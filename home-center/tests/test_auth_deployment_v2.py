@@ -59,7 +59,7 @@ class AuthDeploymentV2Tests(unittest.TestCase):
             "/readyz",
             "/internal/v1/node",
             "verify_bidirectional_peer_identity",
-            "rollback_cluster",
+            "fail_rollback",
             "publish_cluster_transaction",
             "DC02_SOFTWARE_CANARY_30S=PASS",
             "HOME_CENTER_CLUSTER_ROLLOUT=PASS",
