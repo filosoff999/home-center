@@ -39,16 +39,14 @@ jobs:
           cache: ""
       - name: Re-run release gates and build twice
         shell: bash
-        env:
-          HOME_CENTER_VERSION: 0.8.0
-          HOME_CENTER_REVISION: bbb2b1e952b2072c8ce30ad6b3220c7c14280949
-          HOME_CENTER_RELEASE_BUILD: "1"
         run: |
           set -Eeuo pipefail
           test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
           make contracts test security
-          bash deploy/scripts/build-artifact.sh "$RUNNER_TEMP/home-center-080-first"
-          bash deploy/scripts/build-artifact.sh "$RUNNER_TEMP/home-center-080-second"
+          HOME_CENTER_VERSION="$VERSION" HOME_CENTER_REVISION="$SOURCE_SHA" HOME_CENTER_RELEASE_BUILD=1 \
+            bash deploy/scripts/build-artifact.sh "$RUNNER_TEMP/home-center-080-first"
+          HOME_CENTER_VERSION="$VERSION" HOME_CENTER_REVISION="$SOURCE_SHA" HOME_CENTER_RELEASE_BUILD=1 \
+            bash deploy/scripts/build-artifact.sh "$RUNNER_TEMP/home-center-080-second"
           cmp "$RUNNER_TEMP/home-center-080-first/home-center-$VERSION-linux-amd64.tar.gz" \
               "$RUNNER_TEMP/home-center-080-second/home-center-$VERSION-linux-amd64.tar.gz"
           cd "$RUNNER_TEMP/home-center-080-first"
