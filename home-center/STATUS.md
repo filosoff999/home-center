@@ -2,90 +2,114 @@
 
 **Дата:** 06.09.2026  
 **Repository:** `ControlCenterSoft/home-center`  
-**Статус:** `0.4.3 SERVER-SIDE PRODUCTION_ACCEPTED / MANAGED_CLIENT_TRUST_PENDING / P2.4 0.5.0 VERIFIER_CANDIDATE`
+**Статус:** `0.5.0 PRODUCTION_ACCEPTED / MANAGED_CLIENT_TRUST_PENDING / 0.6.0 RELEASE_CANDIDATE`
 
 ## Принятые границы
 
-- самостоятельный продукт;
+- Home Center — самостоятельный продукт;
 - отдельные repository, issues, CI/CD, releases, artifacts, secrets и runtime;
-- отсутствие code/runtime/build/deploy зависимостей от других продуктов;
+- отсутствие code/runtime/build/deploy зависимостей от Control Center и AI Development Fabric;
 - GitHub-hosted engineering compute only;
-- HM.DM rollout: `dc02 → dc01`;
+- HM.DM rollout: `dc02 → canary/soak → dc01`;
 - automatic failover disabled до witness/fencing certification;
-- domain services не изменяются неявно.
+- Samba AD, DNS, DHCP, Domain SID и replication topology не изменяются неявно.
 
-## Production `0.4.3`
+## Production `0.5.0`
 
-- `dc01=0.4.3`, `dc02=0.4.3`;
-- exact revision: `64f798ceae0b669cbac01b452c3cf4fd96070136`;
-- artifact SHA-256: `b2dde6a51ec9450ddd23e802db50be2605c8854e804803ba014422878a02d3d4`;
-- internal manifest SHA-256: `fea9edd8f61425dd685fb1f1db227685d3a7faaaca6c97f7ae641af2bccc0b75`;
-- exact release: `/opt/home-center/releases/0.4.3-64f798ceae0b-b2dde6a51ec9`;
-- deploy transaction: `20260906T160641Z-4618b29b86a5`, order `dc02 → dc01`;
-- immutable typed Action Registry: accepted;
-- единственное executable action: `service.state.read.v1`, local/read-only/allowlisted;
-- persisted idempotent replay, включая replay после рестарта `dc02`: PASS;
-- injection, remote target, unknown action и conflicting idempotency: fail-closed;
-- GitHub-hosted CI: PASS;
-- exact canary/deployment acceptance: PASS;
-- separate Web CA distribution/key placement: PASS;
-- `dc01` Web certificate SHA-256: `28594a1e6afb94dbe944c6fa874325a21c2beeceec3d87774320284c6cdaa443`;
-- `dc02` Web certificate SHA-256: `a495d61150997d521c46fae9a06abf12626e6d1b5a10282f14a44f9f50d1921f`;
-- restricted browser-compatible TLS 1.2/TLS 1.3 and future VIP identity: PASS;
-- peer mTLS TLS 1.3 both directions and peer public fingerprints unchanged: PASS;
-- rollback points созданы на обоих узлах;
-- backup после action: PASS;
-- Samba domain SID `S-1-5-21-483832520-828804035-215000592` сохранён;
-- DRS replication: PASS;
-- Samba AD/DNS/DHCP mutations: none;
-- `dc01-control-agent.service` mutation: none;
+Обе production-ноды приняты на одной exact identity:
+
+- `dc01=0.5.0`, `dc02=0.5.0`;
+- revision: `1d1ff0be759667c40361bbd04b9da273a778b9c8`;
+- artifact SHA-256: `3898daba8711dc1b24266c2677b29fc2302877724f49bf0d5cab9a5e4bcda58a`;
+- release: `/opt/home-center/releases/0.5.0-1d1ff0be7596-3898daba8711`;
+- cluster transaction: `20260906T180027Z-3bd073793891`;
+- production acceptance evidence: `serverops-control#1624 / 5561312312`;
+- Web TLS ECDSA P-256/SHA-256 server-side acceptance: PASS;
+- peer mTLS identities preserved: PASS;
+- readiness/parity/DRS/Domain SID/protected-service gates: PASS;
+- Samba AD/DNS/DHCP mutation evidence: none;
 - automatic failover: disabled.
 
-P2.3 остаётся открытым только для реального managed-client evidence: явная установка Web CA административным процессом и browser trust на Windows/Android без warning. Это не разрешает Home Center изменять AD/GPO.
+Managed-client Web CA enrollment и browser acceptance остаются отдельным явным gate. Home Center не получает права неявно менять AD/GPO ради установки trust anchor.
 
-## Quarantined releases
+## P2.4 signed stable release channel
 
-- `0.4.0`: **QUARANTINED / DO_NOT_DEPLOY** — Web leaf и общий CA оставались Ed25519 и воспроизводили Android/Chrome TLS alert 40;
-- `0.4.1`: **QUARANTINED / DO_NOT_DEPLOY** — empty regular flock-файл ошибочно отклонялся из-за строкового сравнения GNU `stat %F`;
-- `0.4.2`: **QUARANTINED / DO_NOT_DEPLOY** — software rollout прошёл, но Web activation preflight отклонил безопасный marker `root:home-center:0600`, ошибочно требуя gid `0`; Web identity не переключалась;
+`0.5.0` содержит инертный offline/read-only verifier:
 
-## Активный P2.4 / `0.5.0`
+- DSSE PAE + ECDSA P-256/SHA-256 threshold verification;
+- canonical release record и append-only ledger;
+- `stable/superseded/quarantined` lifecycle;
+- provenance/acceptance/artifact exact binding;
+- freshness, anti-replay, equivocation/history rewrite rejection;
+- immutable `VerifiedRelease`;
+- no network/download/install authority.
 
-- ADR-0007 и closed schemas для release record, DSSE envelope, ledger, trust policy, checkpoint и result;
-- canonical ASCII JSON + DSSE PAE + ECDSA P-256/SHA-256 threshold verification;
-- exact repository/ref/workflow/provenance/acceptance binding;
-- append-only atomic transitions `stable`, `superseded`, `quarantined`; quarantine terminal;
-- generation/sequence/checkpoint anti-replay, stale/future/equivocation/history-rewrite rejection;
-- full content-addressed artifact byte, archive, manifest, version и revision verification;
-- immutable `VerifiedStableRelease`; verifier offline/read-only, без network/deploy/systemctl;
-- reproducible build-twice CI and immutable full-SHA action pins.
+Production signing private key, root-owned trust bootstrap, first production signed ledger и durable content-addressed artifact store остаются отдельными activation prerequisites.
 
-Production activation blockers:
+## P2.5 / `0.6.0` Release Candidate
 
-- отдельные Home Center production signing keys и утверждённые public fingerprints отсутствуют;
-- root-owned trust policy ещё не bootstrap-установлена на обе ноды;
-- durable Home Center-owned content-addressed artifact store ещё не создан;
-- signed production ledger не опубликован;
-- P2.5 persisted two-node updater/checkpoint writer не реализован и не включён.
+Реализован и CI-проверен installable persisted two-node reconcile core:
 
-Проверяемые доказательства:
+- exact P2.4 `VerifiedRelease` binding;
+- durable closed checkpoint contract;
+- state machine `discover → acquire → verify → admit → backup-dc02 → update-dc02 → canary-soak → backup-dc01 → update-dc01 → cluster-accept → checkpoint`;
+- любое ambiguous outcome → `recovery_required`;
+- dc01 completion невозможен до dc02 completion;
+- sequence rollback/replay/equivocation rejection;
+- clock rollback rejection;
+- atomic fsync checkpoint publication;
+- no-symlink and bounded checkpoint handling;
+- single-writer non-blocking flock;
+- exact Web CA/leaf/public-key и peer CA/certificate/public-key continuity checks;
+- bounded monitoring states `current`, `drifted`, `blocked`, `quarantined`, `recovery_required`;
+- production activation hard-disabled: `PRODUCTION_ACTIVATION_ENABLED = False`.
 
-- [`ops/PRODUCTION-ACCEPTANCE-2026-09-06.md`](ops/PRODUCTION-ACCEPTANCE-2026-09-06.md);
-- [`ops/P2.1-PRODUCTION-ACCEPTANCE-2026-09-06.md`](ops/P2.1-PRODUCTION-ACCEPTANCE-2026-09-06.md).
-- [`ops/P2.3-PRODUCTION-ACCEPTANCE-2026-09-06.md`](ops/P2.3-PRODUCTION-ACCEPTANCE-2026-09-06.md).
+0.6.0 Operations Foundation также добавляет:
 
-## Roadmap
+- точную installed release identity `VERSION + REVISION`;
+- read-only `/api/v1/meta` с version/revision/build/source;
+- видимую версию/build в Web UI;
+- build-generated release identity, привязанную к exact artifact revision;
+- regression gate: mobile **Узлы** всегда `grid-template-columns: 1fr`;
+- exact release-cut policy: target только `0.6.0`, predecessor только accepted `0.5.0` baseline;
+- fail-closed deterministic bootstrap renderer: изменение reviewed source shape блокирует build.
 
-1. **P2.2 — bounded privileged helper и policy gate** ([#9](https://github.com/ControlCenterSoft/home-center/issues/9)).
-   Отдельный минимальный privileged execution boundary, deny-by-default policy scope и failure/recovery доказательства. Ни одна mutation action не допускается в registry до отдельного ADR, тестов и canary acceptance.
+## 0.6.0 acceptance state
 
-2. **P2.3 — HTTPS/TLS certificate lifecycle и доверенный Web UI** ([#10](https://github.com/ControlCenterSoft/home-center/issues/10)).
-   Server-side lifecycle принят; остаётся только явное managed-client CA/browser trust evidence.
+На release PR пройдены:
 
-3. **P2.4 — signed stable release channel** ([#17](https://github.com/ControlCenterSoft/home-center/issues/17)).
-   `0.5.0` реализует инертный verifier и security contracts. Production signing/trust/store остаются отдельным gate.
+- Python 3.12 deterministic contracts/tests/security: PASS;
+- Python 3.14 deterministic contracts/tests/security: PASS;
+- 154 tests после release-cut fix: PASS;
+- build-twice byte-identical artifact: PASS;
+- checksum verification: PASS.
 
-4. **P2.5 — persisted two-node update reconcile.**
-   Только после P2.4 trust bootstrap: discover → verify → dc02 → continuous soak → dc01 → accept/rollback с fsync checkpoint и bounded retry.
+До production promotion ещё обязательны:
+
+1. merge release PR в `main`;
+2. exact merged-main CI PASS;
+3. получить immutable merged-main artifact + SHA-256;
+4. независимая проверка artifact identity/manifest;
+5. controlled `dc02 → canary/soak → dc01` rollout;
+6. exact parity, Web/peer identity, readiness, mTLS, DRS, Domain SID, backup и protected-service acceptance;
+7. production acceptance evidence.
+
+## Upgrade
+
+Допускается только exact переход:
+
+`0.5.0 / 1d1ff0be759667c40361bbd04b9da273a778b9c8 → 0.6.0 / <exact merged-main revision>`.
+
+Runbook: [`docs/UPGRADE-TO-0.6.0.md`](docs/UPGRADE-TO-0.6.0.md).
+
+Прямой переход с 0.4.x в 0.6.0 запрещён.
+
+## Roadmap к 1.0.0
+
+1. **0.6.x — Operations Foundation:** persisted reconcile primitives, release identity, Version Guard/cluster state foundation.
+2. **0.7.x — Release Manager:** reviewed signed-channel trust/bootstrap, durable artifact store, persisted activation workflow и bounded rollback/recovery orchestration.
+3. **0.8.x — Security/Auth:** local administrator model, AD authentication integration, client trust workflow и TLS/auth hardening.
+4. **0.9.x — Release Candidate:** full E2E, upgrade/rollback/restore, two-node parity, external publication hardening.
+5. **1.0.0 — Stable:** production acceptance всех обязательных gates и документации.
 
 Automatic failover остаётся запрещён до отдельной witness/fencing certification.

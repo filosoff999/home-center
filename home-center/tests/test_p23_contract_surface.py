@@ -17,18 +17,21 @@ class P23ContractSurfaceTests(unittest.TestCase):
         runtime = (ROOT / "product/control-plane/src/home_center/__init__.py").read_text(encoding="utf-8")
         project = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
         builder = (ROOT / "deploy/scripts/build-artifact.sh").read_text(encoding="utf-8")
-        self.assertIn('__version__ = "0.5.0"', runtime)
-        self.assertIn('version = "0.5.0"', project)
+        self.assertIn('__version__ = "0.6.0"', runtime)
+        self.assertIn('version = "0.6.0"', project)
         self.assertIn("HOME_CENTER_VERSION:-$SOURCE_VERSION", builder)
         self.assertIn('[ "$VERSION" = "$SOURCE_VERSION" ]', builder)
-        self.assertIn('[ "$VERSION" = 0.5.0 ]', builder)
+        self.assertIn('[ "$VERSION" = 0.6.0 ]', builder)
         self.assertIn('[[ "$REVISION" =~ ^[0-9a-f]{40}$ ]]', builder)
 
     def test_deploy_scripts_reject_unadmitted_release_versions(self) -> None:
-        for name in ("install-node.sh", "bootstrap-hm-dm.sh"):
-            script = (ROOT / "deploy/scripts" / name).read_text(encoding="utf-8")
-            self.assertIn('[ "$VERSION" = 0.5.0 ]' if name == "install-node.sh" else '[ "$TARGET_VERSION" = 0.5.0 ]', script)
-            self.assertIn("RELEASE_VERSION_NOT_ADMITTED", script)
+        installer = (ROOT / "deploy/scripts/install-node.sh").read_text(encoding="utf-8")
+        bootstrap = (ROOT / "deploy/scripts/bootstrap-hm-dm.sh").read_text(encoding="utf-8")
+        self.assertIn('[ "$VERSION" = 0.6.0 ]', installer)
+        self.assertIn('[ "$TARGET_VERSION" = 0.5.0 ]', bootstrap)
+        self.assertIn("RELEASE_VERSION_NOT_ADMITTED", installer)
+        self.assertIn("RELEASE_VERSION_NOT_ADMITTED", bootstrap)
+        self.assertIn("render-bootstrap-policy.py", (ROOT / "deploy/scripts/build-artifact.sh").read_text(encoding="utf-8"))
         with tempfile.TemporaryDirectory() as tmp:
             result = subprocess.run(
                 ["bash", str(ROOT / "deploy/scripts/build-artifact.sh"), tmp],
@@ -40,7 +43,6 @@ class P23ContractSurfaceTests(unittest.TestCase):
             )
         self.assertEqual(result.returncode, 66)
         self.assertIn("VERSION_OVERRIDE_MISMATCH", result.stderr)
-        installer = (ROOT / "deploy/scripts/install-node.sh").read_text(encoding="utf-8")
         self.assertIn('[[ "$REVISION" =~ ^[0-9a-f]{40}$ ]]', installer)
         self.assertNotIn("^working-tree$", installer)
 

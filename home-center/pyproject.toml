@@ -1,6 +1,7 @@
 [project]
 name = "home-center"
-version = "0.5.0"
+# Accepted predecessor baseline: version = "0.5.0"
+version = "0.6.0"
 description = "Local-first control plane for managed home infrastructure"
 requires-python = ">=3.12"
 dependencies = []
