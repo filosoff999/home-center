@@ -62,7 +62,7 @@ Exact merged-main candidate:
 
 ### 0.8.0 released
 
-Published identity: revision `bbb2b1e952b2072c8ce30ad6b3220c7c14280949`, artifact SHA-256 `25fb72fdffab972703d9be2b7e457b1f4ed053bc1c013a6237558fd693e73ca8`.
+Published [Home Center v0.8.0](https://github.com/ControlCenterSoft/home-center/releases/tag/v0.8.0): revision `bbb2b1e952b2072c8ce30ad6b3220c7c14280949`, artifact SHA-256 `25fb72fdffab972703d9be2b7e457b1f4ed053bc1c013a6237558fd693e73ca8`.
 
 0.8.0 включает:
 
@@ -75,7 +75,7 @@ Published identity: revision `bbb2b1e952b2072c8ce30ad6b3220c7c14280949`, artifac
 - публичный secret-free provider catalog: Web UI показывает AD-вход только при явном включении provider;
 - локальный вход остаётся доступным независимо от состояния AD.
 
-В 0.8 не активируются production deployment, AD/GPO mutation, automatic update или automatic failover. Публикация релиза не означает его deployment на dc01/dc02; live HM.DM rollout и optional AD validation остаются отдельными gates.
+Release PR, exact-main CI `34064080930` и pinned publication run `34064461198` прошли deterministic Python 3.12/3.14 и reproducible build-twice. В 0.8 не активируются production deployment, AD/GPO mutation, automatic update или automatic failover. Публикация релиза не означает его deployment на dc01/dc02; live HM.DM rollout и optional AD validation отслеживаются в issue #44.
 
 ### 0.9.0 development line
 
@@ -98,11 +98,12 @@ Gateway, DNS, router/NAT и certificates остаются operator-owned. Accept
 - [upgrade exact 0.4.3 → 0.5.0](docs/UPGRADE-TO-0.5.0.md);
 - [upgrade exact 0.5.0 → 0.6.0](docs/UPGRADE-TO-0.6.0.md);
 - [upgrade exact 0.6.0 → 0.7.0](docs/UPGRADE-TO-0.7.0.md);
-- [upgrade plan exact 0.7.0 → 0.8.0](docs/UPGRADE-TO-0.8.0.md);
+- [upgrade exact 0.7.0 → 0.8.0](docs/UPGRADE-TO-0.8.0.md);
+- [0.8.0 release evidence](ops/0.8.0-RELEASE-EVIDENCE-2026-09-06.md);
 - [upgrade plan exact 0.8.0 → 0.9.0](docs/UPGRADE-TO-0.9.0.md);
 - [external access 0.9 runbook](docs/EXTERNAL-ACCESS-0.9.0.md);
 - [ADR-0007: signed stable release channel](docs/adr/0007-signed-stable-release-channel.md);
-- [ADR-0010: optional bounded AD authentication](docs/adr/0010-optional-ad-authentication.md).
+- [ADR-0010: optional bounded AD authentication](docs/adr/0010-optional-ad-authentication.md);
 - [ADR-0011: external publication boundary](docs/adr/0011-external-publication-boundary.md);
 - [ADR-0012: release-candidate acceptance](docs/adr/0012-release-candidate-acceptance.md).
 

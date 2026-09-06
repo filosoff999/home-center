@@ -80,6 +80,13 @@ Published release identity:
 - artifact SHA-256: `25fb72fdffab972703d9be2b7e457b1f4ed053bc1c013a6237558fd693e73ca8`;
 - artifact bytes: `136606`.
 
+Release evidence:
+
+- tag/release: `v0.8.0`;
+- exact-main CI `34064080930`: Python 3.12 PASS, Python 3.14 PASS, build-twice PASS;
+- pinned publisher `34064461198`: exact source/digest PASS, tag and both assets published;
+- issue #29: completed.
+
 Release includes:
 
 - local administrator credential/session model;
@@ -121,7 +128,7 @@ Production-only evidence remains pending by definition: exact merged-main 0.9 re
 
 - `0.5.0 → 0.6.0`: [`docs/UPGRADE-TO-0.6.0.md`](docs/UPGRADE-TO-0.6.0.md)
 - `0.6.0 → 0.7.0`: [`docs/UPGRADE-TO-0.7.0.md`](docs/UPGRADE-TO-0.7.0.md)
-- `0.7.0 → 0.8.0`: [`docs/UPGRADE-TO-0.8.0.md`](docs/UPGRADE-TO-0.8.0.md) — plan; target exact-main identity pending
+- `0.7.0 → 0.8.0`: [`docs/UPGRADE-TO-0.8.0.md`](docs/UPGRADE-TO-0.8.0.md) — exact release published
 - `0.8.0 → 0.9.0`: [`docs/UPGRADE-TO-0.9.0.md`](docs/UPGRADE-TO-0.9.0.md) — exact predecessor; target identity pending release cut
 
 Прямой переход `0.7.x` или старше → `0.9.0` запрещён release policy.
