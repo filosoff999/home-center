@@ -43,7 +43,7 @@ def main() -> None:
     provision_tests = read(ROOT / "tests/test_local_admin_provision.py")
     deployment_tests = read(ROOT / "tests/test_auth_deployment_v2.py")
     openapi = read(ROOT / "contracts/openapi/home-center-auth.v2.openapi.json")
-    login_contract = read(ROOT / "contracts/auth/login-request.v1.schema.json")
+    login_contract = read(ROOT / "contracts/auth/login-request.v2.schema.json")
     credential_contract = read(ROOT / "contracts/auth/local-admin-credential.v1.schema.json")
     ad_contract = read(ROOT / "contracts/auth/ad-provider-config.v1.schema.json")
 
