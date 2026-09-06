@@ -12,31 +12,31 @@ import sys
 from pathlib import Path
 
 
-TARGET_VERSION = "0.8.0"
-SOURCE_VERSION = "0.7.0"
-SOURCE_REVISION = "f28fc1c820b065616758ca3c220794555c30a25a"
-SOURCE_ARTIFACT_SHA256 = "6ab15ef38b5d4b064ddb45c47009c73de3f5425553a059d75c9fb3c77bc82b82"
-SOURCE_RELEASE = "/opt/home-center/releases/0.7.0-f28fc1c820b0-6ab15ef38b5d"
+TARGET_VERSION = "0.9.0"
+SOURCE_VERSION = "0.8.0"
+SOURCE_REVISION = "bbb2b1e952b2072c8ce30ad6b3220c7c14280949"
+SOURCE_ARTIFACT_SHA256 = "25fb72fdffab972703d9be2b7e457b1f4ed053bc1c013a6237558fd693e73ca8"
+SOURCE_RELEASE = "/opt/home-center/releases/0.8.0-bbb2b1e952b2-25fb72fdffab"
 
 BOOTSTRAP_REPLACEMENTS = {
     '[ "$TARGET_VERSION" = 0.5.0 ] || { echo RELEASE_VERSION_NOT_ADMITTED >&2; exit 66; }':
-        '[ "$TARGET_VERSION" = 0.8.0 ] || { echo RELEASE_VERSION_NOT_ADMITTED >&2; exit 66; }',
-    "ADMITTED_SOURCE_V043_VERSION=0.4.3": "ADMITTED_SOURCE_V070_VERSION=0.7.0",
+        '[ "$TARGET_VERSION" = 0.9.0 ] || { echo RELEASE_VERSION_NOT_ADMITTED >&2; exit 66; }',
+    "ADMITTED_SOURCE_V043_VERSION=0.4.3": "ADMITTED_SOURCE_V080_VERSION=0.8.0",
     "ADMITTED_SOURCE_V043_REVISION=64f798ceae0b669cbac01b452c3cf4fd96070136":
-        f"ADMITTED_SOURCE_V070_REVISION={SOURCE_REVISION}",
+        f"ADMITTED_SOURCE_V080_REVISION={SOURCE_REVISION}",
     "ADMITTED_SOURCE_V043_RELEASE=/opt/home-center/releases/0.4.3-64f798ceae0b-b2dde6a51ec9":
-        f"ADMITTED_SOURCE_V070_RELEASE={SOURCE_RELEASE}",
+        f"ADMITTED_SOURCE_V080_RELEASE={SOURCE_RELEASE}",
     '  [ "$version" = "$ADMITTED_SOURCE_V043_VERSION" ] \\':
-        '  [ "$version" = "$ADMITTED_SOURCE_V070_VERSION" ] \\',
+        '  [ "$version" = "$ADMITTED_SOURCE_V080_VERSION" ] \\',
     '    && [ "$revision" = "$ADMITTED_SOURCE_V043_REVISION" ] \\':
-        '    && [ "$revision" = "$ADMITTED_SOURCE_V070_REVISION" ] \\',
+        '    && [ "$revision" = "$ADMITTED_SOURCE_V080_REVISION" ] \\',
     '    && [ "$release" = "$ADMITTED_SOURCE_V043_RELEASE" ]':
-        '    && [ "$release" = "$ADMITTED_SOURCE_V070_RELEASE" ]',
+        '    && [ "$release" = "$ADMITTED_SOURCE_V080_RELEASE" ]',
 }
 
 INSTALL_REPLACEMENTS = {
     '[ "$VERSION" = 0.6.0 ] || { echo RELEASE_VERSION_NOT_ADMITTED >&2; exit 66; }':
-        '[ "$VERSION" = 0.8.0 ] || { echo RELEASE_VERSION_NOT_ADMITTED >&2; exit 66; }',
+        '[ "$VERSION" = 0.9.0 ] || { echo RELEASE_VERSION_NOT_ADMITTED >&2; exit 66; }',
 }
 
 
@@ -73,15 +73,15 @@ def render(bootstrap_path: Path, install_path: Path) -> None:
     if any(value in bootstrap for value in forbidden_bootstrap):
         raise SystemExit("release_policy_bootstrap_stale_admission")
     required_bootstrap = (
-        '[ "$TARGET_VERSION" = 0.8.0 ]',
-        "ADMITTED_SOURCE_V070_VERSION=0.7.0",
-        f"ADMITTED_SOURCE_V070_REVISION={SOURCE_REVISION}",
-        f"ADMITTED_SOURCE_V070_RELEASE={SOURCE_RELEASE}",
+        '[ "$TARGET_VERSION" = 0.9.0 ]',
+        "ADMITTED_SOURCE_V080_VERSION=0.8.0",
+        f"ADMITTED_SOURCE_V080_REVISION={SOURCE_REVISION}",
+        f"ADMITTED_SOURCE_V080_RELEASE={SOURCE_RELEASE}",
     )
     if any(value not in bootstrap for value in required_bootstrap):
         raise SystemExit("release_policy_bootstrap_render_rejected")
 
-    if '[ "$VERSION" = 0.8.0 ]' not in installer or '[ "$VERSION" = 0.6.0 ]' in installer:
+    if '[ "$VERSION" = 0.9.0 ]' not in installer or '[ "$VERSION" = 0.6.0 ]' in installer:
         raise SystemExit("release_policy_installer_render_rejected")
 
     _write_atomic(bootstrap_path, bootstrap)

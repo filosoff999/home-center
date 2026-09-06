@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://home-center.invalid/contracts/releases/release-candidate-verification.v1.schema.json",
+  "title": "Home Center release-candidate verification result v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "status",
+    "reason_code",
+    "acceptance_id",
+    "candidate",
+    "predecessor",
+    "rollout_order",
+    "rollback_order",
+    "evidence_sha256"
+  ],
+  "properties": {
+    "schema": {"const": "home-center.release-candidate-verification.v1"},
+    "status": {"enum": ["accepted", "rejected"]},
+    "reason_code": {"oneOf": [{"type": "null"}, {"type": "string", "pattern": "^[a-z0-9][a-z0-9_.-]{0,63}$"}]},
+    "acceptance_id": {"oneOf": [{"type": "null"}, {"type": "string", "pattern": "^[a-z0-9][a-z0-9_.:-]{0,127}$"}]},
+    "candidate": {"oneOf": [{"type": "null"}, {"$ref": "release-candidate-acceptance.v1.schema.json#/$defs/candidateIdentity"}]},
+    "predecessor": {"oneOf": [{"type": "null"}, {"$ref": "release-candidate-acceptance.v1.schema.json#/$defs/predecessorIdentity"}]},
+    "rollout_order": {
+      "oneOf": [
+        {"const": []},
+        {"const": ["dc02", "dc01"]}
+      ]
+    },
+    "rollback_order": {
+      "oneOf": [
+        {"const": []},
+        {"const": ["dc01", "dc02"]}
+      ]
+    },
+    "evidence_sha256": {"oneOf": [{"type": "null"}, {"type": "string", "pattern": "^[0-9a-f]{64}$"}]}
+  }
+}

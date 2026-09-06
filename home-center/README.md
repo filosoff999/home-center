@@ -1,6 +1,6 @@
 # Home Center
 
-> **Статус: 0.5.0 PRODUCTION ACCEPTED · 0.7.0 EXACT-MAIN CANDIDATE · 0.8.0 DEVELOPMENT CANDIDATE · MANAGED-CLIENT TRUST PENDING**
+> **Статус: 0.5.0 PRODUCTION ACCEPTED · 0.8.0 RELEASED / PRODUCTION ROLLOUT PENDING · 0.9.0 DEVELOPMENT ACTIVE**
 
 Home Center — самостоятельный local-first продукт для управления домашней и малой серверной инфраструктурой через единый Web UI и API.
 
@@ -60,9 +60,11 @@ Exact merged-main candidate:
 
 `PRODUCTION_RELEASE_MANAGER_ENABLED = False`; production private signing key, automatic poller/timer и automatic installation не активированы.
 
-### 0.8.0 development line
+### 0.8.0 released
 
-`develop/0.8.0` включает:
+Published identity: revision `bbb2b1e952b2072c8ce30ad6b3220c7c14280949`, artifact SHA-256 `25fb72fdffab972703d9be2b7e457b1f4ed053bc1c013a6237558fd693e73ca8`.
+
+0.8.0 включает:
 
 - локального администратора Home Center вместо bootstrap-token в интерактивном Web login;
 - root-only атомарное создание scrypt verifier без plaintext/reversible password storage;
@@ -73,7 +75,20 @@ Exact merged-main candidate:
 - публичный secret-free provider catalog: Web UI показывает AD-вход только при явном включении provider;
 - локальный вход остаётся доступным независимо от состояния AD.
 
-В 0.8 не активируются production deployment, AD/GPO mutation, automatic update или automatic failover. Live HM.DM AD validation и exact release-branch artifact остаются отдельными gates.
+В 0.8 не активируются production deployment, AD/GPO mutation, automatic update или automatic failover. Публикация релиза не означает его deployment на dc01/dc02; live HM.DM rollout и optional AD validation остаются отдельными gates.
+
+### 0.9.0 development line
+
+`develop/0.9.0` добавляет:
+
+- отключённую по умолчанию external publication boundary через exact trusted reverse proxy;
+- fail-closed forwarding/Origin/HTTPS/public-host validation, client+proxy rate limits и скрытие внутренних endpoints;
+- минимальный внешний health и authenticated non-secret status;
+- exact upgrade policy только с опубликованной 0.8.0 identity;
+- deterministic build-twice/two-node/runtime/external-login/backup E2E;
+- closed acceptance evidence для `dc02 → dc01`, reverse rollback `dc01 → dc02`, backup/restore, exact parity, PKI/Domain SID/DRS и zero forbidden mutations.
+
+Gateway, DNS, router/NAT и certificates остаются operator-owned. Acceptance evidence не заменяет threshold-signed stable release channel.
 
 ## Проверяемые записи
 
@@ -84,8 +99,12 @@ Exact merged-main candidate:
 - [upgrade exact 0.5.0 → 0.6.0](docs/UPGRADE-TO-0.6.0.md);
 - [upgrade exact 0.6.0 → 0.7.0](docs/UPGRADE-TO-0.7.0.md);
 - [upgrade plan exact 0.7.0 → 0.8.0](docs/UPGRADE-TO-0.8.0.md);
+- [upgrade plan exact 0.8.0 → 0.9.0](docs/UPGRADE-TO-0.9.0.md);
+- [external access 0.9 runbook](docs/EXTERNAL-ACCESS-0.9.0.md);
 - [ADR-0007: signed stable release channel](docs/adr/0007-signed-stable-release-channel.md);
 - [ADR-0010: optional bounded AD authentication](docs/adr/0010-optional-ad-authentication.md).
+- [ADR-0011: external publication boundary](docs/adr/0011-external-publication-boundary.md);
+- [ADR-0012: release-candidate acceptance](docs/adr/0012-release-candidate-acceptance.md).
 
 ## Разработка и CI
 
@@ -95,4 +114,4 @@ Engineering compute выполняется только на GitHub-hosted runne
 make ci
 ```
 
-Release PR обязан пройти Python 3.12/3.14 deterministic gates и reproducible build-twice byte comparison до merge.
+PR обязан пройти Python 3.12/3.14 deterministic gates; 0.9 также запускает отдельный E2E. Release PR обязан пройти reproducible build-twice byte comparison до merge.
