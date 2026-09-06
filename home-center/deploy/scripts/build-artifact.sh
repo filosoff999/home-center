@@ -4,7 +4,7 @@ export LC_ALL=C
 
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)
 OUT=${1:-"$ROOT/dist"}
-VERSION=${HOME_CENTER_VERSION:-0.2.0}
+VERSION=${HOME_CENTER_VERSION:-0.3.0}
 REVISION=${HOME_CENTER_REVISION:-$(git -C "$ROOT" rev-parse HEAD 2>/dev/null || printf 'working-tree')}
 STAGE=$(mktemp -d)
 trap 'rm -rf -- "$STAGE"' EXIT
@@ -19,7 +19,8 @@ cp "$ROOT/deploy/profiles/hm-dm-two-node.v1.json" "$STAGE/deployment-profile.jso
 cp "$ROOT/deploy/runtime/run.py" "$ROOT/deploy/runtime/backup-run.py" "$STAGE/"
 cp "$ROOT/deploy/scripts/install-node.sh" "$ROOT/deploy/scripts/rollback-node.sh" "$ROOT/deploy/scripts/bootstrap-hm-dm.sh" "$STAGE/deploy/"
 cp "$ROOT/deploy/hm-dm/config.dc01.json" "$ROOT/deploy/hm-dm/config.dc02.json" "$STAGE/deploy/"
-cp "$ROOT/deploy/systemd/home-center.service" "$ROOT/deploy/systemd/home-center-backup.service" "$ROOT/deploy/systemd/home-center-backup.timer" "$STAGE/deploy/"
+cp "$ROOT/deploy/helper-policy.v1.json" "$STAGE/deploy/"
+cp "$ROOT/deploy/systemd/home-center.service" "$ROOT/deploy/systemd/home-center-backup.service" "$ROOT/deploy/systemd/home-center-backup.timer" "$ROOT/deploy/systemd/home-center-helper.service" "$STAGE/deploy/"
 printf '%s\n' "$VERSION" >"$STAGE/VERSION"
 printf '%s\n' "$REVISION" >"$STAGE/REVISION"
 find "$STAGE" -type f -exec chmod 0644 {} +

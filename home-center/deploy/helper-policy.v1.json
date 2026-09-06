@@ -1,0 +1,7 @@
+{
+  "schema": "home-center.helper.policy.v1",
+  "callers": {
+    "home-center": ["helper.probe"]
+  },
+  "enabled_actions": ["helper.probe.v1"]
+}
