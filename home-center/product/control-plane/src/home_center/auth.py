@@ -66,7 +66,7 @@ class SessionManager:
             ):
                 return None
             actor = payload.get("actor")
-            return actor if isinstance(actor, str) and LOCAL_ADMIN_ACTOR.fullmatch(actor) else None
+            return actor if isinstance(actor, str) and SESSION_ACTOR.fullmatch(actor) else None
         except (KeyError, ValueError, TypeError, json.JSONDecodeError, binascii.Error, UnicodeDecodeError):
             return None
 

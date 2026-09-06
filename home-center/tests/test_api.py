@@ -193,7 +193,7 @@ class ApiTests(unittest.TestCase):
         with self.request(
             "/api/v1/session",
             method="POST",
-            body={"username": "Admin", "password": PASSWORD},
+            body={"provider": "local", "username": "Admin", "password": PASSWORD},
         ) as response:
             payload = response.read().decode()
             self.assertNotIn(PASSWORD, payload)

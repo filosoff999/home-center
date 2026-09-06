@@ -26,7 +26,7 @@ class ContractTests(unittest.TestCase):
                 self.assertEqual(value["openapi"], "3.1.0")
                 continue
             self.assertEqual(value["$schema"], "https://json-schema.org/draft/2020-12/schema")
-            self.assertIn(".v1.schema.json", value["$id"])
+            self.assertRegex(value["$id"], r"\.v[1-9][0-9]*\.schema\.json$")
             self.assertFalse(value.get("additionalProperties", True), path)
 
     def test_runtime_capability_matches_contract(self) -> None:
