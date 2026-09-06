@@ -61,6 +61,7 @@ function hideLogin() {
 async function login(event) {
   event.preventDefault();
   const button = event.currentTarget.querySelector("button");
+  const provider = $("#providerInput").value;
   const username = $("#usernameInput").value;
   const passwordInput = $("#passwordInput");
   const password = passwordInput.value;
@@ -70,7 +71,7 @@ async function login(event) {
     const response = await fetch("/api/v1/session", {
       method: "POST",
       headers: { "Content-Type": "application/json", "Accept": "application/json" },
-      body: JSON.stringify({ username, password }),
+      body: JSON.stringify({ provider, username, password }),
       credentials: "same-origin",
       cache: "no-store",
     });

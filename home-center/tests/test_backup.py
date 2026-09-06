@@ -48,7 +48,7 @@ class BackupTests(unittest.TestCase):
         self.state_db = root / "state" / "state.sqlite3"
         self.backup_dir = root / "backups"
         config = {
-            "schema": "home-center.config.v2",
+            "schema": "home-center.config.v3",
             "cluster_id": "hm-dm-production",
             "node_id": "hm-dm-dc01",
             "node_name": "dc01",
@@ -60,6 +60,14 @@ class BackupTests(unittest.TestCase):
             "backup_dir": str(self.backup_dir),
             "web_root": str(web),
             "local_admin_credentials_file": str(local_admin),
+            "ad_auth": {
+                "enabled": False,
+                "realm": "HM.DM",
+                "kdc_hosts": ["dc01.hm.dm", "dc02.hm.dm"],
+                "allowed_admin_groups": ["domain admins@hm.dm"],
+                "timeout_seconds": 5,
+                "cache_root": str(root / "ad-auth"),
+            },
             "session_key_file": str(secrets / "session.key"),
             "audit_key_file": str(secrets / "audit.key"),
             "tls_certificate": str(secrets / "node.crt"),

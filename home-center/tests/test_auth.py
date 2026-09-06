@@ -24,6 +24,8 @@ class AuthTests(unittest.TestCase):
             self.assertEqual(sessions.actor_from_headers(f"hc_session={signed}"), "local-admin:admin")
             broken = signed[:-1] + ("a" if signed[-1] != "a" else "b")
             self.assertIsNone(sessions.actor_from_headers(f"hc_session={broken}"))
+            ad_signed, _ = sessions.new_session("ad-admin:pavel@HM.DM")
+            self.assertEqual(sessions.actor_from_headers(f"hc_session={ad_signed}"), "ad-admin:pavel@HM.DM")
 
     def test_bootstrap_actor_cannot_create_session(self) -> None:
         with tempfile.TemporaryDirectory() as raw:

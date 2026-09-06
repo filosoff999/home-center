@@ -146,11 +146,16 @@
       <div class="brand-mark large" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M6 15.4 16 7l10 8.4v10.1a1.5 1.5 0 0 1-1.5 1.5h-17A1.5 1.5 0 0 1 6 25.5V15.4Z"/><path d="M12 27v-8h8v8"/></svg></div>
       <p class="eyebrow">Защищённый контур</p>
       <h2>Вход в Home Center</h2>
-      <p>Введите имя и пароль локального администратора Home Center. Пароль не сохраняется в браузере; после проверки используется короткая защищённая сессия.</p>
-      <label for="usernameInput">Имя администратора</label>
+      <p>Выберите локальную или доменную учётную запись. Пароль не сохраняется в браузере; после проверки используется короткая защищённая сессия.</p>
+      <label for="providerInput">Источник учётной записи</label>
+      <select id="providerInput" name="provider">
+        <option value="local">Локальный администратор Home Center</option>
+        <option value="ad">Доменная учётная запись HM.DM</option>
+      </select>
+      <label for="usernameInput">Имя пользователя</label>
       <input id="usernameInput" name="username" type="text" autocomplete="username" minlength="3" maxlength="64" required autofocus>
       <label for="passwordInput">Пароль</label>
-      <input id="passwordInput" name="password" type="password" autocomplete="current-password" minlength="12" maxlength="256" required>
+      <input id="passwordInput" name="password" type="password" autocomplete="current-password" minlength="1" maxlength="256" required>
       <button type="submit" class="primary-button">Войти</button>
       <div id="loginError" class="form-error" role="alert"></div>
       <small>Соединение защищено TLS 1.2+ · HM.DM</small>

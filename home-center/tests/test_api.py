@@ -17,6 +17,7 @@ from unittest.mock import patch
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "product/control-plane/src"))
 
+from home_center.ad_auth import AdAuthError  # noqa: E402
 from home_center.api_v2 import RuntimeRequestHandlerV2  # noqa: E402
 from home_center.config import Config, Peer  # noqa: E402
 from home_center.local_admin_auth import (  # noqa: E402
@@ -165,7 +166,7 @@ class ApiTests(unittest.TestCase):
             with self.request(
                 "/api/v1/session",
                 method="POST",
-                body={"username": USERNAME, "password": PASSWORD},
+                body={"provider": "local", "username": USERNAME, "password": PASSWORD},
             ) as response:
                 cookie = response.headers["Set-Cookie"]
             self._session_cookie = cookie.split(";", 1)[0]
@@ -192,7 +193,7 @@ class ApiTests(unittest.TestCase):
         with self.request(
             "/api/v1/session",
             method="POST",
-            body={"username": "Admin", "password": PASSWORD},
+            body={"provider": "local", "username": "Admin", "password": PASSWORD},
         ) as response:
             payload = response.read().decode()
             self.assertNotIn(PASSWORD, payload)
@@ -204,7 +205,8 @@ class ApiTests(unittest.TestCase):
 
     def test_invalid_login_is_generic_and_legacy_token_shape_is_rejected(self) -> None:
         for body in (
-            {"username": USERNAME, "password": "wrong-password-value"},
+            {"provider": "local", "username": USERNAME, "password": "wrong-password-value"},
+            {"provider": "unknown", "username": USERNAME, "password": PASSWORD},
             {"token": "t" * 64},
         ):
             with self.assertRaises(urllib.error.HTTPError) as caught:
@@ -214,6 +216,52 @@ class ApiTests(unittest.TestCase):
             self.assertIn("invalid_credentials", payload)
             self.assertNotIn("wrong-password-value", payload)
             self.assertNotIn("t" * 32, payload)
+
+
+    def test_optional_ad_login_success_and_failure_are_generic(self) -> None:
+        class FixtureAd:
+            def __init__(self) -> None:
+                self.unavailable = False
+
+            def authenticate(self, username: str, password: str) -> str | None:
+                self.assert_secret_absent = password not in username
+                if self.unavailable:
+                    raise AdAuthError("fixture")
+                if username == "Pavel" and password == PASSWORD:
+                    return "pavel@HM.DM"
+                return None
+
+        fixture = FixtureAd()
+        self.runtime.ad_auth = fixture
+        with self.request(
+            "/api/v1/session",
+            method="POST",
+            body={"provider": "ad", "username": "Pavel", "password": PASSWORD},
+        ) as response:
+            payload = response.read().decode()
+            self.assertIn('"actor":"ad-admin:pavel@HM.DM"', payload)
+            self.assertNotIn(PASSWORD, payload)
+
+        with self.assertRaises(urllib.error.HTTPError) as caught:
+            self.request(
+                "/api/v1/session",
+                method="POST",
+                body={"provider": "ad", "username": "Pavel", "password": "wrong-password"},
+            )
+        self.assertEqual(caught.exception.code, 401)
+        self.assertIn("invalid_credentials", caught.exception.read().decode())
+
+        fixture.unavailable = True
+        with self.assertRaises(urllib.error.HTTPError) as caught:
+            self.request(
+                "/api/v1/session",
+                method="POST",
+                body={"provider": "ad", "username": "Pavel", "password": PASSWORD},
+            )
+        self.assertEqual(caught.exception.code, 503)
+        payload = caught.exception.read().decode()
+        self.assertIn("authentication_unavailable", payload)
+        self.assertNotIn("fixture", payload)
 
     def test_tls_trust_anchor_is_public_but_private_key_is_not_exposed(self) -> None:
         with patch("home_center.api_v2._validated_web_ca", return_value=b"not-used"):

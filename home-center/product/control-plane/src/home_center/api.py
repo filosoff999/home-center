@@ -22,6 +22,7 @@ from .actions import (
     ActionRequestError,
     ActionTargetConflict,
 )
+from .ad_auth import AdAuthError
 from .auth import SessionManager
 from .local_admin_auth import LocalAdminAuthError
 from .runtime import Runtime
@@ -233,11 +234,12 @@ class RuntimeRequestHandler(BaseHTTPRequestHandler):
             return
         try:
             body = self._read_json()
-            if set(body) != {"username", "password"}:
+            if set(body) != {"provider", "username", "password"}:
                 raise ValueError("invalid login shape")
+            provider = body.get("provider")
             username = body.get("username")
             password = body.get("password")
-            if not isinstance(username, str) or not isinstance(password, str):
+            if provider not in {"local", "ad"} or not isinstance(username, str) or not isinstance(password, str):
                 raise ValueError("invalid login types")
         except (ValueError, TypeError, json.JSONDecodeError):
             self.runtime.store.audit(actor=f"network:{remote}", action="session.login", target=self.runtime.config.node_id, outcome="denied", correlation_id=correlation_id, details={"reason": "invalid_credentials"})
@@ -245,9 +247,14 @@ class RuntimeRequestHandler(BaseHTTPRequestHandler):
             return
 
         try:
-            canonical_username = self.runtime.local_admin.authenticate(username, password)
-        except LocalAdminAuthError:
-            LOG.error("local administrator authentication backend unavailable")
+            if provider == "local":
+                canonical_username = self.runtime.local_admin.authenticate(username, password)
+                actor_prefix = "local-admin"
+            else:
+                canonical_username = self.runtime.ad_auth.authenticate(username, password)
+                actor_prefix = "ad-admin"
+        except (LocalAdminAuthError, AdAuthError):
+            LOG.error("authentication backend unavailable")
             self.runtime.store.audit(actor=f"network:{remote}", action="session.login", target=self.runtime.config.node_id, outcome="denied", correlation_id=correlation_id, details={"reason": "authentication_unavailable"})
             self._error(503, "authentication_unavailable", "Служба аутентификации недоступна", correlation_id)
             return
@@ -257,7 +264,7 @@ class RuntimeRequestHandler(BaseHTTPRequestHandler):
             return
 
         self.runtime.login_limiter.clear(remote)
-        actor = f"local-admin:{canonical_username}"
+        actor = f"{actor_prefix}:{canonical_username}"
         session, expires = self.runtime.sessions.new_session(actor)
         self.runtime.store.audit(actor=actor, action="session.login", target=self.runtime.config.node_id, outcome="accepted", correlation_id=correlation_id, details={"remote_address": remote})
         self._json(200, {"schema": "home-center.session.v1", "authenticated": True, "actor": actor, "expires_at_epoch": expires}, cookie=SessionManager.cookie(session, expires - int(time.time())))

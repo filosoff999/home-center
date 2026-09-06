@@ -156,8 +156,8 @@ td { padding: 13px 12px; border-top: 1px solid rgba(255,255,255,.055); vertical-
 .login-card h2 { margin: 6px 0 10px; font-size: 28px; letter-spacing: -.045em; }
 .login-card > p:not(.eyebrow) { margin: 0 0 24px; color: var(--muted); font-size: 12px; line-height: 1.6; }
 .login-card label { display: block; margin-bottom: 7px; color: #bdc9d9; font-size: 10px; }
-.login-card input { width: 100%; padding: 13px 14px; border: 1px solid rgba(255,255,255,.12); border-radius: 11px; outline: 0; color: var(--text); background: #09121f; }
-.login-card input:focus { border-color: rgba(99,230,183,.55); box-shadow: 0 0 0 3px rgba(99,230,183,.08); }
+.login-card :is(input, select) { width: 100%; padding: 13px 14px; border: 1px solid rgba(255,255,255,.12); border-radius: 11px; outline: 0; color: var(--text); background: #09121f; }
+.login-card :is(input, select):focus { border-color: rgba(99,230,183,.55); box-shadow: 0 0 0 3px rgba(99,230,183,.08); }
 .primary-button { width: 100%; margin-top: 12px; padding: 13px; border: 0; border-radius: 11px; color: #07131b; background: linear-gradient(90deg,#66e9bd,#67b8ee); font-weight: 750; cursor: pointer; }
 .login-card > small { display: block; margin-top: 18px; color: #65758b; text-align: center; font-size: 9px; }
 .form-error { min-height: 17px; margin-top: 9px; color: #ff9aa8; font-size: 10px; }

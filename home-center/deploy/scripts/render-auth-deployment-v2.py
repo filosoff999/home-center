@@ -108,7 +108,7 @@ def render_installer(source: str) -> str:
     rendered = _replace_once(
         rendered,
         anchor,
-        anchor + _credential_validator_function(),
+        anchor + "install -d -m 0700 -o home-center -g home-center /var/lib/home-center/ad-auth\n" + _credential_validator_function(),
         "installer_validator_function",
     )
 

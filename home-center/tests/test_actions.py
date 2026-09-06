@@ -109,6 +109,14 @@ class ActionRegistryTests(unittest.TestCase):
         self.assertEqual(len(self.calls), 1)
         self.assertEqual(self.store.audit_events(1)[0]["outcome"], "succeeded")
 
+        ad_job, _ = self.registry.run(
+            actor="ad-admin:pavel@HM.DM",
+            action_id="service.state.read.v1",
+            request=self.request(key="request-ad-0001"),
+            correlation_id="test-action-ad",
+        )
+        self.assertEqual(ad_job["state"], "succeeded")
+
     def test_same_request_is_replayed_without_second_execution(self) -> None:
         first, first_replay = self.registry.run(
             actor=ACTOR,

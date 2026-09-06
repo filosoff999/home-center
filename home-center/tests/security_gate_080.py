@@ -33,6 +33,7 @@ def main() -> None:
     config = read(SRC / "config.py")
     runtime = read(SRC / "runtime.py")
     local = read(SRC / "local_admin_auth.py")
+    ad = read(SRC / "ad_auth.py")
     provision = read(SRC / "local_admin_provision.py")
     provision_cli = read(ROOT / "deploy/runtime/provision-local-admin.py")
     build = read(ROOT / "deploy/scripts/build-artifact.sh")
@@ -42,8 +43,9 @@ def main() -> None:
     provision_tests = read(ROOT / "tests/test_local_admin_provision.py")
     deployment_tests = read(ROOT / "tests/test_auth_deployment_v2.py")
     openapi = read(ROOT / "contracts/openapi/home-center-auth.v2.openapi.json")
-    login_contract = read(ROOT / "contracts/auth/login-request.v1.schema.json")
+    login_contract = read(ROOT / "contracts/auth/login-request.v2.schema.json")
     credential_contract = read(ROOT / "contracts/auth/local-admin-credential.v1.schema.json")
+    ad_contract = read(ROOT / "contracts/auth/ad-provider-config.v1.schema.json")
 
     interactive_surface = "\n".join((auth, api, config, runtime, index, browser))
     require("admin_token_file" not in interactive_surface, "runtime interactive auth still references admin_token_file")
@@ -53,7 +55,7 @@ def main() -> None:
     require("tokenInput" not in index + browser, "legacy bootstrap-token browser input remains reachable")
     require("JSON.stringify({ token })" not in browser, "legacy bootstrap-token browser request remains reachable")
 
-    require('CONFIG_SCHEMA = "home-center.config.v2"' in config, "config v2 is not enforced")
+    require('CONFIG_SCHEMA = "home-center.config.v3"' in config, "config v2 is not enforced")
     require("local_admin_credentials_file" in config + runtime, "local administrator credential path is not wired")
     require("LocalAdminCredentialStore" in runtime, "local credential verifier is not composed into runtime")
 
@@ -69,21 +71,40 @@ def main() -> None:
     ):
         require(marker in local, f"credential hardening marker missing: {marker}")
 
-    require('set(body) != {"username", "password"}' in api, "login request is not closed to username/password")
-    require('actor = f"local-admin:{canonical_username}"' in api, "local administrator actor binding missing")
+    require('set(body) != {"provider", "username", "password"}' in api, "login request is not closed to provider/username/password")
+    require('provider not in {"local", "ad"}' in api, "authentication provider allowlist missing")
+    require('actor = f"{actor_prefix}:{canonical_username}"' in api, "authenticated actor binding missing")
+    require("AdAuthenticator" in runtime, "optional AD authenticator is not composed into runtime")
     require("SameSite=Strict" in auth and "HttpOnly" in auth and "Secure" in auth, "session cookie flags weakened")
     require("LoginRateLimiter" in auth + runtime, "login rate limiter is not active")
 
-    require("usernameInput" in index and "passwordInput" in index, "local login fields missing")
-    require("JSON.stringify({ username, password })" in browser, "browser login does not submit local credentials")
+    require("providerInput" in index and "usernameInput" in index and "passwordInput" in index, "provider login fields missing")
+    require("JSON.stringify({ provider, username, password })" in browser, "browser login does not submit explicit provider credentials")
     require('passwordInput.value = ""' in browser, "browser password is not cleared after authentication")
 
     require('"bootstrapBearer"' not in openapi, "0.8 authentication OpenAPI advertises Bearer authentication")
     require('"sessionCookie"' in openapi, "0.8 authentication OpenAPI lacks session cookie scheme")
-    require('"../auth/login-request.v1.schema.json"' in openapi, "0.8 OpenAPI is not bound to the login contract")
-    require('"password"' in login_contract and '"writeOnly": true' in login_contract, "password contract is not write-only")
+    require('"../auth/login-request.v2.schema.json"' in openapi, "0.8 OpenAPI is not bound to the provider login contract")
+    require('"provider"' in login_contract and '"password"' in login_contract and '"writeOnly": true' in login_contract, "provider/password contract is incomplete")
+    require('"enabled"' in ad_contract and '"allowed_admin_groups"' in ad_contract, "AD provider config contract incomplete")
     for marker in ('"n": {\n      "const": 32768', '"r": {\n      "const": 8', '"p": {\n      "const": 1', '"dklen": {\n      "const": 32'):
         require(marker in credential_contract, f"credential contract KDF marker missing: {marker}")
+
+
+    for marker in (
+        '[KINIT, "-V", "-l", "5m", principal]',
+        '[ID, "-Gn", "-z", principal]',
+        "input=secret + b",
+        "stdout=subprocess.DEVNULL",
+        "stderr=subprocess.DEVNULL",
+        "timeout=self.config.timeout_seconds",
+        '" dns_lookup_kdc = false',
+        '" dns_lookup_realm = false',
+        "shutil.rmtree",
+    ):
+        require(marker in ad, f"AD authentication hardening marker missing: {marker}")
+    require("shell=True" not in ad, "AD authentication may not invoke a shell")
+    require("password" not in ad_contract, "AD provider config contract must not persist passwords")
 
     for marker in (
         "os.O_EXCL",
@@ -105,9 +126,10 @@ def main() -> None:
     require("provision-local-admin.py" in build, "provisioner is not staged for the future 0.8 artifact")
     require('[ "$VERSION" = 0.8.0 ] || { echo RELEASE_VERSION_NOT_ADMITTED' in build, "0.8 artifact version is not admitted exactly")
     require("HOME_CENTER_080_ARTIFACT_NOT_YET_ADMITTED" not in build, "obsolete 0.8 artifact block remains")
-    require("HOME_CENTER_080_CONFIG_SCHEMA_NOT_ADMITTED" in build, "0.8 config-v2 release gate missing")
+    require("HOME_CENTER_080_CONFIG_SCHEMA_NOT_ADMITTED" in build, "0.8 config-v3 release gate missing")
     require("render-release-policy.py" in build, "0.8 release-policy renderer is not invoked")
     require("render-auth-deployment-v2.py" in build, "0.8 auth deployment renderer is not invoked")
+    require("/var/lib/home-center/ad-auth" in read(ROOT / "deploy/scripts/render-auth-deployment-v2.py"), "AD cache directory provisioning missing")
     require(
         build.index("render-release-policy.py") < build.index("render-auth-deployment-v2.py"),
         "0.8 deployment renderers execute in an unsafe order",
