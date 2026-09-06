@@ -4,5 +4,6 @@ from __future__ import annotations
 
 __all__ = ["__version__"]
 
-# Accepted predecessor baseline: __version__ = "0.5.0"
-__version__ = "0.6.0"
+# Historical accepted production baseline: __version__ = "0.5.0"
+# Accepted predecessor baseline: __version__ = "0.6.0"
+__version__ = "0.7.0"

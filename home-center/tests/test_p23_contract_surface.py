@@ -31,7 +31,7 @@ class P23ContractSurfaceTests(unittest.TestCase):
         self.assertIn('[ "$TARGET_VERSION" = 0.5.0 ]', bootstrap)
         self.assertIn("RELEASE_VERSION_NOT_ADMITTED", installer)
         self.assertIn("RELEASE_VERSION_NOT_ADMITTED", bootstrap)
-        self.assertIn("render-bootstrap-policy.py", (ROOT / "deploy/scripts/build-artifact.sh").read_text(encoding="utf-8"))
+        self.assertIn("render-release-policy.py", (ROOT / "deploy/scripts/build-artifact.sh").read_text(encoding="utf-8"))
         with tempfile.TemporaryDirectory() as tmp:
             result = subprocess.run(
                 ["bash", str(ROOT / "deploy/scripts/build-artifact.sh"), tmp],

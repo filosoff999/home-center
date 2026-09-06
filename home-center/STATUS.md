@@ -2,114 +2,88 @@
 
 **Дата:** 06.09.2026  
 **Repository:** `ControlCenterSoft/home-center`  
-**Статус:** `0.5.0 PRODUCTION_ACCEPTED / MANAGED_CLIENT_TRUST_PENDING / 0.6.0 RELEASE_CANDIDATE`
+**Статус:** `0.5.0 PRODUCTION_ACCEPTED / 0.6.0 EXACT_MAIN_CANDIDATE / 0.7.0 RELEASE_CANDIDATE / MANAGED_CLIENT_TRUST_PENDING`
 
 ## Принятые границы
 
 - Home Center — самостоятельный продукт;
-- отдельные repository, issues, CI/CD, releases, artifacts, secrets и runtime;
-- отсутствие code/runtime/build/deploy зависимостей от Control Center и AI Development Fabric;
 - GitHub-hosted engineering compute only;
 - HM.DM rollout: `dc02 → canary/soak → dc01`;
 - automatic failover disabled до witness/fencing certification;
-- Samba AD, DNS, DHCP, Domain SID и replication topology не изменяются неявно.
+- Samba AD, DNS, DHCP, Domain SID и replication topology не изменяются неявно;
+- Control Center и AI Development Fabric не входят в Home Center runtime/build/deploy.
 
 ## Production `0.5.0`
 
-Обе production-ноды приняты на одной exact identity:
+Обе production-ноды остаются на принятой exact identity:
 
-- `dc01=0.5.0`, `dc02=0.5.0`;
+- version: `0.5.0`;
 - revision: `1d1ff0be759667c40361bbd04b9da273a778b9c8`;
 - artifact SHA-256: `3898daba8711dc1b24266c2677b29fc2302877724f49bf0d5cab9a5e4bcda58a`;
 - release: `/opt/home-center/releases/0.5.0-1d1ff0be7596-3898daba8711`;
 - cluster transaction: `20260906T180027Z-3bd073793891`;
-- production acceptance evidence: `serverops-control#1624 / 5561312312`;
-- Web TLS ECDSA P-256/SHA-256 server-side acceptance: PASS;
-- peer mTLS identities preserved: PASS;
-- readiness/parity/DRS/Domain SID/protected-service gates: PASS;
-- Samba AD/DNS/DHCP mutation evidence: none;
-- automatic failover: disabled.
+- production acceptance evidence: `serverops-control#1624 / 5561312312`.
 
-Managed-client Web CA enrollment и browser acceptance остаются отдельным явным gate. Home Center не получает права неявно менять AD/GPO ради установки trust anchor.
+Managed-client Web CA enrollment/browser acceptance остаётся отдельным gate. Фактического rollout 0.6/0.7 на dc01/dc02 в текущем GitHub-сеансе не выполнялось.
 
-## P2.4 signed stable release channel
+## Exact merged-main `0.6.0` candidate
 
-`0.5.0` содержит инертный offline/read-only verifier:
+- revision: `2235670d77bccc1c777223eb4f50a546313b4d2d`;
+- artifact SHA-256: `bf68e870339f18351f4401895f7bff18c093fa9809eb4eefda2633391fe9a811`;
+- artifact bytes: `119076`;
+- GitHub Actions run: `34055837243`;
+- Python 3.12/3.14 gates: PASS;
+- build-twice byte-identical: PASS.
 
-- DSSE PAE + ECDSA P-256/SHA-256 threshold verification;
-- canonical release record и append-only ledger;
-- `stable/superseded/quarantined` lifecycle;
-- provenance/acceptance/artifact exact binding;
-- freshness, anti-replay, equivocation/history rewrite rejection;
-- immutable `VerifiedRelease`;
-- no network/download/install authority.
+0.6.0 включает:
 
-Production signing private key, root-owned trust bootstrap, first production signed ledger и durable content-addressed artifact store остаются отдельными activation prerequisites.
+- persisted two-node reconcile core;
+- exact `VerifiedRelease` binding;
+- durable checkpoint;
+- dc02-first state machine;
+- anti-replay/equivocation/clock rollback rejection;
+- single-writer lock;
+- Web/peer PKI continuity checks;
+- installed `VERSION+REVISION` identity;
+- visible version/build in Web UI;
+- mobile Nodes one-column regression gate.
 
-## P2.5 / `0.6.0` Release Candidate
+`PRODUCTION_ACTIVATION_ENABLED = False`.
 
-Реализован и CI-проверен installable persisted two-node reconcile core:
+## `0.7.0` Release Candidate
 
-- exact P2.4 `VerifiedRelease` binding;
-- durable closed checkpoint contract;
-- state machine `discover → acquire → verify → admit → backup-dc02 → update-dc02 → canary-soak → backup-dc01 → update-dc01 → cluster-accept → checkpoint`;
-- любое ambiguous outcome → `recovery_required`;
-- dc01 completion невозможен до dc02 completion;
-- sequence rollback/replay/equivocation rejection;
-- clock rollback rejection;
-- atomic fsync checkpoint publication;
-- no-symlink and bounded checkpoint handling;
-- single-writer non-blocking flock;
-- exact Web CA/leaf/public-key и peer CA/certificate/public-key continuity checks;
-- bounded monitoring states `current`, `drifted`, `blocked`, `quarantined`, `recovery_required`;
-- production activation hard-disabled: `PRODUCTION_ACTIVATION_ENABLED = False`.
+0.7 foundation добавляет:
 
-0.6.0 Operations Foundation также добавляет:
+- bounded content-addressed artifact store;
+- fixed root-owned inbox/object roots;
+- no caller-controlled source/destination path API;
+- no network/download client;
+- no-overwrite CAS publication + fsync;
+- full P2.4 artifact/manifest/version/revision re-verification;
+- fixed root-owned public trust policy и DSSE snapshot locations;
+- durable anti-replay release-channel checkpoint;
+- offline `ReleaseManager.evaluate()`;
+- local-only `admit_local()` с single-writer lock;
+- no deployment/systemctl/SSH surface;
+- `PRODUCTION_RELEASE_MANAGER_ENABLED = False`;
+- unified fail-closed release-policy renderer;
+- staged target exact `0.7.0`;
+- admitted predecessor exact published `0.6.0 / 2235670d77bccc1c777223eb4f50a546313b4d2d / bf68e870339f18351f4401895f7bff18c093fa9809eb4eefda2633391fe9a811`.
 
-- точную installed release identity `VERSION + REVISION`;
-- read-only `/api/v1/meta` с version/revision/build/source;
-- видимую версию/build в Web UI;
-- build-generated release identity, привязанную к exact artifact revision;
-- regression gate: mobile **Узлы** всегда `grid-template-columns: 1fr`;
-- exact release-cut policy: target только `0.6.0`, predecessor только accepted `0.5.0` baseline;
-- fail-closed deterministic bootstrap renderer: изменение reviewed source shape блокирует build.
-
-## 0.6.0 acceptance state
-
-На release PR пройдены:
-
-- Python 3.12 deterministic contracts/tests/security: PASS;
-- Python 3.14 deterministic contracts/tests/security: PASS;
-- 154 tests после release-cut fix: PASS;
-- build-twice byte-identical artifact: PASS;
-- checksum verification: PASS.
-
-До production promotion ещё обязательны:
-
-1. merge release PR в `main`;
-2. exact merged-main CI PASS;
-3. получить immutable merged-main artifact + SHA-256;
-4. независимая проверка artifact identity/manifest;
-5. controlled `dc02 → canary/soak → dc01` rollout;
-6. exact parity, Web/peer identity, readiness, mTLS, DRS, Domain SID, backup и protected-service acceptance;
-7. production acceptance evidence.
+Release PR tests/security и reproducible artifact проходят; после финального docs head требуется ещё один exact-head CI PASS, merge и exact-main artifact evidence.
 
 ## Upgrade
 
-Допускается только exact переход:
+- `0.5.0 → 0.6.0`: [`docs/UPGRADE-TO-0.6.0.md`](docs/UPGRADE-TO-0.6.0.md)
+- `0.6.0 → 0.7.0`: [`docs/UPGRADE-TO-0.7.0.md`](docs/UPGRADE-TO-0.7.0.md)
 
-`0.5.0 / 1d1ff0be759667c40361bbd04b9da273a778b9c8 → 0.6.0 / <exact merged-main revision>`.
-
-Runbook: [`docs/UPGRADE-TO-0.6.0.md`](docs/UPGRADE-TO-0.6.0.md).
-
-Прямой переход с 0.4.x в 0.6.0 запрещён.
+Прямой переход `0.5.x/0.4.x → 0.7.0` запрещён release policy.
 
 ## Roadmap к 1.0.0
 
-1. **0.6.x — Operations Foundation:** persisted reconcile primitives, release identity, Version Guard/cluster state foundation.
-2. **0.7.x — Release Manager:** reviewed signed-channel trust/bootstrap, durable artifact store, persisted activation workflow и bounded rollback/recovery orchestration.
-3. **0.8.x — Security/Auth:** local administrator model, AD authentication integration, client trust workflow и TLS/auth hardening.
-4. **0.9.x — Release Candidate:** full E2E, upgrade/rollback/restore, two-node parity, external publication hardening.
-5. **1.0.0 — Stable:** production acceptance всех обязательных gates и документации.
+1. **0.7.x — Release Manager foundation:** exact signed-channel/trust/store/checkpoint infrastructure, production-inert.
+2. **0.8.x — Security/Auth:** local administrator credentials/session model, optional AD authentication, client trust workflow, TLS/auth hardening.
+3. **0.9.x — Release Candidate:** external publication hardening, full E2E, upgrade/rollback/restore, two-node parity acceptance.
+4. **1.0.0 — Stable:** production acceptance обязательных gates, documentation и controlled dc02→dc01 deployment evidence.
 
-Automatic failover остаётся запрещён до отдельной witness/fencing certification.
+Production auto-update и automatic failover остаются запрещены до соответствующих независимых activation/witness gates.
