@@ -35,7 +35,7 @@ Do not create a production `stable` record merely because these gates pass. Prom
 Use the exact bundled `bootstrap-hm-dm.sh`, `install-node.sh` and `rollback-node.sh` from the candidate artifact.
 
 1. Pin artifact and its independently recorded SHA-256 in root-only temporary input on `dc01`.
-2. Run read-only source/identity/service/DRS/peer/Web preflight and transactionally snapshot the existing peer CA/node plus Web CA/leaf/public-key fingerprints.
+2. Run read-only source/identity/service/DRS/peer/Web preflight and transactionally snapshot the existing peer CA/node plus Web CA/leaf/public-key fingerprints in the durable cluster marker.
 3. Install exact candidate on `dc02`.
 4. Verify transaction marker, current release, `VERSION`, `REVISION`, full artifact digest, `/readyz`, helper probe, backup/timers, Web TLS 1.2/1.3 and peer mTLS.
 5. Hold the mandatory 30-second canary and repeat readiness, service/timer and peer gates.
@@ -63,7 +63,7 @@ The rollout must not rotate Web certificates: `/etc/home-center/pki/web`, Web CA
 - failure before any installer mutation: stop with no node change;
 - `dc02` failure: rollback exact `dc02` source and never touch `dc01`;
 - `dc01` failure after canary: rollback touched nodes through the existing cluster recovery transaction and prove exact source/readiness/roles, peer mTLS, and unchanged peer/Web public identities;
-- unknown mutating result: reconcile the existing transaction only; blind retry with another artifact is forbidden;
+- unknown mutating result: reconcile the existing transaction only, using the separate Web CA for `:8443` and proving the durable peer/Web identity snapshots; blind retry with another artifact is forbidden;
 - rollback failure: record `recovery_required`, preserve evidence and stop;
 - no failure path modifies Control Center, Samba AD/DNS/DHCP, Web/peer CA keys or automatic failover.
 

@@ -221,7 +221,8 @@ info = directory.lstat()
 if not stat.S_ISDIR(info.st_mode) or stat.S_ISLNK(info.st_mode) or info.st_uid != 0 or stat.S_IMODE(info.st_mode) != 0o700:
     raise SystemExit("cluster_transaction_directory_rejected")
 unresolved = []
-required = {"artifact_sha256", "peer_identity", "rollback_points", "schema", "source", "status", "target", "transaction_id"}
+legacy_required = {"artifact_sha256", "peer_identity", "rollback_points", "schema", "source", "status", "target", "transaction_id"}
+required = legacy_required | {"web_identity"}
 for path in directory.iterdir():
     entry = path.lstat()
     if not stat.S_ISREG(entry.st_mode) or stat.S_ISLNK(entry.st_mode) or entry.st_uid != 0 or stat.S_IMODE(entry.st_mode) != 0o600:
@@ -229,14 +230,18 @@ for path in directory.iterdir():
     with path.open(encoding="utf-8") as handle:
         value = json.load(handle)
     transaction_id = value.get("transaction_id") if isinstance(value, dict) else None
+    status = value.get("status") if isinstance(value, dict) else None
+    keys = set(value) if isinstance(value, dict) else set()
+    current_shape = keys == required
+    legacy_shape = keys == legacy_required
     if not (
         isinstance(value, dict)
-        and set(value) == required
+        and (current_shape or legacy_shape)
         and value.get("schema") == "home-center.cluster-deploy-transaction.v1"
         and isinstance(transaction_id, str)
         and re.fullmatch(r"[0-9]{8}T[0-9]{6}Z-[0-9a-f]{12}", transaction_id)
         and path.name == f"{transaction_id}.json"
-        and value.get("status") in {"started", "recovery_required", "rolled_back", "succeeded"}
+        and status in {"started", "recovery_required", "rolled_back", "succeeded"}
         and re.fullmatch(r"[0-9a-f]{64}", str(value.get("artifact_sha256")))
         and isinstance(value.get("target"), dict)
         and set(value["target"]) == {"revision", "version"}
@@ -265,7 +270,17 @@ for path in directory.iterdir():
             and all(re.fullmatch(r"[0-9a-f]{64}", str(item)) for item in peer_identity.values())
         ):
             raise SystemExit("cluster_transaction_peer_identity_rejected")
-    if value["status"] in {"started", "recovery_required"}:
+        if current_shape:
+            web_identity = value.get("web_identity", {}).get(node, {})
+            if not (
+                isinstance(web_identity, dict)
+                and set(web_identity) == {"ca_sha256", "certificate_sha256", "public_key_sha256"}
+                and all(re.fullmatch(r"[0-9a-f]{64}", str(item)) for item in web_identity.values())
+            ):
+                raise SystemExit("cluster_transaction_web_identity_rejected")
+    if status in {"started", "recovery_required"}:
+        if not current_shape:
+            raise SystemExit("cluster_transaction_web_identity_required_for_recovery")
         if value["target"] != {"revision": expected_revision, "version": expected_version}:
             raise SystemExit("prior_cluster_target_mismatch_recovery_required")
         if value["artifact_sha256"] != expected_artifact:
@@ -291,9 +306,12 @@ for node in ("dc01", "dc02"):
 for node in ("dc01", "dc02"):
     identity = value["peer_identity"][node]
     print(":".join((identity["ca_sha256"], identity["certificate_sha256"], identity["public_key_sha256"])))
+for node in ("dc01", "dc02"):
+    identity = value["web_identity"][node]
+    print(":".join((identity["ca_sha256"], identity["certificate_sha256"], identity["public_key_sha256"])))
 PY
   )
-  [ "${#RECOVERY_FIELDS[@]}" -eq 11 ] || { echo PRIOR_CLUSTER_RECOVERY_FIELDS_REJECTED >&2; exit 70; }
+  [ "${#RECOVERY_FIELDS[@]}" -eq 13 ] || { echo PRIOR_CLUSTER_RECOVERY_FIELDS_REJECTED >&2; exit 70; }
   RECOVERY_TRANSACTION_ID=${RECOVERY_FIELDS[0]}
   RECOVERY_LOCAL_POINT=${RECOVERY_FIELDS[1]}
   RECOVERY_LOCAL_RELEASE=${RECOVERY_FIELDS[2]}
@@ -305,6 +323,8 @@ PY
   RECOVERY_REMOTE_REVISION=${RECOVERY_FIELDS[8]}
   RECOVERY_LOCAL_PEER_STATE=${RECOVERY_FIELDS[9]}
   RECOVERY_REMOTE_PEER_STATE=${RECOVERY_FIELDS[10]}
+  RECOVERY_LOCAL_WEB_STATE=${RECOVERY_FIELDS[11]}
+  RECOVERY_REMOTE_WEB_STATE=${RECOVERY_FIELDS[12]}
   RECOVERY_LOCAL_MARKER=/var/lib/home-center-deploy/transactions/$RECOVERY_TRANSACTION_ID-dc01.json
   RECOVERY_REMOTE_MARKER=/var/lib/home-center-deploy/transactions/$RECOVERY_TRANSACTION_ID-dc02.json
   authorize_cluster_recovery "$RECOVERY_TRANSACTION_ID"
@@ -354,10 +374,30 @@ printf "%s:%s:%s\n" "$ca_sha" "$certificate_sha" "$key_public_sha"')
   [ "$RECOVERY_LOCAL_PEER_STATE_AFTER" = "$RECOVERY_LOCAL_PEER_STATE" ] \
     && [ "$RECOVERY_REMOTE_PEER_STATE_AFTER" = "$RECOVERY_REMOTE_PEER_STATE" ] \
     || { echo PRIOR_CLUSTER_RECOVERY_PEER_STATE_CHANGED >&2; exit 70; }
+  RECOVERY_LOCAL_WEB_STATE_AFTER=$(set -Eeuo pipefail
+    ca_sha=$(openssl x509 -in /etc/home-center/pki/web-ca/ca.crt -outform DER | sha256sum | awk '{print $1}')
+    certificate_sha=$(openssl x509 -in /etc/home-center/pki/web/current/tls.crt -outform DER | sha256sum | awk '{print $1}')
+    key_public_sha=$(openssl pkey -in /etc/home-center/pki/web/current/tls.key -pubout -outform DER | sha256sum | awk '{print $1}')
+    certificate_public_sha=$(openssl x509 -in /etc/home-center/pki/web/current/tls.crt -pubkey -noout | openssl pkey -pubin -outform DER | sha256sum | awk '{print $1}')
+    [ "$key_public_sha" = "$certificate_public_sha" ]
+    openssl verify -x509_strict -CAfile /etc/home-center/pki/web-ca/ca.crt /etc/home-center/pki/web/current/tls.crt >/dev/null
+    printf '%s:%s:%s\n' "$ca_sha" "$certificate_sha" "$key_public_sha"
+  )
+  RECOVERY_REMOTE_WEB_STATE_AFTER=$("${SSH[@]}" 'set -Eeuo pipefail
+ca_sha=$(sudo -n openssl x509 -in /etc/home-center/pki/web-ca/ca.crt -outform DER | sha256sum | awk "{print \$1}")
+certificate_sha=$(sudo -n openssl x509 -in /etc/home-center/pki/web/current/tls.crt -outform DER | sha256sum | awk "{print \$1}")
+key_public_sha=$(sudo -n openssl pkey -in /etc/home-center/pki/web/current/tls.key -pubout -outform DER | sha256sum | awk "{print \$1}")
+certificate_public_sha=$(sudo -n openssl x509 -in /etc/home-center/pki/web/current/tls.crt -pubkey -noout | sudo -n openssl pkey -pubin -outform DER | sha256sum | awk "{print \$1}")
+test "$key_public_sha" = "$certificate_public_sha"
+sudo -n openssl verify -x509_strict -CAfile /etc/home-center/pki/web-ca/ca.crt /etc/home-center/pki/web/current/tls.crt >/dev/null
+printf "%s:%s:%s\n" "$ca_sha" "$certificate_sha" "$key_public_sha"')
+  [ "$RECOVERY_LOCAL_WEB_STATE_AFTER" = "$RECOVERY_LOCAL_WEB_STATE" ] \
+    && [ "$RECOVERY_REMOTE_WEB_STATE_AFTER" = "$RECOVERY_REMOTE_WEB_STATE" ] \
+    || { echo PRIOR_CLUSTER_RECOVERY_WEB_STATE_CHANGED >&2; exit 70; }
   systemctl is-active --quiet home-center.service
   "${SSH[@]}" systemctl is-active --quiet home-center.service
-  RECOVERY_LOCAL_READY=$(curl --fail --silent --show-error --cacert /etc/home-center/pki/ca.crt --max-time 5 https://192.168.10.254:8443/readyz)
-  RECOVERY_REMOTE_READY=$(curl --fail --silent --show-error --cacert /etc/home-center/pki/ca.crt --max-time 5 https://192.168.10.253:8443/readyz)
+  RECOVERY_LOCAL_READY=$(curl --fail --silent --show-error --cacert /etc/home-center/pki/web-ca/ca.crt --max-time 5 https://192.168.10.254:8443/readyz)
+  RECOVERY_REMOTE_READY=$(curl --fail --silent --show-error --cacert /etc/home-center/pki/web-ca/ca.crt --max-time 5 https://192.168.10.253:8443/readyz)
   /usr/bin/python3 -I - "$RECOVERY_LOCAL_READY" "$RECOVERY_REMOTE_READY" "$RECOVERY_LOCAL_VERSION" "$RECOVERY_REMOTE_VERSION" <<'PY'
 import json, sys
 for node, raw, version in zip(("dc01", "dc02"), sys.argv[1:3], sys.argv[3:5]):
@@ -390,10 +430,10 @@ PY
   printf 'header = "Authorization: Bearer %s"\n' "$RECOVERY_ADMIN_TOKEN" >"$RECOVERY_AUTH_CONFIG"
   unset RECOVERY_ADMIN_TOKEN
   RECOVERY_LOCAL_OVERVIEW=$(curl --config "$RECOVERY_AUTH_CONFIG" --fail --silent --show-error \
-    --cacert /etc/home-center/pki/ca.crt --max-time 5 \
+    --cacert /etc/home-center/pki/web-ca/ca.crt --max-time 5 \
     https://192.168.10.254:8443/api/v1/overview)
   RECOVERY_REMOTE_OVERVIEW=$(curl --config "$RECOVERY_AUTH_CONFIG" --fail --silent --show-error \
-    --cacert /etc/home-center/pki/ca.crt --max-time 5 \
+    --cacert /etc/home-center/pki/web-ca/ca.crt --max-time 5 \
     https://192.168.10.253:8443/api/v1/overview)
   rm -f -- "$RECOVERY_AUTH_CONFIG"
   /usr/bin/python3 -I - "$RECOVERY_LOCAL_OVERVIEW" "$RECOVERY_REMOTE_OVERVIEW" <<'PY'
@@ -523,8 +563,9 @@ for path in directory.iterdir():
         if set(value) != required or path.name != f'{value.get("transaction_id")}-{value.get("node")}.json':
             raise SystemExit("transaction_entry_identity_rejected")
     elif schema == "home-center.cluster-deploy-transaction.v1":
-        required = {"artifact_sha256", "peer_identity", "rollback_points", "schema", "source", "status", "target", "transaction_id"}
-        if set(value) != required or path.name != f'{value.get("transaction_id")}.json':
+        legacy_required = {"artifact_sha256", "peer_identity", "rollback_points", "schema", "source", "status", "target", "transaction_id"}
+        required = legacy_required | {"web_identity"}
+        if set(value) not in (legacy_required, required) or path.name != f'{value.get("transaction_id")}.json':
             raise SystemExit("cluster_transaction_entry_identity_rejected")
     else:
         raise SystemExit("transaction_entry_schema_rejected")
@@ -612,7 +653,8 @@ publish_cluster_transaction() {
     "$SHA256" "$TARGET_VERSION" "$TARGET_REVISION" \
     "$LOCAL_SOURCE_RELEASE" "$LOCAL_SOURCE_VERSION" "$LOCAL_SOURCE_REVISION" \
     "$REMOTE_SOURCE_RELEASE" "$REMOTE_SOURCE_VERSION" "$REMOTE_SOURCE_REVISION" \
-    "$LOCAL_PEER_STATE_BEFORE" "$REMOTE_PEER_STATE_BEFORE" <<'PY'
+    "$LOCAL_PEER_STATE_BEFORE" "$REMOTE_PEER_STATE_BEFORE" \
+    "$LOCAL_WEB_STATE_BEFORE" "$REMOTE_WEB_STATE_BEFORE" <<'PY'
 import json
 import os
 import stat
@@ -622,7 +664,8 @@ from pathlib import Path
 
 (directory_raw, path_raw, transaction_id, requested, artifact_sha256, target_version,
  target_revision, dc01_release, dc01_version, dc01_revision, dc02_release,
- dc02_version, dc02_revision, dc01_peer_state, dc02_peer_state) = sys.argv[1:]
+ dc02_version, dc02_revision, dc01_peer_state, dc02_peer_state,
+ dc01_web_state, dc02_web_state) = sys.argv[1:]
 directory = Path(directory_raw)
 path = Path(path_raw)
 root = directory.parent
@@ -632,18 +675,22 @@ for candidate in (root, directory):
     info = candidate.lstat()
     if not stat.S_ISDIR(info.st_mode) or stat.S_ISLNK(info.st_mode) or info.st_uid != 0 or stat.S_IMODE(info.st_mode) != 0o700:
         raise SystemExit("cluster_transaction_directory_rejected")
-def parse_peer_state(raw):
+def parse_public_state(raw, identity_type):
     fields = raw.split(":")
     if len(fields) != 3 or any(len(field) != 64 or any(char not in "0123456789abcdef" for char in field) for field in fields):
-        raise SystemExit("cluster_transaction_peer_identity_rejected")
+        raise SystemExit(f"cluster_transaction_{identity_type}_identity_rejected")
     return {"ca_sha256": fields[0], "certificate_sha256": fields[1], "public_key_sha256": fields[2]}
 
 
 expected = {
     "artifact_sha256": artifact_sha256,
     "peer_identity": {
-        "dc01": parse_peer_state(dc01_peer_state),
-        "dc02": parse_peer_state(dc02_peer_state),
+        "dc01": parse_public_state(dc01_peer_state, "peer"),
+        "dc02": parse_public_state(dc02_peer_state, "peer"),
+    },
+    "web_identity": {
+        "dc01": parse_public_state(dc01_web_state, "web"),
+        "dc02": parse_public_state(dc02_web_state, "web"),
     },
     "rollback_points": {
         "dc01": f"/var/backups/home-center-deploy/{transaction_id}-dc01",

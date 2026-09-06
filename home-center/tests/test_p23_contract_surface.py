@@ -64,8 +64,14 @@ class P23ContractSurfaceTests(unittest.TestCase):
         for required in (
             "web_public_state_local()",
             "web_public_state_remote()",
+            'required = legacy_required | {"web_identity"}',
+            'identity = value["web_identity"][node]',
+            '"web_identity": {',
             "LOCAL_WEB_STATE_BEFORE=$(web_public_state_local)",
             "REMOTE_WEB_STATE_BEFORE=$(web_public_state_remote)",
+            "RECOVERY_LOCAL_WEB_STATE_AFTER",
+            "RECOVERY_REMOTE_WEB_STATE_AFTER",
+            "PRIOR_CLUSTER_RECOVERY_WEB_STATE_CHANGED",
             '[ "$(web_public_state_local)" = "$LOCAL_WEB_STATE_BEFORE" ]',
             '[ "$(web_public_state_remote)" = "$REMOTE_WEB_STATE_BEFORE" ]',
             "DC01_FINAL_WEB_IDENTITY_CHANGED",
@@ -78,18 +84,39 @@ class P23ContractSurfaceTests(unittest.TestCase):
         self.assertIn('web_public_state_remote)" = "$REMOTE_WEB_STATE_BEFORE"', rollback_proof)
         self.assertIn("--cacert /etc/home-center/pki/web-ca/ca.crt", rollback_proof)
         self.assertNotIn("--cacert /etc/home-center/pki/ca.crt --max-time 5 https://192.168.10.254:8443", rollback_proof)
+        prior_recovery = bootstrap.split("if [ -n \"$PRIOR_CLUSTER_RECOVERY_JSON\" ]", 1)[1].split("clear_stale_cluster_temporary", 1)[0]
+        self.assertIn('RECOVERY_LOCAL_WEB_STATE_AFTER', prior_recovery)
+        self.assertIn('RECOVERY_REMOTE_WEB_STATE_AFTER', prior_recovery)
+        self.assertIn('--cacert /etc/home-center/pki/web-ca/ca.crt --max-time 5 https://192.168.10.254:8443/readyz', prior_recovery)
+        self.assertIn("https://192.168.10.254:8443/api/v1/overview", prior_recovery)
+        self.assertNotIn('--cacert /etc/home-center/pki/ca.crt --max-time 5 https://192.168.10.254:8443/readyz', prior_recovery)
+        self.assertNotIn(
+            "--cacert /etc/home-center/pki/ca.crt --max-time 5",
+            prior_recovery.split("https://192.168.10.254:8443/api/v1/overview", 1)[0].rsplit("\n", 2)[-1],
+        )
 
-    def test_prior_cluster_recovery_ignores_valid_terminal_old_target_only(self) -> None:
+    def test_prior_cluster_recovery_requires_web_identity_and_audits_terminal_shapes(self) -> None:
         bootstrap = (ROOT / "deploy/scripts/bootstrap-hm-dm.sh").read_text(encoding="utf-8")
         recovery_block = bootstrap.split("PRIOR_CLUSTER_RECOVERY_JSON=", 1)[1]
         validator = recovery_block.split("<<'PY'\n", 1)[1].split("\nPY\n)", 1)[0]
         validator = validator.replace("info.st_uid != 0", f"info.st_uid != {os.getuid()}")
         validator = validator.replace("entry.st_uid != 0", f"entry.st_uid != {os.getuid()}")
+        audit_block = bootstrap.split("audit_transaction_directory() {", 1)[1]
+        audit_validator = audit_block.split("<<'PY'\n", 1)[1].split("\nPY\n}", 1)[0]
+        audit_validator = audit_validator.replace("info.st_uid != 0", f"info.st_uid != {os.getuid()}")
+        audit_validator = audit_validator.replace("entry.st_uid != 0", f"entry.st_uid != {os.getuid()}")
 
         expected_artifact = "a" * 64
         expected_revision = "b" * 40
 
-        def transaction(transaction_id: str, *, status: str, version: str, revision: str, artifact: str) -> dict:
+        def transaction(
+            transaction_id: str,
+            *,
+            status: str,
+            version: str,
+            revision: str,
+            artifact: str,
+        ) -> dict:
             return {
                 "artifact_sha256": artifact,
                 "peer_identity": {
@@ -151,6 +178,20 @@ class P23ContractSurfaceTests(unittest.TestCase):
             unresolved_path.chmod(0o600)
             completed = subprocess.run(args, input=validator, text=True, capture_output=True, check=False)
             self.assertNotEqual(completed.returncode, 0)
+            self.assertIn("cluster_transaction_web_identity_required_for_recovery", completed.stderr)
+
+            unresolved["web_identity"] = {
+                node: {
+                    "ca_sha256": "1" * 64,
+                    "certificate_sha256": "2" * 64,
+                    "public_key_sha256": "3" * 64,
+                }
+                for node in ("dc01", "dc02")
+            }
+            unresolved_path.write_text(json.dumps(unresolved), encoding="utf-8")
+            unresolved_path.chmod(0o600)
+            completed = subprocess.run(args, input=validator, text=True, capture_output=True, check=False)
+            self.assertNotEqual(completed.returncode, 0)
             self.assertIn("prior_cluster_target_mismatch_recovery_required", completed.stderr)
 
             unresolved["target"] = {"revision": expected_revision, "version": "0.5.0"}
@@ -166,6 +207,19 @@ class P23ContractSurfaceTests(unittest.TestCase):
             completed = subprocess.run(args, input=validator, text=True, capture_output=True, check=False)
             self.assertNotEqual(completed.returncode, 0)
             self.assertIn("prior_cluster_artifact_mismatch_recovery_required", completed.stderr)
+
+            unresolved["artifact_sha256"] = expected_artifact
+            unresolved["status"] = "rolled_back"
+            unresolved_path.write_text(json.dumps(unresolved), encoding="utf-8")
+            unresolved_path.chmod(0o600)
+            completed = subprocess.run(
+                [sys.executable, "-I", "-", str(directory)],
+                input=audit_validator,
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            self.assertEqual(completed.returncode, 0, completed.stderr)
 
     def test_activation_timeout_envelope_reserves_rollback_and_postflight(self) -> None:
         from home_center import tls_activate
@@ -238,7 +292,9 @@ class P23ContractSurfaceTests(unittest.TestCase):
         rollback = (ROOT / "deploy/scripts/rollback-node.sh").read_text(encoding="utf-8")
         for required in (
             '"peer_identity"',
+            '"web_identity"',
             "PRIOR_CLUSTER_RECOVERY_PEER_STATE_CHANGED",
+            "PRIOR_CLUSTER_RECOVERY_WEB_STATE_CHANGED",
             "prior_cluster_recovery_overview_rejected",
             "cluster_source_overview_rejected",
             "publish_cluster_transaction rolled_back",
