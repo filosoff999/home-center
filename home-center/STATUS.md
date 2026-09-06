@@ -2,7 +2,7 @@
 
 **Дата:** 06.09.2026  
 **Repository:** `ControlCenterSoft/home-center`  
-**Статус:** `0.5.0 PRODUCTION_ACCEPTED / 0.7.0 EXACT_MAIN_CANDIDATE / 0.8.0 DEVELOPMENT_CANDIDATE / MANAGED_CLIENT_TRUST_PENDING`
+**Статус:** `0.5.0 PRODUCTION_ACCEPTED / 0.7.0 EXACT_MAIN_CANDIDATE / 0.8.0 RELEASE_CANDIDATE / MANAGED_CLIENT_TRUST_PENDING`
 
 ## Принятые границы
 
@@ -72,7 +72,7 @@ Managed-client Web CA enrollment/browser acceptance остаётся отдел�
 
 Release PR tests/security и reproducible artifact проходят; после финального docs head требуется ещё один exact-head CI PASS, merge и exact-main artifact evidence.
 
-## `0.8.0` parallel development
+## `0.8.0` release candidate
 
 Интегрированный code baseline `e9bb45415b105ea510d0774380b98108fa5f0fc1`:
 

@@ -1,6 +1,6 @@
 # Home Center
 
-> **Статус: 0.5.0 PRODUCTION ACCEPTED · 0.7.0 EXACT-MAIN CANDIDATE · 0.8.0 DEVELOPMENT CANDIDATE · MANAGED-CLIENT TRUST PENDING**
+> **Статус: 0.5.0 PRODUCTION ACCEPTED · 0.7.0 EXACT-MAIN CANDIDATE · 0.8.0 RELEASE CANDIDATE · MANAGED-CLIENT TRUST PENDING**
 
 Home Center — самостоятельный local-first продукт для управления домашней и малой серверной инфраструктурой через единый Web UI и API.
 
@@ -60,9 +60,9 @@ Exact merged-main candidate:
 
 `PRODUCTION_RELEASE_MANAGER_ENABLED = False`; production private signing key, automatic poller/timer и automatic installation не активированы.
 
-### 0.8.0 development line
+### 0.8.0 release candidate
 
-`develop/0.8.0` включает:
+`release/0.8.0` включает интегрированный код из `develop/0.8.0`:
 
 - локального администратора Home Center вместо bootstrap-token в интерактивном Web login;
 - root-only атомарное создание scrypt verifier без plaintext/reversible password storage;
@@ -73,7 +73,7 @@ Exact merged-main candidate:
 - публичный secret-free provider catalog: Web UI показывает AD-вход только при явном включении provider;
 - локальный вход остаётся доступным независимо от состояния AD.
 
-В 0.8 не активируются production deployment, AD/GPO mutation, automatic update или automatic failover. Live HM.DM AD validation и exact release-branch artifact остаются отдельными gates.
+В 0.8 не активируются automatic update, automatic failover или неявные AD/GPO/DNS/DHCP mutations. Release PR в `main` обязан пройти deterministic matrix и reproducible build-twice; production rollout и optional live AD activation выполняются отдельными явными gates после exact-main artifact.
 
 ## Проверяемые записи
 
