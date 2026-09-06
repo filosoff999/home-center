@@ -1,6 +1,6 @@
 # Home Center
 
-> **Статус: 0.5.0 PRODUCTION ACCEPTED · 0.6.0 EXACT-MAIN CANDIDATE · 0.7.0 RELEASE CANDIDATE · MANAGED-CLIENT TRUST PENDING**
+> **Статус: 0.5.0 PRODUCTION ACCEPTED · 0.7.0 EXACT-MAIN CANDIDATE · 0.8.0 DEVELOPMENT CANDIDATE · MANAGED-CLIENT TRUST PENDING**
 
 Home Center — самостоятельный local-first продукт для управления домашней и малой серверной инфраструктурой через единый Web UI и API.
 
@@ -60,6 +60,20 @@ Exact merged-main candidate:
 
 `PRODUCTION_RELEASE_MANAGER_ENABLED = False`; production private signing key, automatic poller/timer и automatic installation не активированы.
 
+### 0.8.0 development line
+
+`develop/0.8.0` включает:
+
+- локального администратора Home Center вместо bootstrap-token в интерактивном Web login;
+- root-only атомарное создание scrypt verifier без plaintext/reversible password storage;
+- Secure, HttpOnly, SameSite=Strict короткие сессии;
+- token-free installer/bootstrap/recovery probes с сохранением `dc02 → canary/soak → dc01`, durable rollback и peer mTLS gates;
+- exact 0.8 artifact policy с predecessor `0.7.0 / f28fc1c820b065616758ca3c220794555c30a25a / 6ab15ef38b5d4b064ddb45c47009c73de3f5425553a059d75c9fb3c77bc82b82`;
+- опциональный AD provider, отключённый по умолчанию: фиксированные Kerberos/NSS executables, явные KDC и разрешённые administrator groups, bounded timeout и удаляемый per-attempt credential cache;
+- локальный вход остаётся доступным независимо от состояния AD.
+
+В 0.8 не активируются production deployment, AD/GPO mutation, automatic update или automatic failover. Live HM.DM AD validation и exact release-branch artifact остаются отдельными gates.
+
 ## Проверяемые записи
 
 - [P1 production acceptance](ops/PRODUCTION-ACCEPTANCE-2026-09-06.md);
@@ -68,7 +82,9 @@ Exact merged-main candidate:
 - [upgrade exact 0.4.3 → 0.5.0](docs/UPGRADE-TO-0.5.0.md);
 - [upgrade exact 0.5.0 → 0.6.0](docs/UPGRADE-TO-0.6.0.md);
 - [upgrade exact 0.6.0 → 0.7.0](docs/UPGRADE-TO-0.7.0.md);
-- [ADR-0007: signed stable release channel](docs/adr/0007-signed-stable-release-channel.md).
+- [upgrade plan exact 0.7.0 → 0.8.0](docs/UPGRADE-TO-0.8.0.md);
+- [ADR-0007: signed stable release channel](docs/adr/0007-signed-stable-release-channel.md);
+- [ADR-0010: optional bounded AD authentication](docs/adr/0010-optional-ad-authentication.md).
 
 ## Разработка и CI
 
