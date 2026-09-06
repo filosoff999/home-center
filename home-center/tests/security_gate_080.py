@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib.util
 from pathlib import Path
 
 
@@ -17,6 +18,15 @@ def require(condition: bool, message: str) -> None:
         raise SystemExit(f"SECURITY_GATE_080_FAIL: {message}")
 
 
+def load_deployment_renderer():
+    path = ROOT / "deploy/scripts/render-auth-deployment-v2.py"
+    spec = importlib.util.spec_from_file_location("home_center_auth_deployment_v2_security_gate", path)
+    require(spec is not None and spec.loader is not None, "deployment v2 renderer cannot be loaded")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
 def main() -> None:
     auth = read(SRC / "auth.py")
     api = read(SRC / "api.py")
@@ -30,6 +40,7 @@ def main() -> None:
     browser = read(WEB / "app.js")
     api_tests = read(ROOT / "tests/test_api.py")
     provision_tests = read(ROOT / "tests/test_local_admin_provision.py")
+    deployment_tests = read(ROOT / "tests/test_auth_deployment_v2.py")
     openapi = read(ROOT / "contracts/openapi/home-center-auth.v2.openapi.json")
     login_contract = read(ROOT / "contracts/auth/login-request.v1.schema.json")
     credential_contract = read(ROOT / "contracts/auth/local-admin-credential.v1.schema.json")
@@ -94,10 +105,45 @@ def main() -> None:
     require("provision-local-admin.py" in build, "provisioner is not staged for the future 0.8 artifact")
     require("HOME_CENTER_080_ARTIFACT_NOT_YET_ADMITTED" in build, "0.8 source artifact admission is not fail-closed")
 
+    renderer = load_deployment_renderer()
+    legacy_bootstrap = read(ROOT / "deploy/scripts/bootstrap-hm-dm.sh")
+    legacy_installer = read(ROOT / "deploy/scripts/install-node.sh")
+    require("/etc/home-center/secrets/admin.token" in legacy_bootstrap, "0.7 bootstrap source boundary unexpectedly changed")
+    require("/etc/home-center/secrets/admin.token" in legacy_installer, "0.7 installer source boundary unexpectedly changed")
+    rendered_bootstrap = renderer.render_bootstrap(legacy_bootstrap)
+    rendered_installer = renderer.render_installer(legacy_installer)
+    rendered_deployment = rendered_bootstrap + "\n" + rendered_installer
+    for forbidden in (
+        "/etc/home-center/secrets/admin.token",
+        "Authorization: Bearer",
+        "ADMIN_TOKEN",
+        "admin_token",
+        "AUTH_CONFIG",
+        "/api/v1/overview",
+        "DC02_ADMIN_TOKEN_MISMATCH",
+    ):
+        require(forbidden not in rendered_deployment, f"rendered 0.8 deployment retains legacy auth marker: {forbidden}")
+    for required in (
+        "/etc/home-center/secrets/local-admin.json",
+        "LOCAL_ADMIN_DEPLOYMENT_PREFLIGHT=PASS",
+        "LOCAL_ADMIN_CLUSTER_PREFLIGHT=PASS",
+        "CLUSTER_AUTH_FREE_ACCEPTANCE=PASS",
+        "/readyz",
+        "/internal/v1/node",
+        "verify_bidirectional_peer_identity",
+        "fail_rollback",
+        "publish_cluster_transaction",
+        "DC02_SOFTWARE_CANARY_30S=PASS",
+        "HOME_CENTER_CLUSTER_ROLLOUT=PASS",
+    ):
+        require(required in rendered_deployment, f"rendered 0.8 deployment lost safety marker: {required}")
+
     require("test_bearer_bootstrap_token_cannot_bypass_local_login" in api_tests, "Bearer bypass regression test missing")
     require("test_invalid_login_is_generic_and_legacy_token_shape_is_rejected" in api_tests, "legacy token-shape regression test missing")
     require("test_existing_symlink_is_never_followed_or_replaced" in provision_tests, "provision symlink regression test missing")
     require("test_existing_regular_file_is_never_overwritten" in provision_tests, "provision overwrite regression test missing")
+    require("test_bootstrap_removes_authenticated_overview_probe_but_keeps_ha_gates" in deployment_tests, "deployment auth migration regression test missing")
+    require("test_bootstrap_shape_drift_fails_closed" in deployment_tests, "deployment source-drift regression test missing")
     print("SECURITY_GATE_080=PASS")
 
 
