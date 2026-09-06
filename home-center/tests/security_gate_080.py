@@ -134,7 +134,7 @@ def main() -> None:
         "fail_rollback",
         "publish_cluster_transaction",
         "DC02_SOFTWARE_CANARY_30S=PASS",
-        "HOME_CENTER_CLUSTER_ROLLOUT=PASS",
+        "HOME_CENTER_CLUSTER_DEPLOY=PASS",
     ):
         require(required in rendered_deployment, f"rendered 0.8 deployment lost safety marker: {required}")
 
