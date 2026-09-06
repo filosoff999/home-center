@@ -13,6 +13,6 @@ contracts:
 	find contracts -type f -name '*.json' -print0 | sort -z | xargs -0 -n1 $(PYTHON) -m json.tool >/dev/null
 
 build:
-	HOME_CENTER_REVISION=$${HOME_CENTER_REVISION:-working-tree} bash deploy/scripts/build-artifact.sh dist
+	bash deploy/scripts/build-artifact.sh dist
 
 ci: contracts test security build

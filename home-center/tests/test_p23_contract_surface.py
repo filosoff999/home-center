@@ -17,17 +17,17 @@ class P23ContractSurfaceTests(unittest.TestCase):
         runtime = (ROOT / "product/control-plane/src/home_center/__init__.py").read_text(encoding="utf-8")
         project = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
         builder = (ROOT / "deploy/scripts/build-artifact.sh").read_text(encoding="utf-8")
-        self.assertIn('__version__ = "0.4.3"', runtime)
-        self.assertIn('version = "0.4.3"', project)
+        self.assertIn('__version__ = "0.5.0"', runtime)
+        self.assertIn('version = "0.5.0"', project)
         self.assertIn("HOME_CENTER_VERSION:-$SOURCE_VERSION", builder)
         self.assertIn('[ "$VERSION" = "$SOURCE_VERSION" ]', builder)
-        self.assertIn('[ "$VERSION" = 0.4.3 ]', builder)
+        self.assertIn('[ "$VERSION" = 0.5.0 ]', builder)
         self.assertIn('[[ "$REVISION" =~ ^[0-9a-f]{40}$ ]]', builder)
 
     def test_deploy_scripts_reject_unadmitted_release_versions(self) -> None:
         for name in ("install-node.sh", "bootstrap-hm-dm.sh"):
             script = (ROOT / "deploy/scripts" / name).read_text(encoding="utf-8")
-            self.assertIn('[ "$VERSION" = 0.4.3 ]' if name == "install-node.sh" else '[ "$TARGET_VERSION" = 0.4.3 ]', script)
+            self.assertIn('[ "$VERSION" = 0.5.0 ]' if name == "install-node.sh" else '[ "$TARGET_VERSION" = 0.5.0 ]', script)
             self.assertIn("RELEASE_VERSION_NOT_ADMITTED", script)
         with tempfile.TemporaryDirectory() as tmp:
             result = subprocess.run(
@@ -44,14 +44,13 @@ class P23ContractSurfaceTests(unittest.TestCase):
         self.assertIn('[[ "$REVISION" =~ ^[0-9a-f]{40}$ ]]', installer)
         self.assertNotIn("^working-tree$", installer)
 
-    def test_bootstrap_admits_only_exact_accepted_or_deployed_source_identity(self) -> None:
+    def test_bootstrap_admits_only_exact_accepted_source_identity(self) -> None:
         bootstrap = (ROOT / "deploy/scripts/bootstrap-hm-dm.sh").read_text(encoding="utf-8")
         for required in (
-            "ADMITTED_SOURCE_V030_VERSION=0.3.0",
-            "ADMITTED_SOURCE_V030_REVISION=6b0c0db144bfd2a7b7a7db1a868d649f20825721",
-            "ADMITTED_SOURCE_V042_VERSION=0.4.2",
-            "ADMITTED_SOURCE_V042_REVISION=9f376e3d39eb29b2c8e402d085cba8b9fee4258d",
-            'source_identity_admitted "$LOCAL_SOURCE_VERSION" "$LOCAL_SOURCE_REVISION"',
+            "ADMITTED_SOURCE_V043_VERSION=0.4.3",
+            "ADMITTED_SOURCE_V043_REVISION=64f798ceae0b669cbac01b452c3cf4fd96070136",
+            "ADMITTED_SOURCE_V043_RELEASE=/opt/home-center/releases/0.4.3-64f798ceae0b-b2dde6a51ec9",
+            'source_identity_admitted "$LOCAL_SOURCE_VERSION" "$LOCAL_SOURCE_REVISION" "$LOCAL_SOURCE_RELEASE"',
             '[ "$LOCAL_SOURCE_VERSION" = "$REMOTE_SOURCE_VERSION" ]',
             '[ "$LOCAL_SOURCE_REVISION" = "$REMOTE_SOURCE_REVISION" ]',
             '"$local_ready" "$remote_ready" "$LOCAL_SOURCE_VERSION"',
@@ -115,7 +114,7 @@ class P23ContractSurfaceTests(unittest.TestCase):
             terminal_path.write_text(json.dumps(terminal), encoding="utf-8")
             terminal_path.chmod(0o600)
 
-            args = [sys.executable, "-I", "-", str(directory), expected_artifact, "0.4.3", expected_revision]
+            args = [sys.executable, "-I", "-", str(directory), expected_artifact, "0.5.0", expected_revision]
             completed = subprocess.run(args, input=validator, text=True, capture_output=True, check=False)
             self.assertEqual(completed.returncode, 0, completed.stderr)
             self.assertEqual(completed.stdout, "")
@@ -134,7 +133,7 @@ class P23ContractSurfaceTests(unittest.TestCase):
             self.assertNotEqual(completed.returncode, 0)
             self.assertIn("prior_cluster_target_mismatch_recovery_required", completed.stderr)
 
-            unresolved["target"] = {"revision": expected_revision, "version": "0.4.3"}
+            unresolved["target"] = {"revision": expected_revision, "version": "0.5.0"}
             unresolved_path.write_text(json.dumps(unresolved), encoding="utf-8")
             unresolved_path.chmod(0o600)
             completed = subprocess.run(args, input=validator, text=True, capture_output=True, check=False)
@@ -176,7 +175,7 @@ class P23ContractSurfaceTests(unittest.TestCase):
     def test_openapi_publishes_tls_status_and_public_trust_anchor(self) -> None:
         value = json.loads((ROOT / "contracts/openapi/home-center.v1.openapi.json").read_text(encoding="utf-8"))
         self.assertEqual(value["openapi"], "3.1.0")
-        self.assertEqual(value["info"]["version"], "0.4.3")
+        self.assertEqual(value["info"]["version"], "0.5.0")
         self.assertEqual(value["servers"], [{"url": "https://dc01.hm.dm:8443", "description": "Current canonical Home Center production endpoint"}])
         paths = value["paths"]
         self.assertIn("/api/v1/tls", paths)

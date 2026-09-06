@@ -1,6 +1,6 @@
 # Control Plane
 
-Будущий runtime-компонент Home Center. До снятия `PREPARATION_ONLY` здесь хранится только описание границ.
+Исполняемый runtime-компонент Home Center. Read-only API, topology/inventory, audit/backup, bounded typed action foundation, Web TLS lifecycle и P2.4 release verifier реализованы; расширенные Desired State, persisted Changes/Jobs, RBAC и module orchestration остаются плановыми.
 
 ## Responsibility boundary
 
@@ -22,8 +22,8 @@
 - скрытые vendor/CI privileged channels;
 - platform-specific side effects без Node Agent typed action.
 
-## Planned internal modules
+## Internal modules
 
-`api`, `identity`, `rbac`, `state`, `jobs`, `inventory`, `topology`, `modules`, `health`, `audit`, `backup`, `policy`.
+Реализованы `api`, `auth`, `actions`, `inventory`, `runtime`, `store`, `backup`, `helper_client`, TLS lifecycle и `release_channel`. Плановые области: полноценные `rbac`, Desired/Actual `state`, persisted `jobs`, `modules` и policy orchestration.
 
-Фактические каталоги/код создаются только после DEV admission и утверждения соответствующих contracts/ADR.
+Новая mutation capability добавляется только после отдельного contract/ADR, deny-by-default policy, failure/recovery tests и production gate.

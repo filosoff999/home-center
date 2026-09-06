@@ -1,14 +1,14 @@
 # Home Center — план реализации
 
-**Версия:** 2.0  
-**Дата:** 2026-09-06  
-**Статус:** `DEVELOPMENT_ACTIVE / P1 PRODUCTION ACCEPTED / P2.1 IN PROGRESS`  
-**Execution epic:** `#6`.  
-**Основание:** `TECHNICAL-SPECIFICATION.md`, `REQUIREMENTS.md`, `ARCHITECTURE.md`, production acceptance 0.1.0.
+**Версия:** 2.3
+**Дата:** 2026-09-06
+**Статус:** `DEVELOPMENT_ACTIVE / P1 + P2.1 + P2.2 PRODUCTION ACCEPTED / P2.3 SERVER-SIDE ACCEPTED / P2.4 0.5.0 VERIFIER CANDIDATE`
+**Execution epic:** `#1`.
+**Основание:** `TECHNICAL-SPECIFICATION.md`, `REQUIREMENTS.md`, `ARCHITECTURE.md`, production acceptance exact `0.4.3`.
 
 ## 1. Исходная точка
 
-P1 не проектируется заново: он уже принят в production HM.DM.
+P1, P2.1 и P2.2 не проектируются заново: они уже приняты в production HM.DM. P2.3 server-side принят на exact `0.4.3`; managed-client Web CA/browser trust остаётся отдельным открытым evidence gate. P2.4 добавляет в `0.5.0` только инертный verifier signed release channel и не включает production signing либо autonomous update.
 
 Принятые свойства 0.1.0:
 
@@ -26,7 +26,7 @@ P1 не проектируется заново: он уже принят в pro
 - no generic shell API;
 - automatic failover disabled without witness/fencing.
 
-Следующая цель — **P2 Typed Actions / Desired State Reconcile**, затем P3–P7.
+Ближайшая цель — завершить **P2.4 signed stable release channel**, затем реализовать P2.5 persisted two-node update reconcile; остальные P2 workstreams и P3–P7 следуют без регрессии принятых gates.
 
 ## 2. Исполнительная стратегия
 
@@ -146,9 +146,9 @@ Security-negative, failure injection, canary, production evidence.
 
 Перейти от read-only P1 к безопасным управляемым изменениям одной ноды через typed actions, сохранив fail-closed модель.
 
-### P2.1 — Action Contract Registry
+### P2.1 — Action Contract Registry (accepted foundation)
 
-**Status:** implementation candidate `0.2.0` tracked in `#6`.
+**Status:** production accepted as `0.2.0`, tracked in `#6`.
 
 Создать machine-readable registry, где каждый action содержит:
 
@@ -176,7 +176,7 @@ Security-negative, failure injection, canary, production evidence.
 
 Samba/DNS/DHCP production mutations не входят в первый action set.
 
-### P2.2 — Change/Job Engine
+### P2.future — Change/Job Engine
 
 Реализовать persisted workflow:
 
@@ -194,7 +194,7 @@ Samba/DNS/DHCP production mutations не входят в первый action set
 - retry/rollback metadata;
 - audit link.
 
-### P2.3 — RBAC Policy Completion
+### P2.future — RBAC Policy Completion
 
 - Owner/Admin/Operator/User/Observer/Service Account;
 - atomic `resource.action` permissions;
@@ -203,7 +203,7 @@ Samba/DNS/DHCP production mutations не входят в первый action set
 - service-token scoping;
 - policy-denial audit.
 
-### P2.4 — Privileged Helper
+### P2.2 — Privileged Helper (accepted foundation)
 
 Минимальный helper:
 
@@ -221,7 +221,7 @@ Samba/DNS/DHCP production mutations не входят в первый action set
 
 Решение Python vs Rust для helper оформляется ADR; default recommendation — Rust only if it demonstrably reduces TCB without delaying contract correctness.
 
-### P2.5 — Desired/Actual/Reconcile
+### P2.future — Desired/Actual/Reconcile
 
 - desired object schema;
 - actual observation schema;
@@ -233,7 +233,7 @@ Samba/DNS/DHCP production mutations не входят в первый action set
 - per-resource concurrency lock;
 - post-reconcile evidence.
 
-### P2.6 — Web UX
+### P2.future — Web UX
 
 - action preview;
 - diff/preflight;
@@ -669,29 +669,18 @@ Task закрыт только если:
 
 ## 18. Приоритет ближайших задач
 
-Следующая рекомендуемая очередь после принятого 0.1.0:
+Текущая очередь после принятого exact `0.4.3`:
 
-1. Action Registry schema + permission model.
-2. Change/Job persisted state machine.
-3. first safe typed service action in synthetic tests.
-4. privileged helper IPC + hardening.
-5. Desired/Actual State + reconcile planner.
-6. P2 Web job/action UI.
-7. P2 canary on Home Center-owned service, not Samba/DNS/DHCP.
-8. P2 production acceptance.
-9. ModuleManifest v1.
-10. content-addressed staging/registry.
-11. dependency/conflict planner.
-12. reference module lifecycle.
-13. P3 acceptance.
-14. ClusterMembership/DeploymentProfile contracts.
-15. productized second-node enrollment.
-16. P4 acceptance.
-17. DrainPlan/DrainResult + safe remove.
-18. P5 acceptance.
-19. witness/fencing ADR and implementation.
-20. P6 HA/DR certification.
-21. P7 productization.
+1. завершить PR/CI и transitional canary rollout verifier-only `0.5.0` из exact `0.4.3`;
+2. получить отдельное authority для Home Center production signing keys и утвердить public-key fingerprints;
+3. выполнить root-owned trust-policy bootstrap на `dc02`, затем `dc01` с rollback evidence;
+4. опубликовать первый signed append-only ledger и durable content-addressed release assets;
+5. реализовать P2.5 persisted updater: discover → verify → dc02 → soak → dc01 → accept/rollback;
+6. завершить managed-client Web CA/browser trust evidence P2.3 без неявной AD/GPO mutation;
+7. реализовать persisted asynchronous Change/Job и Desired/Actual State reconcile;
+8. добавить P2 Web job/action UX и выполнить P2 production acceptance;
+9. перейти к ModuleManifest, content-addressed registry и P3 lifecycle;
+10. продолжить P4–P7 только после соответствующих architecture/security gates.
 
 ## 19. Key risks
 

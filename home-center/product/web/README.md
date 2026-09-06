@@ -1,6 +1,6 @@
 # Home Center Web UI
 
-Web UI — будущий основной пользовательский интерфейс Home Center и клиент versioned Control Plane API.
+Web UI — действующий пользовательский интерфейс Home Center и клиент versioned Control Plane API. Текущая production-часть показывает topology/health, TLS trust/renewal status и безопасные bounded action results; расширенные mutation workflows остаются плановыми.
 
 ## UX invariants
 
@@ -34,4 +34,4 @@ Web UI — будущий основной пользовательский ин
 
 Web UI не должен содержать скрытую бизнес-логику, обходящую canonical API, или выполнять privileged actions напрямую.
 
-Функциональный UI-код добавляется только после снятия `PREPARATION_ONLY` и утверждения API/UX contracts.
+Новый функциональный UI-код добавляется только вместе с утверждёнными API/UX contracts и не может расширять backend permissions.

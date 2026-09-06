@@ -67,6 +67,12 @@ Node Agent — локальный исполнитель на управляем
 
 Canonical contracts хранятся в `home-center/contracts/` и включают OpenAPI, event schemas, module manifests, node capability schemas, desired-state schemas и compatibility metadata.
 
+### 2.6 Release Channel Verifier
+
+P2.4 verifier — отдельная offline/read-only граница между supply-chain metadata и будущим updater. Он принимает только явно переданные local DSSE envelope, public trust policy, anti-replay checkpoint и content-addressed artifact root; проверяет подписи, canonical ledger, transitions, freshness, history и exact artifact; возвращает immutable `VerifiedStableRelease` либо стабильный rejection code.
+
+Verifier не выполняет network fetch, не сохраняет checkpoint, не вызывает installer/systemd/SSH и не выбирает «последнюю» версию. P2.5 обязан независимо реализовать root-owned admission, persisted state machine и node-local revalidation.
+
 ## 3. Состояние и данные
 
 Минимально разделяются:
@@ -78,6 +84,7 @@ Canonical contracts хранятся в `home-center/contracts/` и включа
 - **Audit** — кто/что/когда/почему изменил;
 - **Secrets references** — ссылки/идентификаторы, а не секреты в обычном event/log payload;
 - **Backup metadata** — restore points, scope, verification state.
+- **Release ledger/checkpoint** — подписанная глобальная история channel state и локальный root-owned anti-replay floor; не смешиваются с application Desired State.
 
 ## 4. Enrollment и ввод нового узла
 
@@ -152,6 +159,7 @@ HA не сводится к наличию двух серверов. Для к�
 - destructive actions имеют усиленный policy gate;
 - audit append-only semantics должны быть предусмотрены контрактом;
 - vendor/CI контуры не получают скрытого постоянного root/SSH доступа к клиентской установке.
+- release-signing trust отделён от Web/peer PKI, CI и Control Center; private signing keys отсутствуют на нодах.
 
 ## 9. Failure/recovery как часть архитектуры
 

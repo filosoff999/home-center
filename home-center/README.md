@@ -1,6 +1,6 @@
 # Home Center
 
-> **Статус: RUNTIME 0.4.2 QUARANTINED / P2.2 ACCEPTED · P2.3 0.4.3 RELEASE CANDIDATE**
+> **Статус: 0.4.3 SERVER-SIDE PRODUCTION ACCEPTED · MANAGED-CLIENT TRUST PENDING · P2.4 0.5.0 CANDIDATE**
 
 Home Center — самостоятельный local-first продукт для управления домашней и малой серверной инфраструктурой через единый Web UI и API.
 
@@ -26,19 +26,22 @@ Home Center является полностью независимым прод�
 
 ## Production
 
-Принятый baseline — версия `0.3.0`, revision `6b0c0db144bfd2a7b7a7db1a868d649f20825721`.
+Текущий production baseline на `dc01` и `dc02` — exact `0.4.3`, revision `64f798ceae0b669cbac01b452c3cf4fd96070136`, artifact SHA-256 `b2dde6a51ec9450ddd23e802db50be2605c8854e804803ba014422878a02d3d4`, release `/opt/home-center/releases/0.4.3-64f798ceae0b-b2dde6a51ec9`.
 
 Принятый P2.2 добавляет bounded privileged helper с deny-by-construction policy и сохраняет immutable typed Action Registry. Универсальный shell отсутствует; Samba AD/DNS/DHCP не изменяются.
 
-Software `0.4.2` (`9f376e3d39eb29b2c8e402d085cba8b9fee4258d`) развёрнуто на `dc01` и `dc02`, но quarantined после безопасного preflight-отказа первой Web TLS rotation: helper создавал release marker с ожидаемой primary group `home-center`, тогда как validator ошибочно требовал gid `0`. Web listener остался на legacy identity, peer mTLS и domain services не изменились.
+Rollout `dc02 → dc01`, Web TLS rotation, restricted TLS 1.2/1.3, readiness, exact parity, peer mTLS, DRS, Domain SID и protected-service sentinels прошли. Отдельные Web certificates ECDSA P-256/SHA-256 обслуживаются на обеих нодах; peer PKI не изменена. Реальная установка Web CA в managed Windows/Android trust store и browser acceptance остаётся внешним явным gate: Home Center не изменяет AD/GPO неявно.
 
-P2.3 продолжается как immutable `0.4.3`: отдельный ECDSA P-256/SHA-256 Web CA и Web leaf устраняют TLS alert 40 на Android/Chrome, а hotfix согласует root-only marker `0600` с capability-free helper `root:home-center`. Артефакты `0.4.0`, `0.4.1` и `0.4.2` заблокированы для новых rollout. До exact-head CI, canary `dc02`, promotion `dc01`, Web rotation и browser/DRS acceptance версия `0.4.3` не считается production-accepted.
+P2.4 `0.5.0` добавляет offline/read-only DSSE verifier signed stable channel: immutable release record, append-only `stable/superseded/quarantined` ledger, freshness и anti-replay checkpoint, exact provenance/acceptance binding и полную проверку content-addressed artifact. Verifier ничего не скачивает и не устанавливает. Production signing key, public trust bootstrap, durable artifact store и persisted auto-update относятся к отдельным последующим gates; private signing material в repository/artifact отсутствует.
 
 Проверяемые записи:
 
 - [P1 production acceptance](ops/PRODUCTION-ACCEPTANCE-2026-09-06.md);
 - [P2.1 production acceptance](ops/P2.1-PRODUCTION-ACCEPTANCE-2026-09-06.md).
+- [P2.3 server-side production acceptance](ops/P2.3-PRODUCTION-ACCEPTANCE-2026-09-06.md).
 - [upgrade exact 0.3.0/0.4.2 → 0.4.3](docs/UPGRADE-TO-0.4.3.md).
+- [upgrade exact 0.4.3 → 0.5.0](docs/UPGRADE-TO-0.5.0.md).
+- [ADR-0007: signed stable release channel](docs/adr/0007-signed-stable-release-channel.md).
 
 ## Разработка и CI
 

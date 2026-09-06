@@ -1,4 +1,4 @@
-# Trust model Home Center P2.3
+# Trust model Home Center P2.4
 
 ## Identities
 
@@ -8,6 +8,7 @@
 - Cluster: `hm-dm-production`, locally generated Ed25519 peer CA; its private key remains only on `dc01` root storage.
 - Web: separate node certificate for `dc01.hm.dm` or `dc02.hm.dm`, exact management IP and reserved `home-center.hm.dm` SAN; key and signature profile is ECDSA P-256/SHA-256.
 - Web trust anchor: independent P-256 Web CA. Its private key is root-only on `dc01`; `dc02`, clients and `/api/v1/tls/ca.crt` receive only the public certificate.
+- Release signer: dedicated offline Home Center ECDSA P-256 key set. Only public SPKI pins belong in the node trust policy; production private signing keys are absent from nodes, artifacts, PR jobs and evidence.
 
 ## Authorization
 
@@ -16,6 +17,7 @@
 - mutating operations: none in P1, fail-closed;
 - peer API: only CA-valid client certificate whose CN equals the configured peer identity.
 - TLS Web activation/recovery: only fixed `tls.web.activate.v1` and `tls.web.reconcile.v1` through the bounded helper; no caller-controlled executable, argv, path or network target. Reconcile clears a mutation latch only after exact durable-current and live-listener proof.
+- Release channel: DSSE signature threshold + canonical ledger + monotonic checkpoint may authorize only a `VerifiedStableRelease`; verifier has no deployment authority. GDrive, GitHub issue text and a newer CI build are not authority.
 
 ## Secret handling
 
@@ -23,4 +25,6 @@ Secrets are generated on `dc01`, delivered to `dc02` only through the existing a
 
 Web leaf keys exist only in root-controlled candidate storage and a node-local fingerprint-addressed Web release. Every staged candidate/release is bound to a durable random operation marker and exact file digests; cleanup is compare-and-delete, never path-only. The helper may write only `/etc/home-center/pki/web`; peer CA, Web CA and peer node private keys are explicitly inaccessible. Public fingerprints and certificate metadata are evidence-safe; private key material is never evidence.
 
-`0.4.0` is not trusted for deployment because it coupled Web TLS to Ed25519. `0.4.1` is quarantined because its shell lock admission rejected an empty regular flock file. Deployed `0.4.2` is quarantined because activation required gid `0` for a release marker that the capability-free helper correctly created as `root:home-center:0600`. Target `0.4.3` becomes trusted only after exact-head CI, immutable digest verification, staged `dc02 → dc01` rollout, browser handshake/trust, peer-mTLS and DRS acceptance.
+`0.4.0`, `0.4.1` and `0.4.2` remain quarantined for the recorded Web-profile/lock/marker failures. Exact `0.4.3` is the accepted server-side source baseline after CI, staged `dc02 → dc01`, Web rotation, restricted TLS, peer-mTLS and DRS evidence. Managed-client CA distribution/browser trust remains explicit external evidence and is never implemented as an implicit AD/GPO mutation.
+
+`0.5.0` installs only the read-only channel verifier and contracts through the existing audited exact-artifact rollout. It does not ship a production public trust policy, private signing key, polling timer or auto-deployer. Those authorities remain blocked pending the ADR-0007 trust-bootstrap gates.

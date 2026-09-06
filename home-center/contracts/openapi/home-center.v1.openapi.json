@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Home Center Control Plane API",
-    "version": "0.4.3",
-    "description": "P2.3 API with a fail-closed typed Action Registry, bounded Web TLS lifecycle and metadata-only certificate health surface."
+    "version": "0.5.0",
+    "description": "P2.4 runtime with a fail-closed typed Action Registry, bounded Web TLS lifecycle and read-only signed release-channel verification."
   },
   "servers": [
     {

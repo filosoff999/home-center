@@ -16,7 +16,8 @@ contracts/
 ├── modules/                  # Module Manifest и lifecycle contracts
 ├── deployment-profiles/      # topology/role/placement declarations
 ├── health/                   # readiness/liveness/dependency schemas
-└── backup/                   # backup/restore metadata contracts
+├── backup/                   # backup/restore metadata contracts
+└── releases/                 # signed channel, trust, checkpoint and verification
 ```
 
 Каталоги создаются фактическими schema-файлами после утверждения соответствующего контракта; пустые placeholders не считаются контрактом.
@@ -28,7 +29,7 @@ contracts/
 3. Неизвестные поля обрабатываются согласно явно зафиксированной forward-compatibility policy.
 4. Security-sensitive поля маркируются и не должны автоматически попадать в logs/telemetry/evidence.
 5. Privileged action описывается typed schema; generic shell command не является допустимым public product contract.
-6. Compatibility проверяется автоматически contract tests после снятия `PREPARATION_ONLY`.
+6. Compatibility опубликованных contract versions проверяется автоматическими contract tests.
 7. Contract change в PR должен ссылаться на `HC-*` Requirement ID.
 
 ## Первый обязательный набор schemas
@@ -66,3 +67,14 @@ contracts/
 - `jobs/job.v1.schema.json` — lifecycle, steps, evidence and recovery model.
 
 P2.1 admits only `service.state.read.v1` for Home Center-owned allowlisted units. A registry entry without a matching certified executor fails startup.
+
+## P2.4 signed release-channel contracts
+
+- `releases/release-record.v1.schema.json` — immutable source/artifact/provenance/acceptance identity;
+- `releases/release-ledger.v1.schema.json` — full append-only state snapshot and atomic transitions;
+- `releases/dsse-envelope.v1.schema.json` — exact DSSE payload/signature envelope;
+- `releases/release-trust-policy.v1.schema.json` — dedicated public P-256 keys and threshold;
+- `releases/release-channel-checkpoint.v1.schema.json` — local anti-replay floor;
+- `releases/release-verification-result.v1.schema.json` — non-secret verifier decision.
+
+Schema validation is necessary but not sufficient: canonical-byte equality, DSSE PAE, cryptographic signatures, state folding, freshness, checkpoint monotonicity and artifact contents are enforced by `home_center.release_channel`. GDrive and issue metadata are evidence references, never release authority.

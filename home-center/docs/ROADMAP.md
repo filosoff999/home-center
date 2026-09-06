@@ -1,6 +1,6 @@
 # Roadmap Home Center
 
-**Статус:** `DEVELOPMENT_ACTIVE / P1 + P2.1 + P2.2 PRODUCTION ACCEPTED / P2.3 ACTIVE`  
+**Статус:** `DEVELOPMENT_ACTIVE / P1 + P2.1 + P2.2 PRODUCTION ACCEPTED / P2.3 SERVER-SIDE ACCEPTED / P2.4 ACTIVE`
 **Execution epic:** `#1`.
 
 Roadmap определяет последовательность продуктовых gates. Home Center уже имеет accepted production P1, P2.1 и P2.2 на `dc01/dc02`; дальнейшая работа продолжает P2 и не должна регрессировать принятые safety/evidence свойства.
@@ -48,7 +48,7 @@ Accepted:
 
 ## P2 — Managed Node / Typed Actions / Reconcile
 
-Status: **IN PROGRESS** — P2.1 and P2.2 are production accepted on `0.3.0`; P2.3 targets unaccepted `0.4.3`. Runtime `0.4.2` is quarantined after a safe Web activation preflight failure; `0.4.0`, `0.4.1` and `0.4.2` must not be used for new rollout.
+Status: **IN PROGRESS** — P2.1/P2.2 remain accepted foundations; exact `0.4.3` is server-side production accepted after P2.3 rollout/rotation. Managed-client trust evidence remains open. `0.4.0`, `0.4.1` and `0.4.2` must not be used for new rollout. P2.4 targets inert verifier candidate `0.5.0`.
 
 Accepted foundations:
 
@@ -60,7 +60,7 @@ Accepted foundations:
 
 ### P2.3 — HTTPS/TLS certificate lifecycle — `#10`
 
-Status: **ACTIVE / ENGINEERING**.
+Status: **SERVER-SIDE ACCEPTED / MANAGED-CLIENT TRUST OPEN**.
 
 - [x] ADR-0006 Web TLS trust/identity/rollback model;
 - [x] distinct Web TLS identity path separated from peer mTLS;
@@ -80,30 +80,35 @@ Status: **ACTIVE / ENGINEERING**.
 - [x] pre-switch rollback-chain classification for legacy `0.3.0` and quarantined `0.4.0` states;
 - [x] durable owner-marker/digest CAS, crash reconciliation and helper recovery-latch proof;
 - [x] fsync-stable node/cluster journals with pre-mutation peer identity snapshots and exact rollback overview gates;
-- [ ] exact-head branch CI final PASS after all P2.3 changes;
-- [ ] immutable release artifact and PR/main gates;
-- [ ] production canary `dc02` Web rotation acceptance;
-- [ ] production `dc01` promotion only after dc02 PASS;
+- [x] exact-head branch/main CI final PASS after all P2.3 changes;
+- [x] immutable release artifact and PR/main gates;
+- [x] production canary `dc02` Web rotation acceptance;
+- [x] production `dc01` promotion only after dc02 PASS;
 - [ ] managed Windows OS/browser trust acceptance with no certificate warning;
 - [ ] Android/Chrome acceptance with no TLS alert 40 or `ERR_SSL_VERSION_OR_CIPHER_MISMATCH`;
 - [ ] synthetic expiry/renewal and failed-rotation rollback acceptance;
-- [ ] peer mTLS post-rotation PASS both directions;
-- [ ] peer CA, node certificate and node public-key fingerprints unchanged on both nodes;
-- [ ] final Samba domain SID/DRS no-regression evidence.
+- [x] peer mTLS post-rotation PASS both directions;
+- [x] peer CA, node certificate and node public-key fingerprints unchanged on both nodes;
+- [x] final Samba domain SID/DRS no-regression evidence.
 
 ### P2.4 — Signed stable release channel
 
-Status: **PLANNED / outside 0.4.3 scope**.
+Status: **ACTIVE / `0.5.0` VERIFIER CANDIDATE**.
 
-- [ ] immutable promoted release record independent of expiring CI artifacts;
-- [ ] signature/provenance and digest verification policy;
-- [ ] explicit `stable`, `quarantined` and `superseded` states;
-- [ ] dedicated Home Center deployment credential/channel, separate from Control Center;
-- [ ] release ledger linking source SHA, artifact SHA, CI run and production acceptance.
+- [x] closed immutable release-record/DSSE/trust/ledger/checkpoint/result contracts;
+- [x] ECDSA P-256/SHA-256 threshold verification with canonical bytes and fixed product/repository/workflow scope;
+- [x] append-only `stable`, `quarantined`, `superseded` state machine and terminal quarantine;
+- [x] freshness, generation/sequence anti-rollback, equivocation and history-rewrite rejection;
+- [x] exact content-addressed artifact byte/manifest/identity/archive verification;
+- [x] verifier has no network/deploy/service-control surface and returns immutable identity;
+- [ ] dedicated Home Center production signing keys and approved public fingerprints, separate from Control Center;
+- [ ] root-owned trust-policy bootstrap on both nodes;
+- [ ] durable Home Center-owned content-addressed artifact storage independent of expiring CI;
+- [ ] first signed production ledger linking source SHA, artifact SHA, CI run and immutable acceptance evidence.
 
 ### P2.5 — Persisted two-node update reconcile
 
-Status: **PLANNED / outside 0.4.3 scope**.
+Status: **PLANNED / outside the `0.5.0` verifier-only scope**.
 
 - [ ] periodically compare promoted stable release with both nodes;
 - [ ] persisted checkpointed state machine: discover → verify → dc02 → soak → dc01 → accept;

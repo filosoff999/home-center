@@ -226,9 +226,9 @@ else:
 version_source = (ROOT / "product/control-plane/src/home_center/__init__.py").read_text(encoding="utf-8")
 project = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
 builder = (ROOT / "deploy/scripts/build-artifact.sh").read_text(encoding="utf-8")
-if '__version__ = "0.4.3"' not in version_source or 'version = "0.4.3"' not in project:
+if '__version__ = "0.5.0"' not in version_source or 'version = "0.5.0"' not in project:
     errors.append("runtime/package version mismatch")
-if "HOME_CENTER_VERSION:-$SOURCE_VERSION" not in builder or '[ "$VERSION" = 0.4.3 ]' not in builder:
+if "HOME_CENTER_VERSION:-$SOURCE_VERSION" not in builder or '[ "$VERSION" = 0.5.0 ]' not in builder:
     errors.append("artifact version mismatch")
 if 'git -C "$ROOT" rev-parse HEAD' not in builder or 'git -C "$ROOT/../.."' in builder:
     errors.append("artifact revision must resolve from the independent repository root")
@@ -520,9 +520,9 @@ for required in (
     "DC02_SOFTWARE_CANARY_30S=PASS",
     '"peer_identity"',
     "cluster_source_overview_rejected",
-    "ADMITTED_SOURCE_V030_REVISION=6b0c0db144bfd2a7b7a7db1a868d649f20825721",
-    "ADMITTED_SOURCE_V042_REVISION=9f376e3d39eb29b2c8e402d085cba8b9fee4258d",
-    'source_identity_admitted "$LOCAL_SOURCE_VERSION" "$LOCAL_SOURCE_REVISION"',
+    "ADMITTED_SOURCE_V043_REVISION=64f798ceae0b669cbac01b452c3cf4fd96070136",
+    "ADMITTED_SOURCE_V043_RELEASE=/opt/home-center/releases/0.4.3-64f798ceae0b-b2dde6a51ec9",
+    'source_identity_admitted "$LOCAL_SOURCE_VERSION" "$LOCAL_SOURCE_REVISION" "$LOCAL_SOURCE_RELEASE"',
 ):
     if required not in bootstrap:
         errors.append(f"strict X.509 bootstrap profile missing: {required}")
@@ -548,6 +548,61 @@ for required in (
 ):
     if required not in rotate:
         errors.append(f"rotation empty regular node lock admission missing: {required}")
+
+release_channel = (ROOT / "product/control-plane/src/home_center/release_channel.py").read_text(encoding="utf-8")
+release_verifier = (ROOT / "deploy/runtime/release-channel-verify.py").read_text(encoding="utf-8")
+for required in (
+    'OPENSSL = "/usr/bin/openssl"',
+    'PAYLOAD_TYPE = "application/vnd.home-center.release-ledger.v1+json"',
+    'REPOSITORY = "ControlCenterSoft/home-center"',
+    'WORKFLOW = ".github/workflows/ci.yml"',
+    'b"DSSEv1 "',
+    '"ecdsa-p256-sha256"',
+    '"ASN1 OID: prime256v1"',
+    'raise ReleaseChannelError("artifact_archive_rejected")',
+    'os.O_NOFOLLOW',
+    'if canonical_json(ledger) != payload:',
+    '"ledger_generation_equivocation"',
+    '"ledger_history_rewritten"',
+    '"ledger_stable_version_not_increasing"',
+    '"ledger_revision_fork_rejected"',
+    '"ledger_acceptance_after_event"',
+    '"ledger_unaccepted_stable_rejected"',
+    '"ledger_stable_acceptance_checks_rejected"',
+):
+    if required not in release_channel:
+        errors.append(f"P2.4 signed-channel invariant missing: {required}")
+for forbidden in ("urllib", "requests", "http.client", "socket.", "systemctl", "ssh ", "sudo "):
+    if forbidden in release_channel:
+        errors.append(f"P2.4 verifier must stay read-only and offline: {forbidden}")
+for required in (
+    'history = result.add_mutually_exclusive_group(required=True)',
+    '"--bootstrap-no-checkpoint"',
+    'verify_artifact(verified, args.artifact_root)',
+):
+    if required not in release_verifier:
+        errors.append(f"P2.4 verifier CLI gate missing: {required}")
+if '"$ROOT/deploy/runtime/release-channel-verify.py"' not in builder:
+    errors.append("P2.4 verifier must be present in the immutable artifact")
+
+workflow = (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
+if re.search(r"uses:\s+[^\s]+@v[0-9]", workflow):
+    errors.append("GitHub Actions must be pinned to full immutable commit SHAs")
+for required in (
+    'HOME_CENTER_RELEASE_BUILD: "1"',
+    "Build artifact twice and compare bytes",
+    'cmp "$RUNNER_TEMP/home-center-dist-first/home-center-${{ steps.version.outputs.value }}-linux-amd64.tar.gz"',
+):
+    if required not in workflow:
+        errors.append(f"reproducible release CI gate missing: {required}")
+for required in (
+    'SOURCE_DATE_EPOCH=${SOURCE_DATE_EPOCH:-1767225600}',
+    'HOME_CENTER_RELEASE_BUILD:-0',
+    "RELEASE_WORKTREE_NOT_CLEAN",
+    'tar --sort=name --mtime="@$SOURCE_DATE_EPOCH"',
+):
+    if required not in builder:
+        errors.append(f"release build provenance gate missing: {required}")
 
 if errors:
     print("HOME_CENTER_SECURITY_GATE=FAIL")

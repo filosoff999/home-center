@@ -29,6 +29,7 @@ Architecture Decision Record обязателен для решений, кот�
 4. [ADR-0004 — typed action registry](0004-typed-action-registry.md);
 5. [ADR-0005 — bounded privileged helper](0005-bounded-privileged-helper.md);
 6. [ADR-0006 — Web TLS certificate lifecycle and trust model](0006-web-tls-certificate-lifecycle.md).
+7. [ADR-0007 — signed stable release channel](0007-signed-stable-release-channel.md).
 
 ## Следующие решения
 
@@ -36,6 +37,6 @@ Architecture Decision Record обязателен для решений, кот�
 - persistence/database architecture beyond local single-writer state;
 - module isolation/privilege model;
 - cluster membership/quorum and witness/fencing model;
-- update/signing/supply-chain evolution.
+- protected production signing-key provisioning and P2.5 persisted update reconcile.
 
 README не принимает будущие решения автоматически; он задаёт процесс их фиксации.

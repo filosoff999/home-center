@@ -1,6 +1,6 @@
 # Реестр требований Home Center
 
-Статус: подготовительный нормативный baseline. Requirement ID сохраняются при дальнейшей декомпозиции в issues, ADR, contracts и tests.
+Статус: действующий нормативный baseline. Requirement ID сохраняются при дальнейшей декомпозиции в issues, ADR, contracts и tests.
 
 ## Core / Control Plane
 
@@ -128,13 +128,30 @@ Capability, Desired State, events, module manifests и job schemas должны 
 ## Testing / Release gates
 
 ### HC-TEST-001 — Contract tests
-Изменение canonical contract не допускается без автоматических compatibility/contract tests после снятия `PREPARATION_ONLY`.
+Изменение опубликованного canonical contract не допускается без автоматических compatibility/contract tests и явного versioning решения.
 
 ### HC-TEST-002 — Failure/recovery tests
 Критические lifecycle workflows — enrollment, upgrade, failover, drain/remove, backup/restore — должны иметь negative и interruption tests.
 
 ### HC-TEST-003 — Production gate
 Capability объявляется готовой только при наличии acceptance evidence по happy path, failure/recovery, security и observability.
+
+## Release / Supply Chain
+
+### HC-REL-001 — Explicit signed promotion
+Новый build не является authority для обновления. Допускается только release с явным `stable`-решением, подписанным отдельным Home Center release-signing credential и связанным с exact source, artifact, provenance и production acceptance.
+
+### HC-REL-002 — Durable immutable artifact
+Promoted artifact должен находиться в Home Center-owned content-addressed storage независимо от срока хранения CI artifact. Digest, byte count, internal manifest и `VERSION`/`REVISION` проверяются до любой mutation.
+
+### HC-REL-003 — Append-only channel state
+Состояния `stable`, `superseded` и `quarantined` фиксируются в подписанном append-only ledger. Quarantine терминален для автономной установки; старое, но корректно подписанное состояние не может обойти более новый локальный checkpoint.
+
+### HC-REL-004 — Separate trust and credentials
+Release trust root и signing credentials принадлежат только Home Center и не переиспользуют Web CA, peer CA, SSH, Control Center или обычные PR/CI credentials. Private signing keys отсутствуют на управляемых нодах и в artifacts/evidence.
+
+### HC-REL-005 — Verification/deployment separation
+Проверка канала выдаёт только immutable `VerifiedStableRelease`. Сетевой fetch, root-owned admission, `dc02 → dc01` rollout, soak, retry и rollback реализуются отдельным persisted update workflow и не входят в verifier.
 
 ## Трассируемость
 

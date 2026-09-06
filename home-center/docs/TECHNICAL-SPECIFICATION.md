@@ -1,14 +1,14 @@
 # Home Center — техническое задание
 
-**Версия документа:** 2.2
-**Дата:** 2026-09-06  
-**Статус продукта:** `RUNTIME 0.4.2 QUARANTINED / P2.2 ACCEPTED / P2.3 0.4.3 RELEASE CANDIDATE`
-**Execution epic:** `#1` — независимая разработка и двухузловой HM.DM deployment.  
+**Версия документа:** 2.3
+**Дата:** 2026-09-06
+**Статус продукта:** `0.4.3 SERVER-SIDE PRODUCTION ACCEPTED / MANAGED-CLIENT TRUST PENDING / P2.4 0.5.0 VERIFIER CANDIDATE`
+**Execution epic:** `#1` — независимая разработка и двухузловой HM.DM deployment.
 **Область действия:** весь отдельный repository `ControlCenterSoft/home-center`.
 
 ## 1. Назначение документа
 
-Настоящее техническое задание является консолидированной нормативной спецификацией Home Center. Оно объединяет ранее принятые требования, текущий реестр `HC-*`, архитектуру, фактически принятый production baseline Home Center 0.3.0/P2.2 и дальнейший план P2.3–P7.
+Настоящее техническое задание является консолидированной нормативной спецификацией Home Center. Оно объединяет ранее принятые требования, текущий реестр `HC-*`, архитектуру, exact production baseline Home Center `0.4.3` и дальнейший план P2.4–P7.
 
 Документ определяет требования к архитектуре, функциям, безопасности, интерфейсам, данным, кластерным сценариям, Market, резервному копированию, обновлению, тестированию, поставке и приемке.
 
@@ -27,7 +27,7 @@
 
 ## 2. Текущий принятый baseline
 
-Home Center 0.3.0 (`6b0c0db144bfd2a7b7a7db1a868d649f20825721`) принят в production HM.DM как единая управляемая двухузловая инфраструктура:
+Home Center `0.4.3` (`64f798ceae0b669cbac01b452c3cf4fd96070136`, artifact `b2dde6a51ec9450ddd23e802db50be2605c8854e804803ba014422878a02d3d4`) принят как server-side production baseline HM.DM:
 
 - `dc01` — leader, `192.168.10.254`, HTTPS `:8443`, peer channel `:9443`;
 - `dc02` — standby, `192.168.10.253`, HTTPS `:8443`, peer channel `:9443`;
@@ -43,9 +43,9 @@ Home Center 0.3.0 (`6b0c0db144bfd2a7b7a7db1a868d649f20825721`) принят в p
 - automatic failover/VIP/active-active отключены до появления witness/fencing и P6 certification;
 - существующий HM.DM Domain SID сохраняется, Home Center deployment не должен неявно изменять Samba AD/DNS/Kerberos.
 
-Этот cumulative baseline считается **принятым P1–P2.2**. P2.3–P7 должны быть совместимы с ним либо содержать отдельный migration ADR и проверяемый upgrade path.
+Этот cumulative baseline считается **принятым P1–P2.2 и server-side P2.3**. P2.4–P7 должны быть совместимы с ним либо содержать отдельный migration ADR и проверяемый upgrade path. Managed-client установка Web CA и реальная Windows/Android browser acceptance остаются открытой частью P2.3; Home Center не получает права неявно менять AD/GPO.
 
-Версия `0.4.3` является P2.3 release candidate до exact-head CI и production acceptance. Она вводит отдельную browser-compatible Web PKI ECDSA P-256/SHA-256 для `:8443`, не меняя peer PKI и `:9443`. Версия `0.4.0` quarantined из-за TLS alert 40 на наблюдавшемся Android/Chrome ClientHello; `0.4.1` — из-за несовместимого с пустыми regular flock-файлами сравнения GNU `stat %F`; развёрнутая `0.4.2` — из-за ошибочного требования gid `0` к root-only release marker, создаваемому capability-free helper с primary group `home-center`.
+Версия `0.4.3` ввела отдельную browser-compatible Web PKI ECDSA P-256/SHA-256 для `:8443`, не меняя peer PKI и `:9443`; software rollout, Web rotation, restricted TLS, peer mTLS, Domain SID и DRS доказаны на обеих нодах. Версии `0.4.0`, `0.4.1` и `0.4.2` остаются quarantined по зафиксированным Web-profile/lock/marker причинам. Candidate `0.5.0` добавляет только инертный signed-channel verifier и не включает autonomous update.
 
 ## 3. Цель продукта
 
@@ -120,7 +120,7 @@ Production bootstrap/operator transport может существовать от
 
 ## 6. Технологический baseline и evolution policy
 
-### 6.1. Текущая accepted implementation (`0.3.0`, P2.2)
+### 6.1. Текущая accepted implementation (`0.4.3`, server-side P2.3)
 
 - Control Plane: Python `>=3.12`;
 - local state: SQLite;
@@ -129,9 +129,9 @@ Production bootstrap/operator transport может существовать от
 - service manager: systemd;
 - release CI/build: GitHub-hosted runners;
 - contracts: OpenAPI 3.1 + JSON Schemas;
-- release: immutable archive + SHA-256 manifest.
+- release: immutable archive + SHA-256 manifest, exact `dc02 → dc01` acceptance.
 
-P2.3 `0.4.3` расширяет этот baseline отдельной Web PKI, status/renewal API, fixed TLS activation/reconciliation helper actions и staged rotation. Эти свойства остаются release-candidate до production acceptance и не меняют accepted peer mTLS identity.
+P2.3 `0.4.3` расширяет baseline отдельной Web PKI, status/renewal API, fixed TLS activation/reconciliation helper actions и staged rotation. Server-side свойства production accepted и не меняют peer mTLS identity. P2.4 `0.5.0` добавляет read-only verifier по ADR-0007; production signing/trust/store и P2.5 updater пока отсутствуют.
 
 ### 6.2. Предыдущая Rust/PostgreSQL рекомендация
 
@@ -640,7 +640,7 @@ Canary order for HM.DM remains `dc02 → dc01` unless deployment ADR changes it.
 
 ### 27.1. P2.3 Web TLS upgrade contract
 
-- admitted exact source: accepted `0.3.0` revision `6b0c0db144bfd2a7b7a7db1a868d649f20825721` or deployed `0.4.2` revision `9f376e3d39eb29b2c8e402d085cba8b9fee4258d`; target candidate: `0.4.3`; `0.4.0`, `0.4.1` and `0.4.2` are quarantined for new rollout;
+- historical admitted source was exact accepted `0.3.0` or deployed `0.4.2`; exact target `0.4.3` is now server-side accepted, while `0.4.0`, `0.4.1` and `0.4.2` remain quarantined for new rollout;
 - `:8443` uses TLS 1.2+ and, after rotation, an exact ECDSA P-256 leaf signed ECDSA-with-SHA-256 by the independent Web CA;
 - `:9443` remains TLS 1.3 with `CERT_REQUIRED`, the existing Ed25519 peer CA and existing node identities;
 - `/etc/home-center/pki/web-ca/ca.key` exists only on `dc01`; public `ca.crt` exists on both nodes; the Web CA is provisioned before installing a config that requires `web_ca`;
@@ -653,6 +653,23 @@ Canary order for HM.DM remains `dc02 → dc01` unless deployment ADR changes it.
 - final acceptance additionally requires managed-browser hostname/chain trust, unchanged peer public fingerprints, Samba SID/DRS health and proof of no AD/DNS/DHCP or Control Center mutation.
 
 Continuous update policy must consume only an explicitly promoted immutable stable release, verify signature/provenance/digest, persist two-node checkpoints and quarantine terminally bad digests. Discovery of a newer build alone is never authority to deploy it.
+
+### 27.2. P2.4 signed stable release-channel contract
+
+- exact DSSE v1 payload type: `application/vnd.home-center.release-ledger.v1+json`;
+- canonical ASCII JSON bytes, duplicate/float/unknown-field rejection and bounded payload/signature/key/event sizes;
+- fixed ECDSA P-256/SHA-256 verification; key ID is SHA-256 of DER SPKI; only unique active keys count toward policy threshold;
+- private signing keys remain outside repository, artifacts, PR jobs, `dc01`, `dc02`, logs and evidence and are separate from Web/peer/SSH/Control Center credentials;
+- immutable record binds version, full revision, archive SHA/bytes, internal manifest SHA, content-addressed object key, repository/ref/workflow/run provenance and exact HM.DM acceptance evidence;
+- full signed ledger supports only `unlisted→stable`, `unlisted→quarantined`, `stable→superseded|quarantined` and `superseded→quarantined`; quarantine is terminal;
+- replacing stable is one atomic event that supersedes the old record and promotes one strictly greater semantic version; version, revision and artifact identities cannot fork;
+- signed generation/freshness plus local sequence/head checkpoint reject rollback, replay, equivocation, rewritten history, stale head and clock rollback;
+- content-addressed artifact is opened without symlink following and rechecked for exact bytes, owner/type, bounded tar expansion, complete internal manifest and exact `VERSION`/`REVISION`;
+- verifier returns immutable identity and has no network, deploy, service-control or checkpoint-write authority;
+- `--bootstrap-no-checkpoint` is one-time explicit trust bootstrap only; later production decisions require the persisted floor owned by P2.5;
+- stale/unavailable channel blocks a new mutation but never stops the currently accepted runtime.
+
+The transitional `0.5.0` rollout from exact `/opt/home-center/releases/0.4.3-64f798ceae0b-b2dde6a51ec9` uses the existing audited artifact channel because target-contained trust is circular. It installs no production trust key or updater. Signed-channel activation requires a separate Home Center signing-key ceremony, root-owned trust bootstrap on both nodes and durable content-addressed storage.
 
 ## 28. Security requirements
 
@@ -805,7 +822,13 @@ Every PR after DEV admission:
 
 Release pipeline:
 
-`Source commit → CI → deterministic artifact → checksum/provenance → synthetic acceptance → canary dc02 → postconditions → dc01 → cluster acceptance → evidence`.
+Transitional manual pipeline:
+
+`Source commit → CI build-twice → exact artifact/checksum → canary dc02 → postconditions → dc01 → cluster acceptance → evidence`.
+
+Target stable-channel pipeline after P2.4/P2.5 activation:
+
+`Exact main CI artifact → durable content-addressed copy → production acceptance → immutable record → protected DSSE promotion → independent node verification → persisted dc02 canary/soak → dc01 → acceptance checkpoint`.
 
 Production deploy credentials are unavailable to untrusted PR jobs.
 
@@ -861,6 +884,7 @@ Home Center satisfies this specification when:
 - immutable release package;
 - SHA-256/checksum manifest;
 - build/provenance metadata;
+- signed release record, DSSE ledger decision and public trust policy where the stable channel is active;
 - installer/updater;
 - safe config example;
 - systemd units/policies;
@@ -886,6 +910,7 @@ Home Center satisfies this specification when:
 - Backup: `HC-BKP-001..003`;
 - API/contracts: `HC-API-001`, `HC-CONTRACT-001`;
 - Testing: `HC-TEST-001..003`.
+- Release/supply chain: `HC-REL-001..005`.
 
 ## 39. Реализационный приоритет
 

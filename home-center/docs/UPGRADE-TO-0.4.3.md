@@ -1,8 +1,10 @@
 # Home Center: upgrade exact 0.3.0/0.4.2 → 0.4.3
 
-> **RELEASE CANDIDATE — этот документ не является production authorization.**
+Status: **completed server-side on 2026-09-06**. Exact `0.4.3` is now the accepted source baseline for `0.5.0`; this file preserves the historical rollout/recovery procedure. Managed-client CA/browser trust remains a separate open P2.3 evidence gate.
 
-Принятым baseline остаётся `0.3.0` (`6b0c0db144bfd2a7b7a7db1a868d649f20825721`). На `dc01` и `dc02` уже развёрнуто software `0.4.2` (`9f376e3d39eb29b2c8e402d085cba8b9fee4258d`), но оно имеет статус `QUARANTINED / DO_NOT_DEPLOY`: первая Web rotation безопасно остановилась до переключения identity, потому что validator ожидал gid `0` у root-only release marker, который capability-free helper создаёт с primary group `home-center`. Bootstrap `0.4.3` принимает только один и тот же exact source identity на обеих нодах: либо accepted `0.3.0`, либо этот deployed `0.4.2`.
+> **HISTORICAL ACCEPTED RUNBOOK — результат зафиксирован, но этот документ не является повторно используемым production authorization.**
+
+Текущий принятый baseline — exact `0.4.3` (`64f798ceae0b669cbac01b452c3cf4fd96070136`). До завершённого rollout источником был accepted `0.3.0` (`6b0c0db144bfd2a7b7a7db1a868d649f20825721`) либо временно deployed `0.4.2` (`9f376e3d39eb29b2c8e402d085cba8b9fee4258d`). `0.4.2` теперь имеет статус `QUARANTINED / DO_NOT_DEPLOY`: первая Web rotation безопасно остановилась до переключения identity, потому что validator ожидал gid `0` у root-only release marker, который capability-free helper создаёт с primary group `home-center`. Исторический bootstrap `0.4.3` допускал только одинаковую exact source identity на обеих нодах; это описание не расширяет admission gate будущих версий.
 
 Версия `0.4.0` quarantined из-за Ed25519 Web chain и TLS alert 40 для наблюдавшегося Android/Chrome ClientHello. Версия `0.4.1` quarantined из-за ошибочного строкового сравнения GNU `stat %F` для пустого regular flock-файла. Ни один digest `0.4.0`–`0.4.2` нельзя использовать для нового rollout.
 
@@ -101,7 +103,7 @@ Activation заранее классифицирует предыдущую це
 - failed-rotation synthetic test доказывает rollback; backup/restore verification остаётся PASS;
 - automatic failover/VIP activation остаются отключены.
 
-Только после всех доказательств отдельный acceptance commit переводит `0.4.3` из release candidate в production accepted и обновляет release ledger/GDrive CURRENT.
+Server-side доказательства получены для exact revision `64f798ceae0b669cbac01b452c3cf4fd96070136`, artifact `b2dde6a51ec9450ddd23e802db50be2605c8854e804803ba014422878a02d3d4`, transaction `20260906T160641Z-4618b29b86a5`. Authoritative GDrive CURRENT и GitHub evidence обновлены; issue остаётся открытой до реального managed-client trust evidence.
 
 ## 7. Failure, retry и quarantine
 
