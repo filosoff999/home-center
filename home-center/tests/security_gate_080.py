@@ -46,6 +46,7 @@ def main() -> None:
     login_contract = read(ROOT / "contracts/auth/login-request.v2.schema.json")
     credential_contract = read(ROOT / "contracts/auth/local-admin-credential.v1.schema.json")
     ad_contract = read(ROOT / "contracts/auth/ad-provider-config.v1.schema.json")
+    providers_contract = read(ROOT / "contracts/auth/auth-providers.v1.schema.json")
 
     interactive_surface = "\n".join((auth, api, config, runtime, index, browser))
     require("admin_token_file" not in interactive_surface, "runtime interactive auth still references admin_token_file")
@@ -87,6 +88,8 @@ def main() -> None:
     require('"../auth/login-request.v2.schema.json"' in openapi, "0.8 OpenAPI is not bound to the provider login contract")
     require('"provider"' in login_contract and '"password"' in login_contract and '"writeOnly": true' in login_contract, "provider/password contract is incomplete")
     require('"enabled"' in ad_contract and '"allowed_admin_groups"' in ad_contract, "AD provider config contract incomplete")
+    require("home-center.auth-providers.v1" in providers_contract, "provider discovery contract missing")
+    require('{"id": "ad", "enabled": self.runtime.config.ad_auth.enabled}' in api, "provider discovery is not config-bound")
     for marker in ('"n": {\n      "const": 32768', '"r": {\n      "const": 8', '"p": {\n      "const": 1', '"dklen": {\n      "const": 32'):
         require(marker in credential_contract, f"credential contract KDF marker missing: {marker}")
 
@@ -105,6 +108,17 @@ def main() -> None:
         require(marker in ad, f"AD authentication hardening marker missing: {marker}")
     require("shell=True" not in ad, "AD authentication may not invoke a shell")
     require("password" not in ad_contract, "AD provider config contract must not persist passwords")
+    for marker in (
+        'self.headers.get("Sec-Fetch-Site")',
+        'self.headers.get("Origin")',
+        '"cross_origin_request_rejected"',
+        '"Cross-Origin-Opener-Policy"',
+        '"Cross-Origin-Resource-Policy"',
+        'action="session.logout"',
+    ):
+        require(marker in api, f"browser session hardening marker missing: {marker}")
+    require("adProviderOption" in index and "disabled hidden" in index, "AD option is not fail-safe by default")
+    require("loadAuthProviders" in browser and "auth_provider_catalog_unavailable" in browser, "provider discovery UI wiring missing")
 
     for marker in (
         "os.O_EXCL",
@@ -172,6 +186,8 @@ def main() -> None:
     require("test_invalid_login_is_generic_and_legacy_token_shape_is_rejected" in api_tests, "legacy token-shape regression test missing")
     require("test_existing_symlink_is_never_followed_or_replaced" in provision_tests, "provision symlink regression test missing")
     require("test_existing_regular_file_is_never_overwritten" in provision_tests, "provision overwrite regression test missing")
+    require("test_cross_origin_login_and_logout_are_rejected_before_authentication" in api_tests, "cross-origin session regression test missing")
+    require("test_auth_provider_catalog_is_public_and_disables_ad_by_default" in api_tests, "provider catalog regression test missing")
     require("test_bootstrap_removes_authenticated_overview_probe_but_keeps_ha_gates" in deployment_tests, "deployment auth migration regression test missing")
     require("test_bootstrap_shape_drift_fails_closed" in deployment_tests, "deployment source-drift regression test missing")
     print("SECURITY_GATE_080=PASS")

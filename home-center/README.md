@@ -66,10 +66,11 @@ Exact merged-main candidate:
 
 - локального администратора Home Center вместо bootstrap-token в интерактивном Web login;
 - root-only атомарное создание scrypt verifier без plaintext/reversible password storage;
-- Secure, HttpOnly, SameSite=Strict короткие сессии;
+- Secure, HttpOnly, SameSite=Strict короткие сессии и fail-closed same-origin/Fetch Metadata защита POST-запросов;
 - token-free installer/bootstrap/recovery probes с сохранением `dc02 → canary/soak → dc01`, durable rollback и peer mTLS gates;
 - exact 0.8 artifact policy с predecessor `0.7.0 / f28fc1c820b065616758ca3c220794555c30a25a / 6ab15ef38b5d4b064ddb45c47009c73de3f5425553a059d75c9fb3c77bc82b82`;
 - опциональный AD provider, отключённый по умолчанию: фиксированные Kerberos/NSS executables, явные KDC и разрешённые administrator groups, bounded timeout и удаляемый per-attempt credential cache;
+- публичный secret-free provider catalog: Web UI показывает AD-вход только при явном включении provider;
 - локальный вход остаётся доступным независимо от состояния AD.
 
 В 0.8 не активируются production deployment, AD/GPO mutation, automatic update или automatic failover. Live HM.DM AD validation и exact release-branch artifact остаются отдельными gates.

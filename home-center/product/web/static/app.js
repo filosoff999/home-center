@@ -1,6 +1,6 @@
 "use strict";
 
-const state = { overview: null, profile: null, backups: [], audit: [], tls: null, currentView: "overview" };
+const state = { overview: null, profile: null, backups: [], audit: [], tls: null, authProviders: null, currentView: "overview" };
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
 
@@ -36,6 +36,30 @@ async function api(path, options = {}) {
   const data = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(data.error?.message || `HTTP ${response.status}`);
   return data;
+}
+
+async function loadAuthProviders() {
+  const providerInput = $("#providerInput");
+  const adOption = $("#adProviderOption");
+  let adEnabled = false;
+  try {
+    const response = await fetch("/api/v1/auth/providers", {
+      credentials: "same-origin",
+      headers: { "Accept": "application/json" },
+      cache: "no-store",
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || data.schema !== "home-center.auth-providers.v1" || !Array.isArray(data.providers)) {
+      throw new Error("auth_provider_catalog_unavailable");
+    }
+    state.authProviders = data.providers;
+    adEnabled = data.providers.some((item) => item?.id === "ad" && item.enabled === true);
+  } catch (_) {
+    state.authProviders = null;
+  }
+  adOption.disabled = !adEnabled;
+  adOption.hidden = !adEnabled;
+  if (!adEnabled) providerInput.value = "local";
 }
 
 async function optionalApi(path) {
@@ -290,6 +314,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   $("#loginForm").addEventListener("submit", login); $("#logoutButton").addEventListener("click", logout); $("#refreshButton").addEventListener("click", refresh);
   $$(".nav-item").forEach((item)=>item.addEventListener("click",()=>switchView(item.dataset.view)));
   $$("[data-go]").forEach((item)=>item.addEventListener("click",()=>switchView(item.dataset.go)));
+  await loadAuthProviders();
   try { await api("/api/v1/session"); hideLogin(); await refresh(); } catch (error) { if (error.message !== "authentication_required") showLogin(); }
   setInterval(()=>{ if ($("#loginLayer").hidden) refresh(); },15000);
 });

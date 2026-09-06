@@ -147,8 +147,10 @@ class ApiTests(unittest.TestCase):
         bearer: bool = False,
         method: str = "GET",
         body: dict | None = None,
+        extra_headers: dict[str, str] | None = None,
     ):
         headers = {"Accept": "application/json"}
+        headers.update(extra_headers or {})
         data = None
         if authenticated:
             headers["Cookie"] = self.session_cookie()
@@ -178,6 +180,54 @@ class ApiTests(unittest.TestCase):
             self.assertEqual(value["status"], "ok")
             self.assertEqual(response.headers["X-Frame-Options"], "DENY")
             self.assertIn("frame-ancestors 'none'", response.headers["Content-Security-Policy"])
+
+    def test_auth_provider_catalog_is_public_and_disables_ad_by_default(self) -> None:
+        with self.request("/api/v1/auth/providers") as response:
+            value = json.load(response)
+        self.assertEqual(value["schema"], "home-center.auth-providers.v1")
+        self.assertEqual(value["providers"], [{"enabled": True, "id": "local"}, {"enabled": False, "id": "ad"}])
+
+    def test_cross_origin_login_and_logout_are_rejected_before_authentication(self) -> None:
+        hostile_headers = {"Origin": "https://attacker.invalid", "Sec-Fetch-Site": "cross-site"}
+        with self.assertRaises(urllib.error.HTTPError) as caught:
+            self.request(
+                "/api/v1/session",
+                method="POST",
+                body={"provider": "local", "username": USERNAME, "password": PASSWORD},
+                extra_headers=hostile_headers,
+            )
+        self.assertEqual(caught.exception.code, 403)
+        payload = caught.exception.read().decode("utf-8")
+        self.assertIn("cross_origin_request_rejected", payload)
+        self.assertNotIn(PASSWORD, payload)
+
+        with self.assertRaises(urllib.error.HTTPError) as caught:
+            self.request(
+                "/api/v1/session/logout",
+                authenticated=True,
+                method="POST",
+                extra_headers=hostile_headers,
+            )
+        self.assertEqual(caught.exception.code, 403)
+        with self.request("/api/v1/session", authenticated=True) as response:
+            self.assertTrue(json.load(response)["authenticated"])
+
+    def test_same_origin_browser_login_and_authenticated_logout(self) -> None:
+        origin = f"https://127.0.0.1:{self.server.server_port}"
+        headers = {"Origin": origin, "Sec-Fetch-Site": "same-origin"}
+        with self.request(
+            "/api/v1/session",
+            method="POST",
+            body={"provider": "local", "username": USERNAME, "password": PASSWORD},
+            extra_headers=headers,
+        ) as response:
+            cookie = response.headers["Set-Cookie"].split(";", 1)[0]
+        self._session_cookie = cookie
+        with self.request(
+            "/api/v1/session/logout", authenticated=True, method="POST", extra_headers=headers
+        ) as response:
+            self.assertFalse(json.load(response)["authenticated"])
+            self.assertIn("Max-Age=0", response.headers["Set-Cookie"])
 
     def test_api_is_fail_closed_without_session(self) -> None:
         with self.assertRaises(urllib.error.HTTPError) as caught:

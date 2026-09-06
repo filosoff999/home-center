@@ -43,6 +43,9 @@
           "401": {
             "description": "Invalid credentials, disabled provider, or denied AD group membership"
           },
+          "403": {
+            "description": "Cross-origin browser request rejected before credential processing"
+          },
           "429": {
             "description": "Authentication rate limit exceeded"
           },
@@ -63,6 +66,30 @@
         "responses": {
           "200": {
             "description": "Browser session cookie expired"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Cross-origin browser request rejected"
+          }
+        }
+      }
+    },
+    "/api/v1/auth/providers": {
+      "get": {
+        "operationId": "getAuthenticationProviders",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Public, secret-free authentication provider availability",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "../auth/auth-providers.v1.schema.json"
+                }
+              }
+            }
           }
         }
       }
