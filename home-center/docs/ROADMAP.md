@@ -1,9 +1,9 @@
 # Roadmap Home Center
 
-**Статус:** `DEVELOPMENT_ACTIVE / P1 PRODUCTION ACCEPTED / P2 ACTIVE`  
+**Статус:** `DEVELOPMENT_ACTIVE / P1 PRODUCTION ACCEPTED / P2.1 PRODUCTION ACCEPTED`  
 **Execution epic:** `#1`.
 
-Roadmap определяет последовательность продуктовых gates. Home Center уже имеет accepted production P1 на `dc01/dc02`; дальнейшая работа начинается с P2 и не должна регрессировать принятые P1 safety/evidence свойства.
+Roadmap определяет последовательность продуктовых gates. Home Center уже имеет accepted production P1 и P2.1 на `dc01/dc02`; дальнейшая работа продолжает P2 и не должна регрессировать принятые safety/evidence свойства.
 
 ## P0 — Repository / Architecture Readiness
 
@@ -48,19 +48,19 @@ Accepted:
 
 ## P2 — Managed Node / Typed Actions / Reconcile
 
-Status: **IN PROGRESS** — P2.1 candidate is tracked in `#6`.
+Status: **IN PROGRESS** — P2.1 is production accepted; P2.2 is next.
 
-- [ ] typed Action Registry — `0.2.0` candidate in `#6`;
-- [ ] persisted Change/Job state machine;
+- [x] typed Action Registry — `0.2.0`, accepted in `#6`;
+- [ ] persisted Change/Job state machine — synchronous read-only foundation accepted;
 - [ ] complete RBAC/policy for mutations;
 - [ ] bounded privileged helper;
-- [ ] first non-domain safe actions;
+- [x] first non-domain safe read action — `service.state.read.v1`;
 - [ ] Desired State / Actual State;
 - [ ] drift/reconcile;
 - [ ] checkpoint/retry/recovery;
 - [ ] Web action/preflight/progress/recovery UX;
 - [ ] P2 synthetic/security/failure acceptance;
-- [ ] canary production acceptance using Home Center-owned safe target.
+- [x] canary production acceptance of the read-only action.
 
 **Gate P2:** one managed node is reproducibly changed through Desired State and typed actions; interruption cannot create silent success or duplicate side effects.
 

@@ -1,6 +1,6 @@
 # Home Center
 
-> **Статус: PRODUCTION_ACCEPTED / INDEPENDENT PRODUCT**
+> **Статус: PRODUCTION_ACCEPTED / P2.1 / INDEPENDENT PRODUCT**
 
 Home Center — самостоятельный local-first продукт для управления домашней и малой серверной инфраструктурой через единый Web UI и API.
 
@@ -26,9 +26,14 @@ Home Center является полностью независимым прод�
 
 ## Production
 
-Версия `0.1.0`, revision `0b9c4c1d0c1d0da85461e324ca780b56652634ec`, развёрнуты и приняты на `dc01` и `dc02`.
+Версия `0.2.0`, revision `853215871f0840b8cc05fc900d572bef87a7dc58`, развёрнута и принята на `dc01` и `dc02`.
 
-Проверяемая запись CI, artifact, rollout, rollback points и post-deployment checks: [production acceptance 2026-09-06](ops/PRODUCTION-ACCEPTANCE-2026-09-06.md).
+P2.1 добавляет immutable typed Action Registry и единственное разрешённое действие `service.state.read.v1`: локальное, read-only, с permission/risk metadata, строгим allowlist, persisted idempotency и audit evidence. Универсальный shell и mutation actions отсутствуют.
+
+Проверяемые записи:
+
+- [P1 production acceptance](ops/PRODUCTION-ACCEPTANCE-2026-09-06.md);
+- [P2.1 production acceptance](ops/P2.1-PRODUCTION-ACCEPTANCE-2026-09-06.md).
 
 ## Разработка и CI
 
