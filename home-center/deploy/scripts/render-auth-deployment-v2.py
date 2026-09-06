@@ -181,17 +181,11 @@ def render_bootstrap(source: str) -> str:
         "bootstrap_validator_functions",
     )
 
-    sha_pattern = (
-        r'REMOTE_ADMIN_SHA=\$\("\$\{SSH\[@\]\}" sudo -n sha256sum '
-        + re.escape(LOCAL_ADMIN_CREDENTIAL)
-        + r" \| awk '\{print \$1\}'\)\n"
-        + r'\[ "\$REMOTE_ADMIN_SHA" = "\$\(sha256sum '
-        + re.escape(LOCAL_ADMIN_CREDENTIAL)
-        + r" \| awk '\{print \$1\}'\)" \] \|\| \{ echo DC02_ADMIN_TOKEN_MISMATCH >&2; false; \}'
-    )
-    rendered = _regex_once(
+    credential_equality = f'''REMOTE_ADMIN_SHA=$("${{SSH[@]}}" sudo -n sha256sum {LOCAL_ADMIN_CREDENTIAL} | awk '{{print $1}}')
+[ "$REMOTE_ADMIN_SHA" = "$(sha256sum {LOCAL_ADMIN_CREDENTIAL} | awk '{{print $1}}')" ] || {{ echo DC02_ADMIN_TOKEN_MISMATCH >&2; false; }}'''
+    rendered = _replace_once(
         rendered,
-        sha_pattern,
+        credential_equality,
         f'validate_local_admin_credential "{LOCAL_ADMIN_CREDENTIAL}"\n'
         "validate_remote_local_admin_credential\n"
         "echo LOCAL_ADMIN_CLUSTER_PREFLIGHT=PASS",
