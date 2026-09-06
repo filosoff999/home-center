@@ -25,6 +25,7 @@
       <button class="nav-item active" data-view="overview"><span class="nav-icon">◫</span>Обзор</button>
       <button class="nav-item" data-view="nodes"><span class="nav-icon">◇</span>Узлы</button>
       <button class="nav-item" data-view="cluster"><span class="nav-icon">⌘</span>Кластер</button>
+      <button class="nav-item" data-view="tls"><span class="nav-icon">⌾</span>Сертификаты</button>
       <button class="nav-item" data-view="backups"><span class="nav-icon">↻</span>Резервные копии</button>
       <button class="nav-item" data-view="jobs"><span class="nav-icon">✓</span>Задания</button>
       <button class="nav-item" data-view="audit"><span class="nav-icon">≡</span>Аудит</button>
@@ -66,6 +67,7 @@
         <div class="metric-grid">
           <article class="metric-card"><span>Узлы</span><strong id="nodesMetric">—</strong><small id="nodesMetricNote">из 2 ожидаемых</small></article>
           <article class="metric-card"><span>Репликация</span><strong id="replicationMetric">Проверка</strong><small>mTLS peer health</small></article>
+          <article class="metric-card"><span>Web TLS</span><strong id="tlsMetric">Проверка</strong><small id="tlsMetricNote">hostname · chain · expiry</small></article>
           <article class="metric-card"><span>Последняя копия</span><strong id="backupMetric">Нет данных</strong><small id="backupMetricNote">локальная проверка</small></article>
           <article class="metric-card"><span>Незавершённые задания</span><strong id="jobsMetric">0</strong><small>fail-closed orchestration</small></article>
         </div>
@@ -79,6 +81,7 @@
             <div class="panel-head"><div><span class="panel-kicker">Политика</span><h3>Контур безопасности</h3></div></div>
             <ul class="check-list">
               <li><i>✓</i><div><strong>Взаимная TLS-аутентификация</strong><span>Связь dc01 ↔ dc02</span></div></li>
+              <li><i>✓</i><div><strong>Раздельная Web TLS identity</strong><span>Ротация не меняет peer mTLS</span></div></li>
               <li><i>✓</i><div><strong>Single-writer</strong><span>Авто-failover отключён без witness</span></div></li>
               <li><i>✓</i><div><strong>Цепочка аудита</strong><span>HMAC и контроль целостности</span></div></li>
               <li><i>✓</i><div><strong>Least privilege</strong><span>Нет generic shell API</span></div></li>
@@ -105,6 +108,21 @@
         <article class="panel json-panel"><div class="panel-head"><div><span class="panel-kicker">Canonical state</span><h3>Deployment Profile</h3></div></div><pre id="profileJson">Загрузка…</pre></article>
       </section>
 
+      <section class="view" data-panel="tls">
+        <div class="section-intro"><div><p>HTTPS / trust / renewal</p><h2>Сертификаты</h2></div><span id="tlsViewTag" class="tag">Проверка</span></div>
+        <div class="content-grid two-thirds">
+          <article class="panel">
+            <div class="panel-head"><div><span class="panel-kicker">Web endpoint</span><h3 id="tlsWebHostname">—</h3></div><a class="text-button" href="/api/v1/tls/ca.crt">Скачать корневой CA ↓</a></div>
+            <div id="tlsDetails" class="detail-grid"></div>
+          </article>
+          <article class="panel">
+            <div class="panel-head"><div><span class="panel-kicker">Lifecycle</span><h3>Ротация и доверие</h3></div></div>
+            <ul id="tlsChecks" class="check-list"></ul>
+          </article>
+        </div>
+        <article class="panel json-panel"><div class="panel-head"><div><span class="panel-kicker">Evidence-safe metadata</span><h3>Состояние TLS</h3></div></div><pre id="tlsJson">Загрузка…</pre></article>
+      </section>
+
       <section class="view" data-panel="backups">
         <div class="section-intro"><div><p>Проверяемое восстановление</p><h2>Резервные копии</h2></div><span class="tag">SQLite online backup</span></div>
         <article class="panel"><div class="panel-head"><div><span class="panel-kicker">Restore points</span><h3>Локальные копии этого узла</h3></div></div><div id="backupList" class="table-wrap"></div></article>
@@ -112,7 +130,7 @@
 
       <section class="view" data-panel="jobs">
         <div class="section-intro"><div><p>Изменения и оркестрация</p><h2>Задания</h2></div><span class="tag warning">Mutation gate locked</span></div>
-        <article class="panel"><div id="jobList" class="empty-state"><span>✓</span><h3>Активных заданий нет</h3><p>Первая версия работает в наблюдаемом режиме. Изменения откроются только вместе с typed actions, preflight и recovery.</p></div></article>
+        <article class="panel"><div id="jobList" class="empty-state"><span>✓</span><h3>Активных заданий нет</h3><p>Изменения открываются только через типизированные действия, preflight и recovery. Generic shell API отсутствует.</p></div></article>
       </section>
 
       <section class="view" data-panel="audit">
@@ -132,7 +150,7 @@
       <input id="tokenInput" name="token" type="password" autocomplete="current-password" minlength="32" required autofocus>
       <button type="submit" class="primary-button">Войти</button>
       <div id="loginError" class="form-error" role="alert"></div>
-      <small>Соединение защищено TLS 1.3 · HM.DM</small>
+      <small>Соединение защищено TLS 1.2+ · HM.DM</small>
     </form>
   </div>
 </body>

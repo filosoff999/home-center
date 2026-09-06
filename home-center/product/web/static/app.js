@@ -1,6 +1,6 @@
 "use strict";
 
-const state = { overview: null, profile: null, backups: [], audit: [], currentView: "overview" };
+const state = { overview: null, profile: null, backups: [], audit: [], tls: null, currentView: "overview" };
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
 
@@ -26,12 +26,24 @@ function formatTime(value) {
   return Number.isNaN(date.valueOf()) ? value : new Intl.DateTimeFormat("ru-RU", { dateStyle: "short", timeStyle: "medium" }).format(date);
 }
 
+function shortHash(value) {
+  return typeof value === "string" && value.length > 20 ? `${value.slice(0, 20)}…` : (value || "—");
+}
+
 async function api(path, options = {}) {
   const response = await fetch(path, { credentials: "same-origin", headers: { "Accept": "application/json", ...(options.headers || {}) }, ...options });
   if (response.status === 401) { showLogin(); throw new Error("authentication_required"); }
   const data = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(data.error?.message || `HTTP ${response.status}`);
   return data;
+}
+
+async function optionalApi(path) {
+  try { return await api(path); }
+  catch (error) {
+    if (error.message === "authentication_required") throw error;
+    return null;
+  }
 }
 
 function showLogin() { $("#loginLayer").hidden = false; $("#tokenInput").focus(); }
@@ -59,7 +71,16 @@ async function logout() {
 
 function switchView(view) {
   state.currentView = view;
-  const titles = { overview: ["Управляемая инфраструктура", "Обзор"], nodes: ["Фактическое состояние", "Узлы"], cluster: ["Отказоустойчивость", "Кластер"], backups: ["Восстановление", "Резервные копии"], jobs: ["Оркестрация", "Задания"], audit: ["Evidence", "Аудит"] };
+  const titles = {
+    overview: ["Управляемая инфраструктура", "Обзор"],
+    nodes: ["Фактическое состояние", "Узлы"],
+    cluster: ["Отказоустойчивость", "Кластер"],
+    tls: ["HTTPS / trust / renewal", "Сертификаты"],
+    backups: ["Восстановление", "Резервные копии"],
+    jobs: ["Оркестрация", "Задания"],
+    audit: ["Evidence", "Аудит"],
+  };
+  if (!titles[view]) return;
   $$(".nav-item").forEach((item) => item.classList.toggle("active", item.dataset.view === view));
   $$(".view").forEach((item) => item.classList.toggle("active", item.dataset.panel === view));
   $("#viewEyebrow").textContent = titles[view][0];
@@ -84,6 +105,7 @@ function render() {
   $("#backupMetricNote").textContent = state.backups.length ? "integrity + restore gate" : "ожидается первый timer run";
   $("#jobsMetric").textContent = String((state.overview.jobs || []).filter((job) => !["succeeded", "failed", "cancelled"].includes(job.state)).length);
   $("#lastUpdate").textContent = `Обновлено ${formatTime(state.overview.observed_at)}`;
+  renderTls();
   renderOverviewNodes(nodes);
   renderNodeCards(nodes);
   renderTopology(nodes);
@@ -132,6 +154,63 @@ function renderTopology(nodes) {
   }
 }
 
+function tlsCheck(title, text, ok) {
+  const item = node("li", ok ? "" : "warning");
+  item.append(node("i", "", ok ? "✓" : "!"));
+  const body = node("div");
+  body.append(node("strong", "", title));
+  body.append(node("span", "", text));
+  item.append(body);
+  return item;
+}
+
+function renderTls() {
+  const root = $("#tlsDetails");
+  const checks = $("#tlsChecks");
+  root.replaceChildren();
+  checks.replaceChildren();
+  if (!state.tls) {
+    $("#tlsMetric").textContent = "Нет данных";
+    $("#tlsMetricNote").textContent = "TLS status API недоступен";
+    $("#tlsWebHostname").textContent = "Статус недоступен";
+    $("#tlsViewTag").textContent = "Нет данных";
+    $("#tlsViewTag").className = "tag warning";
+    $("#tlsJson").textContent = "TLS status API недоступен на этом узле.";
+    return;
+  }
+  const web = state.tls.web || {};
+  const renewal = state.tls.renewal || {};
+  const candidate = state.tls.candidate || {};
+  const trust = state.tls.trust_anchor || {};
+  const chainOk = web.chain_valid === true;
+  const hostnameOk = web.hostname_match === true;
+  const separate = web.mode === "separate-web-identity";
+  const due = renewal.due === true;
+  const healthy = chainOk && hostnameOk && !due && separate;
+  $("#tlsMetric").textContent = healthy ? "Исправен" : (due ? "Требует ротации" : "Проверка");
+  $("#tlsMetricNote").textContent = `${web.days_remaining ?? "—"} дн. · ${separate ? "separate Web ID" : "legacy fallback"}`;
+  $("#tlsWebHostname").textContent = state.tls.web_url || state.tls.web_hostname || "—";
+  $("#tlsViewTag").textContent = healthy ? "TLS HEALTHY" : (due ? "RENEWAL DUE" : "CHECK");
+  $("#tlsViewTag").className = healthy ? "tag" : "tag warning";
+  const candidateText = candidate.complete ? "готов к активации" : (candidate.partial ? "неполный — заблокирован" : "не подготовлен");
+  [
+    ["Режим", web.mode || "—"],
+    ["Издатель", web.issuer || "—"],
+    ["SAN DNS", (web.san_dns || []).join(", ") || "—"],
+    ["Действителен до", formatTime(web.not_after)],
+    ["Осталось", Number.isFinite(web.days_remaining) ? `${web.days_remaining} дн.` : "—"],
+    ["Web SHA-256", shortHash(web.fingerprint_sha256)],
+    ["Trust anchor SHA-256", shortHash(trust.fingerprint_sha256)],
+    ["Candidate", candidateText],
+  ].forEach(([label, value]) => { const d=node("div","detail"); d.append(node("span","",label)); d.append(node("strong","",value)); root.append(d); });
+  checks.append(tlsCheck("Цепочка доверия", chainOk ? "Строгая проверка CA проходит" : "Цепочка не подтверждена", chainOk));
+  checks.append(tlsCheck("Имя узла", hostnameOk ? `${web.expected_hostname} присутствует в SAN` : "Hostname не соответствует SAN", hostnameOk));
+  checks.append(tlsCheck("Отдельная Web identity", separate ? "Peer mTLS ключ не используется Web listener" : "Работает миграционный peer-cert fallback", separate));
+  checks.append(tlsCheck("Срок действия", due ? `Ротация требуется при пороге ${renewal.threshold_days ?? 30} дней` : "Ротация пока не требуется", !due));
+  checks.append(tlsCheck("Staged candidate", candidate.partial ? "Обнаружена неполная пара cert/key" : candidateText, !candidate.partial));
+  $("#tlsJson").textContent = JSON.stringify(state.tls, null, 2);
+}
+
 function table(headers, rows) {
   const t=node("table"); const thead=node("thead"), hr=node("tr"); headers.forEach((h)=>hr.append(node("th","",h))); thead.append(hr); t.append(thead); const tbody=node("tbody");
   rows.forEach((cells)=>{ const row=node("tr"); cells.forEach((cell)=>{ const td=node("td",cell.className || "",cell.text); row.append(td); }); tbody.append(row); }); t.append(tbody); return t;
@@ -156,8 +235,14 @@ function renderAudit() {
 async function refresh() {
   $("#refreshButton").disabled=true; $("#notice").classList.add("hidden");
   try {
-    const [overview, profile, backups, audit] = await Promise.all([api("/api/v1/overview"),api("/api/v1/deployment-profile"),api("/api/v1/backups"),api("/api/v1/audit?limit=100")]);
-    state.overview=overview; state.profile=profile; state.backups=backups.items || []; state.audit=audit.items || []; render();
+    const [overview, profile, backups, audit, tls] = await Promise.all([
+      api("/api/v1/overview"),
+      api("/api/v1/deployment-profile"),
+      api("/api/v1/backups"),
+      api("/api/v1/audit?limit=100"),
+      optionalApi("/api/v1/tls"),
+    ]);
+    state.overview=overview; state.profile=profile; state.backups=backups.items || []; state.audit=audit.items || []; state.tls=tls; render();
   } catch (error) {
     if (error.message !== "authentication_required") { $("#notice").textContent=`Не удалось обновить данные: ${error.message}`; $("#notice").classList.remove("hidden"); }
   } finally { $("#refreshButton").disabled=false; }

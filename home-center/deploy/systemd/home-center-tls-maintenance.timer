@@ -1,0 +1,12 @@
+[Unit]
+Description=Schedule Home Center Web TLS maintenance
+
+[Timer]
+OnBootSec=10min
+OnUnitActiveSec=12h
+RandomizedDelaySec=30min
+Persistent=true
+Unit=home-center-tls-maintenance.service
+
+[Install]
+WantedBy=timers.target

@@ -12,13 +12,13 @@
       "additionalProperties": {
         "type": "array",
         "uniqueItems": true,
-        "items": {"enum": ["helper.probe"]}
+        "items": {"enum": ["helper.probe", "tls.web.rotate"]}
       }
     },
     "enabled_actions": {
       "type": "array",
       "uniqueItems": true,
-      "items": {"enum": ["helper.probe.v1"]}
+      "items": {"enum": ["helper.probe.v1", "tls.web.activate.v1"]}
     }
   }
 }

@@ -1,7 +1,7 @@
 {
   "schema": "home-center.helper.policy.v1",
   "callers": {
-    "home-center": ["helper.probe"]
+    "home-center": ["helper.probe", "tls.web.rotate"]
   },
-  "enabled_actions": ["helper.probe.v1"]
+  "enabled_actions": ["helper.probe.v1", "tls.web.activate.v1"]
 }

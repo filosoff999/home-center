@@ -2,12 +2,13 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Home Center Control Plane API",
-    "version": "0.2.0",
-    "description": "P2 API with a fail-closed typed Action Registry. Only certified read-only actions are available."
+    "version": "0.4.0",
+    "description": "P2.3 API with a fail-closed typed Action Registry, bounded Web TLS lifecycle and metadata-only certificate health surface."
   },
   "servers": [
     {
-      "url": "https://home-center.hm.dm:8443"
+      "url": "https://dc01.hm.dm:8443",
+      "description": "Current canonical Home Center production endpoint"
     }
   ],
   "paths": {
@@ -173,6 +174,60 @@
         }
       }
     },
+    "/api/v1/tls": {
+      "get": {
+        "operationId": "getTlsStatus",
+        "description": "Returns certificate metadata and lifecycle health only. Private keys are never serialized.",
+        "responses": {
+          "200": {
+            "description": "Web/peer certificate health, trust anchor fingerprint, candidate state and renewal status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TlsStatus"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "503": {
+            "description": "TLS status cannot be validated fail-closed"
+          }
+        }
+      }
+    },
+    "/api/v1/tls/ca.crt": {
+      "get": {
+        "operationId": "getTlsTrustAnchor",
+        "security": [],
+        "description": "Downloads only the public Home Center HM.DM CA certificate used to validate managed Web endpoints.",
+        "responses": {
+          "200": {
+            "description": "Public X.509 trust anchor",
+            "headers": {
+              "Content-Disposition": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/x-pem-file": {
+                "schema": {
+                  "type": "string",
+                  "contentMediaType": "application/x-pem-file"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Trust anchor is unavailable"
+          }
+        }
+      }
+    },
     "/api/v1/actions": {
       "get": {
         "operationId": "listActions",
@@ -286,6 +341,187 @@
           "observed_at": {
             "type": "string",
             "format": "date-time"
+          }
+        }
+      },
+      "CertificateStatus": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": [
+          "mode",
+          "fingerprint_sha256",
+          "subject",
+          "issuer",
+          "not_after",
+          "days_remaining",
+          "san_dns",
+          "san_ip",
+          "expected_hostname",
+          "hostname_match",
+          "chain_valid"
+        ],
+        "properties": {
+          "mode": {
+            "type": "string"
+          },
+          "fingerprint_sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "subject": {
+            "type": "string"
+          },
+          "issuer": {
+            "type": "string"
+          },
+          "not_after": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "days_remaining": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "san_dns": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "san_ip": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "expected_hostname": {
+            "type": "string"
+          },
+          "hostname_match": {
+            "type": "boolean"
+          },
+          "chain_valid": {
+            "type": "boolean"
+          }
+        }
+      },
+      "TlsStatus": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schema",
+          "node_id",
+          "node_name",
+          "web_hostname",
+          "canonical_web_hostname",
+          "web_url",
+          "web",
+          "peer",
+          "trust_anchor",
+          "candidate",
+          "renewal"
+        ],
+        "properties": {
+          "schema": {
+            "const": "home-center.tls-status.v1"
+          },
+          "node_id": {
+            "type": "string"
+          },
+          "node_name": {
+            "type": "string"
+          },
+          "web_hostname": {
+            "type": "string"
+          },
+          "canonical_web_hostname": {
+            "type": "string"
+          },
+          "web_url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "web": {
+            "$ref": "#/components/schemas/CertificateStatus"
+          },
+          "peer": {
+            "$ref": "#/components/schemas/CertificateStatus"
+          },
+          "trust_anchor": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "fingerprint_sha256",
+              "subject",
+              "not_after"
+            ],
+            "properties": {
+              "fingerprint_sha256": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              "subject": {
+                "type": "string"
+              },
+              "not_after": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          },
+          "candidate": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "certificate_present",
+              "private_key_present",
+              "complete",
+              "partial"
+            ],
+            "properties": {
+              "certificate_present": {
+                "type": "boolean"
+              },
+              "private_key_present": {
+                "type": "boolean"
+              },
+              "complete": {
+                "type": "boolean"
+              },
+              "partial": {
+                "type": "boolean"
+              }
+            }
+          },
+          "renewal": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "threshold_days",
+              "due",
+              "last_maintenance"
+            ],
+            "properties": {
+              "threshold_days": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "due": {
+                "type": "boolean"
+              },
+              "last_maintenance": {
+                "type": [
+                  "object",
+                  "null"
+                ]
+              }
+            }
           }
         }
       }

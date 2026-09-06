@@ -26,11 +26,13 @@ Architecture Decision Record обязателен для решений, кот�
 1. [ADR-0001 — repository and execution boundary](0001-repository-and-execution-boundary.md);
 2. [ADR-0002 — P1 runtime foundation](0002-p1-runtime-foundation.md);
 3. [ADR-0003 — two-node single-writer topology](0003-two-node-single-writer.md);
-4. [ADR-0004 — typed action registry](0004-typed-action-registry.md).
+4. [ADR-0004 — typed action registry](0004-typed-action-registry.md);
+5. [ADR-0005 — bounded privileged helper](0005-bounded-privileged-helper.md);
+6. [ADR-0006 — Web TLS certificate lifecycle and trust model](0006-web-tls-certificate-lifecycle.md).
 
 ## Следующие решения
 
-- node trust/enrollment protocol;
+- node trust/enrollment protocol beyond the accepted two-node bootstrap;
 - persistence/database architecture beyond local single-writer state;
 - module isolation/privilege model;
 - cluster membership/quorum and witness/fencing model;

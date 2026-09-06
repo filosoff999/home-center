@@ -10,11 +10,12 @@ import unittest
 import urllib.error
 import urllib.request
 from pathlib import Path
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "product/control-plane/src"))
 
-from home_center.api import RuntimeRequestHandler  # noqa: E402
+from home_center.api_v2 import RuntimeRequestHandlerV2  # noqa: E402
 from home_center.config import Config, Peer  # noqa: E402
 from home_center.runtime import Runtime  # noqa: E402
 from home_center.server import HomeCenterServer  # noqa: E402
@@ -45,7 +46,7 @@ class ApiTests(unittest.TestCase):
             )
 
         self.runtime.actions._runner = action_runner
-        self.server = HomeCenterServer(("127.0.0.1", 0), RuntimeRequestHandler, self.runtime)
+        self.server = HomeCenterServer(("127.0.0.1", 0), RuntimeRequestHandlerV2, self.runtime)
         self.thread = threading.Thread(target=self.server.serve_forever, daemon=True); self.thread.start()
         self.base = f"http://127.0.0.1:{self.server.server_port}"
 
@@ -81,6 +82,31 @@ class ApiTests(unittest.TestCase):
             self.assertNotIn("t" * 32, payload)
             cookie = response.headers["Set-Cookie"]
             self.assertIn("Secure", cookie); self.assertIn("HttpOnly", cookie); self.assertIn("SameSite=Strict", cookie)
+
+    def test_tls_trust_anchor_is_public_but_private_key_is_not_exposed(self) -> None:
+        with self.request("/api/v1/tls/ca.crt") as response:
+            self.assertEqual(response.read(), b"not-used")
+            self.assertEqual(response.headers["Content-Type"], "application/x-pem-file")
+            self.assertIn("attachment", response.headers["Content-Disposition"])
+        with self.assertRaises(urllib.error.HTTPError) as caught:
+            self.request("/api/v1/tls", token=False)
+        self.assertEqual(caught.exception.code, 401)
+
+    def test_authenticated_tls_status_is_versioned_and_metadata_only(self) -> None:
+        value = {
+            "schema": "home-center.tls-status.v1",
+            "node_id": "hm-dm-dc01",
+            "web": {"fingerprint_sha256": "a" * 64, "chain_valid": True, "hostname_match": True},
+            "candidate": {"certificate_present": False, "private_key_present": False, "complete": False, "partial": False},
+            "renewal": {"due": False, "threshold_days": 30},
+        }
+        with patch("home_center.api_v2.tls_status", return_value=value):
+            with self.request("/api/v1/tls", token=True) as response:
+                result = json.load(response)
+        self.assertEqual(result, value)
+        serialized = json.dumps(result)
+        self.assertNotIn("PRIVATE KEY", serialized)
+        self.assertNotIn("tls.key", serialized)
 
     def test_typed_action_api_is_authenticated_persisted_and_idempotent(self) -> None:
         with self.assertRaises(urllib.error.HTTPError) as caught:

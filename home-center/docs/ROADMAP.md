@@ -1,9 +1,9 @@
 # Roadmap Home Center
 
-**Статус:** `DEVELOPMENT_ACTIVE / P1 PRODUCTION ACCEPTED / P2.1 PRODUCTION ACCEPTED`  
+**Статус:** `DEVELOPMENT_ACTIVE / P1 + P2.1 + P2.2 PRODUCTION ACCEPTED / P2.3 ACTIVE`  
 **Execution epic:** `#1`.
 
-Roadmap определяет последовательность продуктовых gates. Home Center уже имеет accepted production P1 и P2.1 на `dc01/dc02`; дальнейшая работа продолжает P2 и не должна регрессировать принятые safety/evidence свойства.
+Roadmap определяет последовательность продуктовых gates. Home Center уже имеет accepted production P1, P2.1 и P2.2 на `dc01/dc02`; дальнейшая работа продолжает P2 и не должна регрессировать принятые safety/evidence свойства.
 
 ## P0 — Repository / Architecture Readiness
 
@@ -48,19 +48,50 @@ Accepted:
 
 ## P2 — Managed Node / Typed Actions / Reconcile
 
-Status: **IN PROGRESS** — P2.1 is production accepted; P2.2 is next.
+Status: **IN PROGRESS** — P2.1 and P2.2 are production accepted; P2.3 Web TLS lifecycle is active.
+
+Accepted foundations:
 
 - [x] typed Action Registry — `0.2.0`, accepted in `#6`;
-- [ ] persisted Change/Job state machine — synchronous read-only foundation accepted;
-- [ ] complete RBAC/policy for mutations;
-- [ ] bounded privileged helper;
 - [x] first non-domain safe read action — `service.state.read.v1`;
+- [x] bounded privileged helper / deny-by-construction policy gate — `0.3.0`, production accepted in `#9`;
+- [x] deterministic helper replay/conflict/interruption evidence;
+- [x] P2.2 canary `dc02 → dc01` with DRS preservation and no AD/DNS/DHCP mutation.
+
+### P2.3 — HTTPS/TLS certificate lifecycle — `#10`
+
+Status: **ACTIVE / ENGINEERING**.
+
+- [x] ADR-0006 Web TLS trust/identity/rollback model;
+- [x] distinct Web TLS identity path separated from peer mTLS;
+- [x] minimum TLS policy: Web 1.2+, peer mTLS 1.3;
+- [x] strict candidate validation: chain, validity, node hostname, future VIP, IP, server-only EKU and key match;
+- [x] fingerprint-addressed Web certificate releases and atomic `web-current` switch;
+- [x] bounded helper action `tls.web.activate.v1` with no generic shell/argv/path surface;
+- [x] deterministic activation rollback and presented-certificate postflight;
+- [x] renewal/expiry/candidate status API plus trust-anchor download;
+- [x] Web UI certificate health/trust/renewal view;
+- [x] unprivileged scheduled maintenance coordinator;
+- [x] staged internal-CA issuance/rotation workflow `dc02 → dc01` with fixed node identities;
+- [x] packaging/install/rollback integration for maintenance units;
+- [ ] exact-head branch CI final PASS after all P2.3 changes;
+- [ ] immutable release artifact and PR/main gates;
+- [ ] production canary `dc02` Web rotation acceptance;
+- [ ] production `dc01` promotion only after dc02 PASS;
+- [ ] managed Windows OS/browser trust acceptance with no certificate warning;
+- [ ] synthetic expiry/renewal and failed-rotation rollback acceptance;
+- [ ] peer mTLS post-rotation PASS both directions;
+- [ ] final Samba domain SID/DRS no-regression evidence.
+
+Remaining P2 after P2.3:
+
+- [ ] persisted asynchronous Change/Job state machine beyond current synchronous foundations;
+- [ ] complete RBAC/policy for later infrastructure mutations;
 - [ ] Desired State / Actual State;
 - [ ] drift/reconcile;
 - [ ] checkpoint/retry/recovery;
 - [ ] Web action/preflight/progress/recovery UX;
-- [ ] P2 synthetic/security/failure acceptance;
-- [x] canary production acceptance of the read-only action.
+- [ ] broader P2 synthetic/security/failure acceptance.
 
 **Gate P2:** one managed node is reproducibly changed through Desired State and typed actions; interruption cannot create silent success or duplicate side effects.
 

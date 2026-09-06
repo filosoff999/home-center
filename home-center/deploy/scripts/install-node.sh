@@ -35,25 +35,28 @@ if [ -L /opt/home-center/current ]; then
   [ -d "$PREVIOUS" ] || { echo CURRENT_RELEASE_MISSING >&2; exit 66; }
 fi
 
-restore_helper_files() {
-  if [ -f "$BACKUP/helper-policy.json.existed" ]; then
-    install -m 0644 -o root -g root "$BACKUP/helper-policy.json" /etc/home-center/helper-policy.json
+restore_optional_file() {
+  local name=$1 target=$2
+  if [ -f "$BACKUP/$name.existed" ]; then
+    install -m 0644 -o root -g root "$BACKUP/$name" "$target"
   else
-    rm -f /etc/home-center/helper-policy.json
+    rm -f "$target"
   fi
-  if [ -f "$BACKUP/home-center-helper.service.existed" ]; then
-    install -m 0644 -o root -g root "$BACKUP/home-center-helper.service" /etc/systemd/system/home-center-helper.service
-  else
-    rm -f /etc/systemd/system/home-center-helper.service
-  fi
+}
+
+restore_optional_files() {
+  restore_optional_file helper-policy.json /etc/home-center/helper-policy.json
+  restore_optional_file home-center-helper.service /etc/systemd/system/home-center-helper.service
+  restore_optional_file home-center-tls-maintenance.service /etc/systemd/system/home-center-tls-maintenance.service
+  restore_optional_file home-center-tls-maintenance.timer /etc/systemd/system/home-center-tls-maintenance.timer
 }
 
 rollback() {
   rc=$?
   set +e
   trap - ERR EXIT
-  systemctl stop home-center-helper.service home-center.service 2>/dev/null || true
-  [ "$BACKUP_READY" = 0 ] || restore_helper_files
+  systemctl stop home-center-tls-maintenance.timer home-center-tls-maintenance.service home-center-helper.service home-center.service 2>/dev/null || true
+  [ "$BACKUP_READY" = 0 ] || restore_optional_files
   if [ -n "$PREVIOUS" ] && [ -d "$PREVIOUS" ]; then
     ln -sfn "$PREVIOUS" /opt/home-center/.current.rollback
     mv -Tf /opt/home-center/.current.rollback /opt/home-center/current
@@ -64,8 +67,13 @@ rollback() {
     else
       systemctl disable --now home-center-helper.service >/dev/null 2>&1 || true
     fi
+    if [ -f /etc/systemd/system/home-center-tls-maintenance.timer ] && [ -f "$PREVIOUS/home_center/tls_maintenance.py" ]; then
+      systemctl enable --now home-center-tls-maintenance.timer >/dev/null 2>&1 || true
+    else
+      systemctl disable --now home-center-tls-maintenance.timer >/dev/null 2>&1 || true
+    fi
   else
-    systemctl disable --now home-center-helper.service home-center.service home-center-backup.timer >/dev/null 2>&1 || true
+    systemctl disable --now home-center-tls-maintenance.timer home-center-helper.service home-center.service home-center-backup.timer >/dev/null 2>&1 || true
     [ ! -L /opt/home-center/current ] || unlink /opt/home-center/current
     systemctl daemon-reload
   fi
@@ -88,10 +96,12 @@ if [ -e /etc/home-center/helper-policy.json ]; then
   cp -a /etc/home-center/helper-policy.json "$BACKUP/helper-policy.json"
   : >"$BACKUP/helper-policy.json.existed"
 fi
-if [ -e /etc/systemd/system/home-center-helper.service ]; then
-  cp -a /etc/systemd/system/home-center-helper.service "$BACKUP/home-center-helper.service"
-  : >"$BACKUP/home-center-helper.service.existed"
-fi
+for unit in home-center-helper.service home-center-tls-maintenance.service home-center-tls-maintenance.timer; do
+  if [ -e "/etc/systemd/system/$unit" ]; then
+    cp -a "/etc/systemd/system/$unit" "$BACKUP/$unit"
+    : >"$BACKUP/$unit.existed"
+  fi
+done
 printf '%s\n' "$PREVIOUS" >"$BACKUP/previous-release"
 BACKUP_READY=1
 
@@ -126,17 +136,21 @@ chmod 0640 /etc/home-center/config.json /etc/home-center/secrets/* /etc/home-cen
 chmod 0644 /etc/home-center/pki/node.crt /etc/home-center/pki/ca.crt
 chmod 0644 /etc/home-center/helper-policy.json
 chown root:root /etc/home-center/helper-policy.json
+install -d -m 0750 -o root -g home-center /etc/home-center/pki/web /etc/home-center/pki/web/candidate
 
 install -m 0644 -o root -g root "$RELEASE/deploy/home-center.service" /etc/systemd/system/home-center.service
 install -m 0644 -o root -g root "$RELEASE/deploy/home-center-backup.service" /etc/systemd/system/home-center-backup.service
 install -m 0644 -o root -g root "$RELEASE/deploy/home-center-backup.timer" /etc/systemd/system/home-center-backup.timer
 install -m 0644 -o root -g root "$RELEASE/deploy/home-center-helper.service" /etc/systemd/system/home-center-helper.service
+install -m 0644 -o root -g root "$RELEASE/deploy/home-center-tls-maintenance.service" /etc/systemd/system/home-center-tls-maintenance.service
+install -m 0644 -o root -g root "$RELEASE/deploy/home-center-tls-maintenance.timer" /etc/systemd/system/home-center-tls-maintenance.timer
 ln -sfn "$RELEASE" /opt/home-center/.current.new
 mv -Tf /opt/home-center/.current.new /opt/home-center/current
 systemctl daemon-reload
-systemctl enable home-center-helper.service home-center.service home-center-backup.timer >/dev/null
+systemctl enable home-center-helper.service home-center.service home-center-backup.timer home-center-tls-maintenance.timer >/dev/null
 systemctl restart home-center-helper.service
 systemctl restart home-center.service
+systemctl start home-center-tls-maintenance.timer
 
 for _ in $(seq 1 20); do
   code=$(curl --silent --show-error --cacert /etc/home-center/pki/ca.crt --output /run/home-center-health.json --write-out '%{http_code}' --max-time 3 "https://$EXPECTED_IP:8443/readyz" 2>/dev/null || true)
@@ -185,9 +199,11 @@ PY
 systemctl start home-center-backup.service
 systemctl is-active --quiet home-center-helper.service
 systemctl is-active --quiet home-center.service
+systemctl is-active --quiet home-center-tls-maintenance.timer
 systemctl is-enabled --quiet home-center-helper.service
 systemctl is-enabled --quiet home-center.service
 systemctl is-enabled --quiet home-center-backup.timer
+systemctl is-enabled --quiet home-center-tls-maintenance.timer
 trap - ERR
 echo "HOME_CENTER_NODE_DEPLOY=PASS"
 echo "NODE=$NODE"

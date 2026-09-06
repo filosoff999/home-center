@@ -7,8 +7,10 @@ import signal
 import ssl
 import threading
 from http.server import ThreadingHTTPServer
+from pathlib import Path
 
-from .api import PeerRequestHandler, RuntimeRequestHandler
+from .api import PeerRequestHandler
+from .api_v2 import RuntimeRequestHandlerV2
 from .config import load_config
 from .runtime import Runtime
 
@@ -17,6 +19,8 @@ LOG = logging.getLogger("home_center")
 
 WEB_MINIMUM_TLS_VERSION = ssl.TLSVersion.TLSv1_2
 PEER_MINIMUM_TLS_VERSION = ssl.TLSVersion.TLSv1_3
+WEB_CERTIFICATE = Path("/etc/home-center/pki/web/current/tls.crt")
+WEB_PRIVATE_KEY = Path("/etc/home-center/pki/web/current/tls.key")
 
 
 class HomeCenterServer(ThreadingHTTPServer):
@@ -28,20 +32,23 @@ class HomeCenterServer(ThreadingHTTPServer):
         super().__init__(address, handler)
 
 
-def _server_context(runtime: Runtime) -> ssl.SSLContext:
+def _server_context(certificate: Path, private_key: Path) -> ssl.SSLContext:
     context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-    context.load_cert_chain(str(runtime.config.tls_certificate), str(runtime.config.tls_private_key))
+    context.load_cert_chain(str(certificate), str(private_key))
     return context
 
 
 def _web_context(runtime: Runtime) -> ssl.SSLContext:
-    context = _server_context(runtime)
+    separate = WEB_CERTIFICATE.is_file() and WEB_PRIVATE_KEY.is_file()
+    certificate = WEB_CERTIFICATE if separate else runtime.config.tls_certificate
+    private_key = WEB_PRIVATE_KEY if separate else runtime.config.tls_private_key
+    context = _server_context(certificate, private_key)
     context.minimum_version = WEB_MINIMUM_TLS_VERSION
     return context
 
 
 def _peer_context(runtime: Runtime) -> ssl.SSLContext:
-    context = _server_context(runtime)
+    context = _server_context(runtime.config.tls_certificate, runtime.config.tls_private_key)
     context.minimum_version = PEER_MINIMUM_TLS_VERSION
     context.verify_mode = ssl.CERT_REQUIRED
     context.load_verify_locations(cafile=str(runtime.config.cluster_ca))
@@ -53,7 +60,7 @@ def main() -> None:
     config = load_config()
     runtime = Runtime(config)
     runtime.start()
-    web = HomeCenterServer(config.web_bind, RuntimeRequestHandler, runtime)
+    web = HomeCenterServer(config.web_bind, RuntimeRequestHandlerV2, runtime)
     peer = HomeCenterServer(config.peer_bind, PeerRequestHandler, runtime)
     web.socket = _web_context(runtime).wrap_socket(web.socket, server_side=True)
     peer.socket = _peer_context(runtime).wrap_socket(peer.socket, server_side=True)
@@ -70,7 +77,7 @@ def main() -> None:
     peer_thread = threading.Thread(target=peer.serve_forever, name="home-center-peer", daemon=True)
     web_thread.start()
     peer_thread.start()
-    LOG.info("Home Center started node=%s role=%s", config.node_name, config.role)
+    LOG.info("Home Center started node=%s role=%s web_tls=%s", config.node_name, config.role, "separate" if WEB_CERTIFICATE.is_file() else "legacy-fallback")
     stop.wait()
     web.shutdown()
     peer.shutdown()

@@ -8,7 +8,7 @@
   "properties": {
     "schema": {"const": "home-center.helper.request.v1"},
     "request_id": {"type": "string", "minLength": 8, "maxLength": 96, "pattern": "^[A-Za-z0-9._-]+$"},
-    "action": {"const": "helper.probe.v1"},
+    "action": {"enum": ["helper.probe.v1", "tls.web.activate.v1"]},
     "params": {"type": "object", "additionalProperties": false},
     "nonce": {"type": "string", "pattern": "^[0-9a-f]{32}$"}
   }
