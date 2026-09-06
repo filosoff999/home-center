@@ -2,7 +2,7 @@
 
 **Дата:** 06.09.2026  
 **Repository:** `ControlCenterSoft/home-center`  
-**Статус:** `PRODUCTION 0.3.0 / P2.2 ACCEPTED / P2.3 0.4.2 RELEASE_CANDIDATE`
+**Статус:** `RUNTIME 0.4.2 QUARANTINED / P2.2 ACCEPTED / P2.3 0.4.3 RELEASE_CANDIDATE`
 
 ## Принятые границы
 
@@ -16,9 +16,9 @@
 
 ## Production
 
-- version: `0.3.0`;
-- revision: `6b0c0db144bfd2a7b7a7db1a868d649f20825721`;
-- observed nodes before P2.3 rollout: `dc01=0.3.0`, `dc02=0.3.0`;
+- accepted baseline version: `0.3.0`;
+- accepted baseline revision: `6b0c0db144bfd2a7b7a7db1a868d649f20825721`;
+- observed runtime after software rollout: `dc01=0.4.2`, `dc02=0.4.2`, exact revision `9f376e3d39eb29b2c8e402d085cba8b9fee4258d`;
 - exact release path и artifact SHA подтверждаются production evidence в `#1624`;
 - immutable typed Action Registry: accepted;
 - единственное executable action: `service.state.read.v1`, local/read-only/allowlisted;
@@ -36,13 +36,14 @@
 
 ## Активный P2.3 release candidate
 
-- target version: `0.4.2`;
+- target version: `0.4.3`;
 - `0.4.0`: **QUARANTINED / DO_NOT_DEPLOY** — Web leaf и общий CA оставались Ed25519 и воспроизводили Android/Chrome TLS alert 40;
 - `0.4.1`: **QUARANTINED / DO_NOT_DEPLOY** — empty regular flock-файл ошибочно отклонялся из-за строкового сравнения GNU `stat %F`;
+- `0.4.2`: **QUARANTINED / DO_NOT_DEPLOY** — software rollout прошёл, но Web activation preflight отклонил безопасный marker `root:home-center:0600`, ошибочно требуя gid `0`; Web identity не переключалась;
 - Web PKI: отдельный Web CA и leaf, ECDSA P-256, ECDSA-with-SHA-256;
 - peer PKI: существующие Ed25519 `ca.crt`, `node.crt`, `node.key`, TLS 1.3 mTLS — без изменения;
 - rollout: только immutable artifact, `dc02 → dc01`, с readiness, restricted-sigalgs, peer-mTLS, DRS и rollback gates;
-- статус acceptance: ожидает exact-head PR/main CI и production rollout; до этого production остаётся на `0.3.0`.
+- статус acceptance: `0.4.3` ожидает exact-head PR/main CI, software rollout и Web rotation; принятым baseline остаётся `0.3.0`, а текущий `0.4.2` runtime quarantined.
 - незакрытые gates: immutable digest, `dc02` canary/soak, `dc01` promotion, Android/Chrome + managed Windows trust, peer-mTLS обе стороны, unchanged peer fingerprints, SID/DRS/no-mutation и synthetic rollback.
 
 Проверяемые доказательства:

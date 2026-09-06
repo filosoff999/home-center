@@ -1,6 +1,6 @@
 # Threat model Home Center P2.3
 
-Статус: P2.2 accepted baseline; P2.3 `0.4.2` release candidate, 06.09.2026. Requirements: HC-SEC-001..004, HC-HA-004, HC-TEST-002..003.
+Статус: P2.2 accepted baseline; deployed `0.4.2` quarantined; P2.3 `0.4.3` release candidate, 06.09.2026. Requirements: HC-SEC-001..004, HC-HA-004, HC-TEST-002..003.
 
 ## Активы
 
@@ -31,7 +31,7 @@
 | Audit tampering | keyed hash chain; startup/readiness/backup verification | row mutation causes failure |
 | Artifact tampering | exact SHA-256 + internal manifest before install | checksum failure blocks install |
 | Archive traversal/special file | path/type gates before release activation | installer gate |
-| Crash/race during Web credential publication | root owner marker, operation ID, exact file digests, same-directory atomic rename, directory fsync and CAS cleanup | unowned/mismatched/partial state stays `recovery_required` |
+| Crash/race during Web credential publication | root-owned marker `0600` with the helper's fixed `home-center` primary group, operation ID, exact file digests, same-directory atomic rename, directory fsync and CAS cleanup | unowned/mismatched/partial state stays `recovery_required` |
 | False recovery after interrupted mutation | fixed reconcile validates release name/fingerprint, chain, SAN/profile, key match and live listener under node lock | helper latch cannot clear on malformed evidence or listener divergence |
 | False cluster rollback success | fsync-stable cluster journal stores exact source and peer identity snapshots; both readiness/overview roles and bidirectional mTLS are re-proved | unknown/mismatched recovery remains non-terminal |
 | Privilege escalation | no generic shell API, empty capabilities, systemd hardening | static security gate |
@@ -43,6 +43,8 @@
 - bootstrap token must be rotated into full Identity/RBAC before privileged actions;
 - public Web CA trust must be distributed through a separate reviewed HM.DM policy; P2.3 never mutates AD/GPO implicitly;
 - `0.4.0` digest remains quarantined because it uses a browser-incompatible Ed25519 Web chain;
+- `0.4.1` remains quarantined because it rejects an empty regular flock file;
+- deployed `0.4.2` remains quarantined because its release-marker gid validator is incompatible with the capability-free helper unit;
 - signed durable stable releases and persisted two-node auto-update reconcile remain P2.4/P2.5 gates;
 - replicated control-state and automatic failover require witness/fencing design;
 - public module supply chain and signing are outside P1.

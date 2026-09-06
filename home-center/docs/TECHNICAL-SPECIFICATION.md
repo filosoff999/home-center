@@ -2,7 +2,7 @@
 
 **Версия документа:** 2.2
 **Дата:** 2026-09-06  
-**Статус продукта:** `PRODUCTION 0.3.0 / P2.2 ACCEPTED / P2.3 0.4.2 RELEASE CANDIDATE`
+**Статус продукта:** `RUNTIME 0.4.2 QUARANTINED / P2.2 ACCEPTED / P2.3 0.4.3 RELEASE CANDIDATE`
 **Execution epic:** `#1` — независимая разработка и двухузловой HM.DM deployment.  
 **Область действия:** весь отдельный repository `ControlCenterSoft/home-center`.
 
@@ -45,7 +45,7 @@ Home Center 0.3.0 (`6b0c0db144bfd2a7b7a7db1a868d649f20825721`) принят в p
 
 Этот cumulative baseline считается **принятым P1–P2.2**. P2.3–P7 должны быть совместимы с ним либо содержать отдельный migration ADR и проверяемый upgrade path.
 
-Версия `0.4.2` является только P2.3 release candidate до exact-head CI и production acceptance. Она вводит отдельную browser-compatible Web PKI ECDSA P-256/SHA-256 для `:8443`, не меняя peer PKI и `:9443`. Версия `0.4.0` quarantined из-за TLS alert 40 на наблюдавшемся Android/Chrome ClientHello; `0.4.1` quarantined из-за несовместимого с пустыми regular flock-файлами сравнения GNU `stat %F`.
+Версия `0.4.3` является P2.3 release candidate до exact-head CI и production acceptance. Она вводит отдельную browser-compatible Web PKI ECDSA P-256/SHA-256 для `:8443`, не меняя peer PKI и `:9443`. Версия `0.4.0` quarantined из-за TLS alert 40 на наблюдавшемся Android/Chrome ClientHello; `0.4.1` — из-за несовместимого с пустыми regular flock-файлами сравнения GNU `stat %F`; развёрнутая `0.4.2` — из-за ошибочного требования gid `0` к root-only release marker, создаваемому capability-free helper с primary group `home-center`.
 
 ## 3. Цель продукта
 
@@ -131,7 +131,7 @@ Production bootstrap/operator transport может существовать от
 - contracts: OpenAPI 3.1 + JSON Schemas;
 - release: immutable archive + SHA-256 manifest.
 
-P2.3 `0.4.2` расширяет этот baseline отдельной Web PKI, status/renewal API, fixed TLS activation/reconciliation helper actions и staged rotation. Эти свойства остаются release-candidate до production acceptance и не меняют accepted peer mTLS identity.
+P2.3 `0.4.3` расширяет этот baseline отдельной Web PKI, status/renewal API, fixed TLS activation/reconciliation helper actions и staged rotation. Эти свойства остаются release-candidate до production acceptance и не меняют accepted peer mTLS identity.
 
 ### 6.2. Предыдущая Rust/PostgreSQL рекомендация
 
@@ -640,12 +640,12 @@ Canary order for HM.DM remains `dc02 → dc01` unless deployment ADR changes it.
 
 ### 27.1. P2.3 Web TLS upgrade contract
 
-- source production: `0.3.0`; target candidate: `0.4.2`; `0.4.0` and `0.4.1` digests are quarantined;
+- admitted exact source: accepted `0.3.0` revision `6b0c0db144bfd2a7b7a7db1a868d649f20825721` or deployed `0.4.2` revision `9f376e3d39eb29b2c8e402d085cba8b9fee4258d`; target candidate: `0.4.3`; `0.4.0`, `0.4.1` and `0.4.2` are quarantined for new rollout;
 - `:8443` uses TLS 1.2+ and, after rotation, an exact ECDSA P-256 leaf signed ECDSA-with-SHA-256 by the independent Web CA;
 - `:9443` remains TLS 1.3 with `CERT_REQUIRED`, the existing Ed25519 peer CA and existing node identities;
 - `/etc/home-center/pki/web-ca/ca.key` exists only on `dc01`; public `ca.crt` exists on both nodes; the Web CA is provisioned before installing a config that requires `web_ca`;
 - Web candidates/releases/current live under `/etc/home-center/pki/web`; version rollback never deletes this persistent PKI state;
-- candidate and release staging are bound to a durable root-owned operation marker and exact file digests; same-directory publication and current/release/software symlink switches are directory-fsynced;
+- candidate and release staging are bound to a durable root-owned operation marker and exact file digests; the release marker is `root:home-center:0600`, matching the capability-free helper primary group while granting no group access; same-directory publication and current/release/software symlink switches are directory-fsynced;
 - activation classifies and verifies the previous certificate chain before the atomic switch, including legacy `0.3.0` and possible quarantined `0.4.0` rollback material;
 - interrupted activation is reconciled only from marker-owned state; durable-current/listener divergence is restarted and the exact live fingerprint is proved before a helper recovery latch can clear;
 - cluster deployment journals persist exact source releases and pre-mutation peer CA/node certificate/public-key fingerprints for both nodes; a rollback becomes terminal only after source, readiness, healthy overview/roles and bidirectional peer-mTLS proof;

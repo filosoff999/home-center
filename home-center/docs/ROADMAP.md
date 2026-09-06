@@ -48,7 +48,7 @@ Accepted:
 
 ## P2 — Managed Node / Typed Actions / Reconcile
 
-Status: **IN PROGRESS** — P2.1 and P2.2 are production accepted on `0.3.0`; P2.3 is an unaccepted `0.4.2` release candidate. The `0.4.0` and `0.4.1` artifacts are quarantined and must never be deployed.
+Status: **IN PROGRESS** — P2.1 and P2.2 are production accepted on `0.3.0`; P2.3 targets unaccepted `0.4.3`. Runtime `0.4.2` is quarantined after a safe Web activation preflight failure; `0.4.0`, `0.4.1` and `0.4.2` must not be used for new rollout.
 
 Accepted foundations:
 
@@ -93,7 +93,7 @@ Status: **ACTIVE / ENGINEERING**.
 
 ### P2.4 — Signed stable release channel
 
-Status: **PLANNED / outside 0.4.2 scope**.
+Status: **PLANNED / outside 0.4.3 scope**.
 
 - [ ] immutable promoted release record independent of expiring CI artifacts;
 - [ ] signature/provenance and digest verification policy;
@@ -103,7 +103,7 @@ Status: **PLANNED / outside 0.4.2 scope**.
 
 ### P2.5 — Persisted two-node update reconcile
 
-Status: **PLANNED / outside 0.4.2 scope**.
+Status: **PLANNED / outside 0.4.3 scope**.
 
 - [ ] periodically compare promoted stable release with both nodes;
 - [ ] persisted checkpointed state machine: discover → verify → dc02 → soak → dc01 → accept;

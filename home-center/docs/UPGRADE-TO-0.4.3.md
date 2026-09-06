@@ -1,8 +1,10 @@
-# Home Center: upgrade 0.3.0 → 0.4.2
+# Home Center: upgrade exact 0.3.0/0.4.2 → 0.4.3
 
 > **RELEASE CANDIDATE — этот документ не является production authorization.**
 
-Production остаётся на `0.3.0` (`6b0c0db144bfd2a7b7a7db1a868d649f20825721`) до полного прохождения описанных ниже gates. Версия `0.4.0` имеет статус `QUARANTINED / DO_NOT_DEPLOY`: она сохраняет Ed25519 Web chain и воспроизводит TLS alert 40 для наблюдавшегося Android/Chrome ClientHello. Версия `0.4.1` также `QUARANTINED / DO_NOT_DEPLOY`: её shell admission ошибочно сравнивает GNU `stat %F` пустого regular flock-файла со строкой `regular file`, хотя GNU возвращает `regular empty file`.
+Принятым baseline остаётся `0.3.0` (`6b0c0db144bfd2a7b7a7db1a868d649f20825721`). На `dc01` и `dc02` уже развёрнуто software `0.4.2` (`9f376e3d39eb29b2c8e402d085cba8b9fee4258d`), но оно имеет статус `QUARANTINED / DO_NOT_DEPLOY`: первая Web rotation безопасно остановилась до переключения identity, потому что validator ожидал gid `0` у root-only release marker, который capability-free helper создаёт с primary group `home-center`. Bootstrap `0.4.3` принимает только один и тот же exact source identity на обеих нодах: либо accepted `0.3.0`, либо этот deployed `0.4.2`.
+
+Версия `0.4.0` quarantined из-за Ed25519 Web chain и TLS alert 40 для наблюдавшегося Android/Chrome ClientHello. Версия `0.4.1` quarantined из-за ошибочного строкового сравнения GNU `stat %F` для пустого regular flock-файла. Ни один digest `0.4.0`–`0.4.2` нельзя использовать для нового rollout.
 
 ## Инварианты
 
@@ -10,8 +12,8 @@ Production остаётся на `0.3.0` (`6b0c0db144bfd2a7b7a7db1a868d649f20825
 |---|---|---|
 | Web `:8443` | legacy Ed25519 peer-certificate fallback, TLS 1.2+ | отдельный ECDSA P-256/SHA-256 Web leaf, TLS 1.2+ |
 | Peer `:9443` | Ed25519 cluster CA/node identity, TLS 1.3 mTLS | без изменения |
-| Web CA private key | отсутствует | только `/etc/home-center/pki/web-ca/ca.key` на `dc01`, root `0600` |
-| Web CA public cert | отсутствует | одинаковый `/etc/home-center/pki/web-ca/ca.crt` на обеих нодах |
+| Web CA private key | `0.3.0`: отсутствует; deployed `0.4.2`: только `dc01`, root `0600` | только `/etc/home-center/pki/web-ca/ca.key` на `dc01`, root `0600` |
+| Web CA public cert | `0.3.0`: отсутствует; deployed `0.4.2`: одинаковый cert на обеих нодах | одинаковый `/etc/home-center/pki/web-ca/ca.crt` на обеих нодах |
 | Rollout | — | `dc02 → dc01`; automatic failover отключён |
 
 Home Center полностью независим от Control Center. Ни installer, ни rotation не должны менять `dc01-control-agent.service`, Samba AD, DNS, DHCP, Domain SID или replication topology.
@@ -23,7 +25,7 @@ Home Center полностью независим от Control Center. Ни inst
 3. Слить только reviewed exact-head commit и дождаться PASS `main` CI для merge SHA.
 4. Скачать artifact именно этого run; проверить внешний SHA-256 и внутренний `MANIFEST.sha256`.
 5. Зафиксировать source SHA, workflow run/artifact ID, archive SHA и размер. Любое несовпадение блокирует mutation.
-6. Никогда не повторно использовать artifact/digest `0.4.0`.
+6. Никогда не использовать для нового rollout artifact/digest `0.4.0`, `0.4.1` или `0.4.2`.
 
 ## 2. Production preflight
 
@@ -54,10 +56,10 @@ Routine rotation не создаёт новый trust root молча. Отсу�
 
 ## 4. Immutable software rollout
 
-1. Развернуть exact `0.4.2` artifact на `dc02`.
+1. Развернуть exact `0.4.3` artifact на `dc02`.
 2. Проверить exact version/revision/artifact SHA, readiness, helper probe, timers, backup и legacy Web fallback.
 3. Проверить peer mTLS `dc01 → dc02`, DRS и неизменность peer public identities.
-4. Выдержать 30-секундный canary soak и повторить readiness, service/timer и peer-mTLS gates. Terminal regression вызывает rollback `dc02` к `0.3.0` и quarantine нового digest.
+4. Выдержать 30-секундный canary soak и повторить readiness, service/timer и peer-mTLS gates. Terminal regression вызывает rollback `dc02` к exact зафиксированному source (`0.3.0` или `0.4.2`) и quarantine нового digest.
 5. Только после PASS повторить install на `dc01`.
 6. Проверить parity version/revision/artifact SHA и cluster overview на обеих нодах.
 
@@ -83,11 +85,11 @@ Installer восстанавливает release symlink, config и все core/
 5. повторить restricted TLS 1.2/1.3, readiness и peer-mTLS проверки;
 6. подтвердить byte-stable peer CA/certificate/public-key fingerprints на обеих нодах.
 
-Activation заранее классифицирует предыдущую цепочку. Candidate получает durable owner marker с operation ID и SHA-256 обоих файлов до публикации credential; cleanup выполняется только после exact CAS-проверки marker/digests. Если postflight новой identity не проходит, helper возвращает предыдущий symlink, перезапускает только `home-center.service` и проверяет прежний presented fingerprint. Timeout mutating action имеет статус `unknown/recovery_required`, а не ложный `failed`. Fixed reconcile восстанавливает только marker-owned partial state и доказывает соответствие durable `current` фактически обслуживаемому fingerprint до снятия recovery latch.
+Activation заранее классифицирует предыдущую цепочку. Candidate получает durable owner marker с operation ID и SHA-256 обоих файлов до публикации credential; release marker создаётся helper как `root:home-center:0600`, поэтому остаётся root-only без требования отсутствующей `CAP_CHOWN`. Cleanup выполняется только после exact CAS-проверки marker/digests. Если postflight новой identity не проходит, helper возвращает предыдущий symlink, перезапускает только `home-center.service` и проверяет прежний presented fingerprint. Timeout mutating action имеет статус `unknown/recovery_required`, а не ложный `failed`. Fixed reconcile восстанавливает только marker-owned partial state и доказывает соответствие durable `current` фактически обслуживаемому fingerprint до снятия recovery latch.
 
 ## 6. Acceptance matrix
 
-- `dc01` и `dc02`: exact `0.4.2` source revision и artifact SHA;
+- `dc01` и `dc02`: exact `0.4.3` source revision и artifact SHA;
 - Web cert/CA: `profile=ecdsa-p256-sha256`, `profile_valid=true`, `san_policy_valid=true`, valid chain/hostname/horizon;
 - Android/Chrome: handshake завершается, TLS alert 40 / `ERR_SSL_VERSION_OR_CIPHER_MISMATCH` отсутствует;
 - managed Windows/browser: Web CA явно установлен административным процессом, hostname/chain trusted без warning;
@@ -99,7 +101,7 @@ Activation заранее классифицирует предыдущую це
 - failed-rotation synthetic test доказывает rollback; backup/restore verification остаётся PASS;
 - automatic failover/VIP activation остаются отключены.
 
-Только после всех доказательств отдельный acceptance commit переводит `0.4.2` из release candidate в production accepted и обновляет release ledger/GDrive CURRENT.
+Только после всех доказательств отдельный acceptance commit переводит `0.4.3` из release candidate в production accepted и обновляет release ledger/GDrive CURRENT.
 
 ## 7. Failure, retry и quarantine
 

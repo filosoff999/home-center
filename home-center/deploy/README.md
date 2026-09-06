@@ -1,6 +1,6 @@
 # Deployment Profiles
 
-`deploy/` содержит декларативные profiles и versioned fail-closed scripts поставки Home Center. Production baseline принят на `0.3.0`; изменения Web PKI в scripts относятся к `0.4.2` release candidate до отдельной acceptance. Канонический двухузловой rollout выполняется immutable artifact в порядке `dc02 → dc01`; каждый node install создаёт rollback point и проверяет readiness, helper, timers и backup.
+`deploy/` содержит декларативные profiles и versioned fail-closed scripts поставки Home Center. Production baseline принят на `0.3.0`; текущий software runtime `0.4.2` quarantined после безопасного отказа Web activation, а исправления Web PKI относятся к `0.4.3` release candidate до отдельной acceptance. Канонический двухузловой rollout выполняется immutable artifact в порядке `dc02 → dc01`; каждый node install создаёт rollback point и проверяет readiness, helper, timers и backup.
 
 ## Исполняемые процедуры
 

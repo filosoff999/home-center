@@ -17,17 +17,17 @@ class P23ContractSurfaceTests(unittest.TestCase):
         runtime = (ROOT / "product/control-plane/src/home_center/__init__.py").read_text(encoding="utf-8")
         project = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
         builder = (ROOT / "deploy/scripts/build-artifact.sh").read_text(encoding="utf-8")
-        self.assertIn('__version__ = "0.4.2"', runtime)
-        self.assertIn('version = "0.4.2"', project)
+        self.assertIn('__version__ = "0.4.3"', runtime)
+        self.assertIn('version = "0.4.3"', project)
         self.assertIn("HOME_CENTER_VERSION:-$SOURCE_VERSION", builder)
         self.assertIn('[ "$VERSION" = "$SOURCE_VERSION" ]', builder)
-        self.assertIn('[ "$VERSION" = 0.4.2 ]', builder)
+        self.assertIn('[ "$VERSION" = 0.4.3 ]', builder)
         self.assertIn('[[ "$REVISION" =~ ^[0-9a-f]{40}$ ]]', builder)
 
     def test_deploy_scripts_reject_unadmitted_release_versions(self) -> None:
         for name in ("install-node.sh", "bootstrap-hm-dm.sh"):
             script = (ROOT / "deploy/scripts" / name).read_text(encoding="utf-8")
-            self.assertIn('[ "$VERSION" = 0.4.2 ]' if name == "install-node.sh" else '[ "$TARGET_VERSION" = 0.4.2 ]', script)
+            self.assertIn('[ "$VERSION" = 0.4.3 ]' if name == "install-node.sh" else '[ "$TARGET_VERSION" = 0.4.3 ]', script)
             self.assertIn("RELEASE_VERSION_NOT_ADMITTED", script)
         with tempfile.TemporaryDirectory() as tmp:
             result = subprocess.run(
@@ -43,6 +43,110 @@ class P23ContractSurfaceTests(unittest.TestCase):
         installer = (ROOT / "deploy/scripts/install-node.sh").read_text(encoding="utf-8")
         self.assertIn('[[ "$REVISION" =~ ^[0-9a-f]{40}$ ]]', installer)
         self.assertNotIn("^working-tree$", installer)
+
+    def test_bootstrap_admits_only_exact_accepted_or_deployed_source_identity(self) -> None:
+        bootstrap = (ROOT / "deploy/scripts/bootstrap-hm-dm.sh").read_text(encoding="utf-8")
+        for required in (
+            "ADMITTED_SOURCE_V030_VERSION=0.3.0",
+            "ADMITTED_SOURCE_V030_REVISION=6b0c0db144bfd2a7b7a7db1a868d649f20825721",
+            "ADMITTED_SOURCE_V042_VERSION=0.4.2",
+            "ADMITTED_SOURCE_V042_REVISION=9f376e3d39eb29b2c8e402d085cba8b9fee4258d",
+            'source_identity_admitted "$LOCAL_SOURCE_VERSION" "$LOCAL_SOURCE_REVISION"',
+            '[ "$LOCAL_SOURCE_VERSION" = "$REMOTE_SOURCE_VERSION" ]',
+            '[ "$LOCAL_SOURCE_REVISION" = "$REMOTE_SOURCE_REVISION" ]',
+            '"$local_ready" "$remote_ready" "$LOCAL_SOURCE_VERSION"',
+        ):
+            self.assertIn(required, bootstrap)
+        self.assertNotIn("ADMITTED_SOURCE_VERSION=", bootstrap)
+        self.assertNotIn("ADMITTED_SOURCE_REVISION=", bootstrap)
+
+    def test_prior_cluster_recovery_ignores_valid_terminal_old_target_only(self) -> None:
+        bootstrap = (ROOT / "deploy/scripts/bootstrap-hm-dm.sh").read_text(encoding="utf-8")
+        recovery_block = bootstrap.split("PRIOR_CLUSTER_RECOVERY_JSON=", 1)[1]
+        validator = recovery_block.split("<<'PY'\n", 1)[1].split("\nPY\n)", 1)[0]
+        validator = validator.replace("info.st_uid != 0", f"info.st_uid != {os.getuid()}")
+        validator = validator.replace("entry.st_uid != 0", f"entry.st_uid != {os.getuid()}")
+
+        expected_artifact = "a" * 64
+        expected_revision = "b" * 40
+
+        def transaction(transaction_id: str, *, status: str, version: str, revision: str, artifact: str) -> dict:
+            return {
+                "artifact_sha256": artifact,
+                "peer_identity": {
+                    node: {
+                        "ca_sha256": "c" * 64,
+                        "certificate_sha256": "d" * 64,
+                        "public_key_sha256": "e" * 64,
+                    }
+                    for node in ("dc01", "dc02")
+                },
+                "rollback_points": {
+                    node: f"/var/backups/home-center-deploy/{transaction_id}-{node}"
+                    for node in ("dc01", "dc02")
+                },
+                "schema": "home-center.cluster-deploy-transaction.v1",
+                "source": {
+                    node: {
+                        "release": "/opt/home-center/releases/0.4.2-9f376e3d39eb-e259a050e9c7",
+                        "revision": "9f376e3d39eb29b2c8e402d085cba8b9fee4258d",
+                        "version": "0.4.2",
+                    }
+                    for node in ("dc01", "dc02")
+                },
+                "status": status,
+                "target": {"revision": revision, "version": version},
+                "transaction_id": transaction_id,
+            }
+
+        with tempfile.TemporaryDirectory() as tmp:
+            directory = Path(tmp) / "transactions"
+            directory.mkdir(mode=0o700)
+            terminal_id = "20260906T153747Z-c66e25e1dbd2"
+            unresolved_id = "20260906T160000Z-111111111111"
+            terminal = transaction(
+                terminal_id,
+                status="succeeded",
+                version="0.4.2",
+                revision="9f376e3d39eb29b2c8e402d085cba8b9fee4258d",
+                artifact="f" * 64,
+            )
+            terminal_path = directory / f"{terminal_id}.json"
+            terminal_path.write_text(json.dumps(terminal), encoding="utf-8")
+            terminal_path.chmod(0o600)
+
+            args = [sys.executable, "-I", "-", str(directory), expected_artifact, "0.4.3", expected_revision]
+            completed = subprocess.run(args, input=validator, text=True, capture_output=True, check=False)
+            self.assertEqual(completed.returncode, 0, completed.stderr)
+            self.assertEqual(completed.stdout, "")
+
+            unresolved_path = directory / f"{unresolved_id}.json"
+            unresolved = transaction(
+                unresolved_id,
+                status="recovery_required",
+                version="0.4.2",
+                revision="9f376e3d39eb29b2c8e402d085cba8b9fee4258d",
+                artifact=expected_artifact,
+            )
+            unresolved_path.write_text(json.dumps(unresolved), encoding="utf-8")
+            unresolved_path.chmod(0o600)
+            completed = subprocess.run(args, input=validator, text=True, capture_output=True, check=False)
+            self.assertNotEqual(completed.returncode, 0)
+            self.assertIn("prior_cluster_target_mismatch_recovery_required", completed.stderr)
+
+            unresolved["target"] = {"revision": expected_revision, "version": "0.4.3"}
+            unresolved_path.write_text(json.dumps(unresolved), encoding="utf-8")
+            unresolved_path.chmod(0o600)
+            completed = subprocess.run(args, input=validator, text=True, capture_output=True, check=False)
+            self.assertEqual(completed.returncode, 0, completed.stderr)
+            self.assertEqual(json.loads(completed.stdout), unresolved)
+
+            unresolved["artifact_sha256"] = "f" * 64
+            unresolved_path.write_text(json.dumps(unresolved), encoding="utf-8")
+            unresolved_path.chmod(0o600)
+            completed = subprocess.run(args, input=validator, text=True, capture_output=True, check=False)
+            self.assertNotEqual(completed.returncode, 0)
+            self.assertIn("prior_cluster_artifact_mismatch_recovery_required", completed.stderr)
 
     def test_activation_timeout_envelope_reserves_rollback_and_postflight(self) -> None:
         from home_center import tls_activate
@@ -72,7 +176,7 @@ class P23ContractSurfaceTests(unittest.TestCase):
     def test_openapi_publishes_tls_status_and_public_trust_anchor(self) -> None:
         value = json.loads((ROOT / "contracts/openapi/home-center.v1.openapi.json").read_text(encoding="utf-8"))
         self.assertEqual(value["openapi"], "3.1.0")
-        self.assertEqual(value["info"]["version"], "0.4.2")
+        self.assertEqual(value["info"]["version"], "0.4.3")
         self.assertEqual(value["servers"], [{"url": "https://dc01.hm.dm:8443", "description": "Current canonical Home Center production endpoint"}])
         paths = value["paths"]
         self.assertIn("/api/v1/tls", paths)

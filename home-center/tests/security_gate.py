@@ -226,14 +226,19 @@ else:
 version_source = (ROOT / "product/control-plane/src/home_center/__init__.py").read_text(encoding="utf-8")
 project = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
 builder = (ROOT / "deploy/scripts/build-artifact.sh").read_text(encoding="utf-8")
-if '__version__ = "0.4.2"' not in version_source or 'version = "0.4.2"' not in project:
+if '__version__ = "0.4.3"' not in version_source or 'version = "0.4.3"' not in project:
     errors.append("runtime/package version mismatch")
-if "HOME_CENTER_VERSION:-$SOURCE_VERSION" not in builder or '[ "$VERSION" = 0.4.2 ]' not in builder:
+if "HOME_CENTER_VERSION:-$SOURCE_VERSION" not in builder or '[ "$VERSION" = 0.4.3 ]' not in builder:
     errors.append("artifact version mismatch")
 if 'git -C "$ROOT" rev-parse HEAD' not in builder or 'git -C "$ROOT/../.."' in builder:
     errors.append("artifact revision must resolve from the independent repository root")
 if '[[ "$REVISION" =~ ^[0-9a-f]{40}$ ]]' not in builder:
     errors.append("artifact revision must be an immutable Git commit")
+tls_activate = (ROOT / "product/control-plane/src/home_center/tls_activate.py").read_text(encoding="utf-8")
+if "or marker_info.st_gid != account.pw_gid" not in tls_activate:
+    errors.append("Web release ownership marker must bind the root helper's home-center primary group")
+if "os.fchown(descriptor" in tls_activate:
+    errors.append("capability-free Web helper must not rely on fchown for release marker publication")
 for required in (
     'cp "$ROOT/deploy/helper-policy.v1.json" "$STAGE/deploy/"',
     '"$ROOT/deploy/scripts/rotate-web-tls.sh"',
@@ -515,6 +520,9 @@ for required in (
     "DC02_SOFTWARE_CANARY_30S=PASS",
     '"peer_identity"',
     "cluster_source_overview_rejected",
+    "ADMITTED_SOURCE_V030_REVISION=6b0c0db144bfd2a7b7a7db1a868d649f20825721",
+    "ADMITTED_SOURCE_V042_REVISION=9f376e3d39eb29b2c8e402d085cba8b9fee4258d",
+    'source_identity_admitted "$LOCAL_SOURCE_VERSION" "$LOCAL_SOURCE_REVISION"',
 ):
     if required not in bootstrap:
         errors.append(f"strict X.509 bootstrap profile missing: {required}")

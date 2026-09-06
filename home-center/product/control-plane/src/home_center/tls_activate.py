@@ -470,11 +470,15 @@ def _write_release_owner(path: Path, owner: dict[str, str]) -> None:
 def _release_owner(stage: Path) -> dict[str, str]:
     marker = stage / ".owner.json"
     marker_info = marker.lstat()
+    account = pwd.getpwnam("home-center")
     if (
         not stat.S_ISREG(marker_info.st_mode)
         or stat.S_ISLNK(marker_info.st_mode)
         or marker_info.st_uid != ROOT_UID
-        or marker_info.st_gid != 0
+        # The root helper deliberately runs with Group=home-center and no
+        # capabilities.  Its O_EXCL marker therefore inherits that gid.  Mode
+        # 0600 keeps the ownership proof root-only despite the service group.
+        or marker_info.st_gid != account.pw_gid
         or stat.S_IMODE(marker_info.st_mode) != 0o600
         or marker_info.st_size < 128
         or marker_info.st_size > 2048

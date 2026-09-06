@@ -34,7 +34,7 @@ STAMP=$TRANSACTION_ID
 VERSION=$(tar -xOf "$ARTIFACT" ./VERSION | tr -d '\r\n')
 REVISION=$(tar -xOf "$ARTIFACT" ./REVISION | tr -d '\r\n')
 [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo INVALID_VERSION >&2; exit 66; }
-[ "$VERSION" = 0.4.2 ] || { echo RELEASE_VERSION_NOT_ADMITTED >&2; exit 66; }
+[ "$VERSION" = 0.4.3 ] || { echo RELEASE_VERSION_NOT_ADMITTED >&2; exit 66; }
 [[ "$REVISION" =~ ^[0-9a-f]{40}$ ]] || { echo INVALID_REVISION >&2; exit 66; }
 
 LOCK_DIR=/run/home-center-locks

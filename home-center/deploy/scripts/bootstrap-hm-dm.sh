@@ -64,10 +64,21 @@ INSTALLER=$PINNED_INSTALLER
 ROLLBACK=$PINNED_ROLLBACK
 TARGET_VERSION=$(tar -xOf "$ARTIFACT" ./VERSION | tr -d '\r\n')
 TARGET_REVISION=$(tar -xOf "$ARTIFACT" ./REVISION | tr -d '\r\n')
-[ "$TARGET_VERSION" = 0.4.2 ] || { echo RELEASE_VERSION_NOT_ADMITTED >&2; exit 66; }
+[ "$TARGET_VERSION" = 0.4.3 ] || { echo RELEASE_VERSION_NOT_ADMITTED >&2; exit 66; }
 [[ "$TARGET_REVISION" =~ ^[0-9a-f]{40}$ ]] || { echo RELEASE_REVISION_NOT_ADMITTED >&2; exit 66; }
-ADMITTED_SOURCE_VERSION=0.3.0
-ADMITTED_SOURCE_REVISION=6b0c0db144bfd2a7b7a7db1a868d649f20825721
+ADMITTED_SOURCE_V030_VERSION=0.3.0
+ADMITTED_SOURCE_V030_REVISION=6b0c0db144bfd2a7b7a7db1a868d649f20825721
+ADMITTED_SOURCE_V042_VERSION=0.4.2
+ADMITTED_SOURCE_V042_REVISION=9f376e3d39eb29b2c8e402d085cba8b9fee4258d
+
+source_identity_admitted() {
+  local version=$1 revision=$2
+  case "$version:$revision" in
+    "$ADMITTED_SOURCE_V030_VERSION:$ADMITTED_SOURCE_V030_REVISION" | \
+      "$ADMITTED_SOURCE_V042_VERSION:$ADMITTED_SOURCE_V042_REVISION") return 0 ;;
+    *) return 1 ;;
+  esac
+}
 
 LOCK_DIR=/run/home-center-locks
 LOCK_FILE=$LOCK_DIR/cluster-rollout.lock
@@ -230,7 +241,10 @@ for path in directory.iterdir():
         and path.name == f"{transaction_id}.json"
         and value.get("status") in {"started", "recovery_required", "rolled_back", "succeeded"}
         and re.fullmatch(r"[0-9a-f]{64}", str(value.get("artifact_sha256")))
-        and value.get("target") == {"revision": expected_revision, "version": expected_version}
+        and isinstance(value.get("target"), dict)
+        and set(value["target"]) == {"revision", "version"}
+        and re.fullmatch(r"[0-9a-f]{40}", str(value["target"].get("revision")))
+        and re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", str(value["target"].get("version")))
         and value.get("rollback_points") == {
             "dc01": f"/var/backups/home-center-deploy/{transaction_id}-dc01",
             "dc02": f"/var/backups/home-center-deploy/{transaction_id}-dc02",
@@ -255,6 +269,8 @@ for path in directory.iterdir():
         ):
             raise SystemExit("cluster_transaction_peer_identity_rejected")
     if value["status"] in {"started", "recovery_required"}:
+        if value["target"] != {"revision": expected_revision, "version": expected_version}:
+            raise SystemExit("prior_cluster_target_mismatch_recovery_required")
         if value["artifact_sha256"] != expected_artifact:
             raise SystemExit("prior_cluster_artifact_mismatch_recovery_required")
         unresolved.append(value)
@@ -471,11 +487,10 @@ revision=$(tr -d "\r\n" <"$release/REVISION")
 printf "%s|%s|%s\n" "$release" "$version" "$revision"') || { echo DC02_SOURCE_RELEASE_REJECTED >&2; exit 66; }
 IFS='|' read -r LOCAL_SOURCE_RELEASE LOCAL_SOURCE_VERSION LOCAL_SOURCE_REVISION <<<"$LOCAL_SOURCE_SNAPSHOT"
 IFS='|' read -r REMOTE_SOURCE_RELEASE REMOTE_SOURCE_VERSION REMOTE_SOURCE_REVISION <<<"$REMOTE_SOURCE_SNAPSHOT"
-[ "$LOCAL_SOURCE_VERSION" = "$ADMITTED_SOURCE_VERSION" ] \
-  && [ "$REMOTE_SOURCE_VERSION" = "$ADMITTED_SOURCE_VERSION" ] \
-  && [ "$LOCAL_SOURCE_REVISION" = "$ADMITTED_SOURCE_REVISION" ] \
-  && [ "$REMOTE_SOURCE_REVISION" = "$ADMITTED_SOURCE_REVISION" ] \
+[ "$LOCAL_SOURCE_VERSION" = "$REMOTE_SOURCE_VERSION" ] \
+  && [ "$LOCAL_SOURCE_REVISION" = "$REMOTE_SOURCE_REVISION" ] \
   && [ "$LOCAL_SOURCE_RELEASE" = "$REMOTE_SOURCE_RELEASE" ] \
+  && source_identity_admitted "$LOCAL_SOURCE_VERSION" "$LOCAL_SOURCE_REVISION" \
   || { echo CLUSTER_SOURCE_BASELINE_NOT_ADMITTED >&2; exit 66; }
 echo CLUSTER_SOURCE_BASELINE=PASS
 
@@ -731,7 +746,7 @@ verify_cluster_source_restored() {
   [ "$remote_snapshot" = "$REMOTE_SOURCE_SNAPSHOT" ] || return 1
   local_ready=$(curl --fail --silent --show-error --cacert /etc/home-center/pki/ca.crt --max-time 5 https://192.168.10.254:8443/readyz) || return 1
   remote_ready=$(curl --fail --silent --show-error --cacert /etc/home-center/pki/ca.crt --max-time 5 https://192.168.10.253:8443/readyz) || return 1
-  /usr/bin/python3 -I - "$local_ready" "$remote_ready" "$ADMITTED_SOURCE_VERSION" <<'PY' || return 1
+  /usr/bin/python3 -I - "$local_ready" "$remote_ready" "$LOCAL_SOURCE_VERSION" <<'PY' || return 1
 import json, sys
 for node, raw in zip(("dc01", "dc02"), sys.argv[1:3]):
     value = json.loads(raw)

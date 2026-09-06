@@ -222,6 +222,30 @@ class TLSActivationTests(unittest.TestCase):
                     tls_activate._prepare_release(self.fingerprint, self.spec)
             validate_release.assert_called_once_with(release, self.fingerprint, self.spec)
 
+    def test_release_owner_accepts_root_only_marker_with_helper_primary_group(self) -> None:
+        owner = {
+            "schema": tls_activate.CANDIDATE_OWNER_SCHEMA,
+            "operation_id": "1" * 32,
+            "certificate_file_sha256": "2" * 64,
+            "private_key_file_sha256": "3" * 64,
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            stage = Path(tmp)
+            marker = stage / ".owner.json"
+            with (
+                mock.patch.object(tls_activate, "ROOT_UID", os.getuid()),
+                mock.patch.object(
+                    tls_activate.pwd,
+                    "getpwnam",
+                    return_value=SimpleNamespace(pw_gid=os.getgid()),
+                ),
+            ):
+                tls_activate._write_release_owner(marker, owner)
+                persisted_owner = tls_activate._release_owner(stage)
+                self.assertEqual(marker.stat().st_gid, os.getgid())
+                self.assertEqual(marker.stat().st_mode & 0o777, 0o600)
+        self.assertEqual(persisted_owner, owner)
+
     def test_existing_release_symlink_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
