@@ -1,5 +1,5 @@
 {
-  "schema": "home-center.config.v3",
+  "schema": "home-center.config.v4",
   "cluster_id": "hm-dm-production",
   "node_id": "hm-dm-dc01",
   "node_name": "dc01",
@@ -23,6 +23,12 @@
     ],
     "timeout_seconds": 5,
     "cache_root": "/var/lib/home-center/ad-auth"
+  },
+  "external_access": {
+    "enabled": false,
+    "mode": "trusted-reverse-proxy",
+    "public_hostname": null,
+    "trusted_proxy_addresses": []
   },
   "session_key_file": "/etc/home-center/secrets/session.key",
   "audit_key_file": "/etc/home-center/secrets/audit.key",

@@ -13,6 +13,7 @@ from .actions import ActionRegistry
 from .ad_auth import AdAuthenticator
 from .auth import LoginRateLimiter, SessionManager
 from .config import Config
+from .external_access import ExternalAccessPolicy, ExternalRequestRateLimiter
 from .local_admin_auth import LocalAdminCredentialStore
 from .reconcile import Reconciler
 from .store import StateStore
@@ -36,6 +37,13 @@ class Runtime:
         self.sessions = SessionManager(config.session_key_file)
         self.login_limiter = LoginRateLimiter()
         self.ad_auth = AdAuthenticator(config.ad_auth)
+        self.external_access = ExternalAccessPolicy(
+            configured_enabled=config.external_access.enabled,
+            public_hostname=config.external_access.public_hostname,
+            trusted_proxy_addresses=config.external_access.trusted_proxy_addresses,
+            authentication_ready=True,
+        )
+        self.external_request_limiter = ExternalRequestRateLimiter()
         self.actions = ActionRegistry(config.node_id, self.store)
         self.reconciler = Reconciler(config, self.store)
 

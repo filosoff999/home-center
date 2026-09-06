@@ -56,7 +56,7 @@ def main() -> None:
     require("tokenInput" not in index + browser, "legacy bootstrap-token browser input remains reachable")
     require("JSON.stringify({ token })" not in browser, "legacy bootstrap-token browser request remains reachable")
 
-    require('CONFIG_SCHEMA = "home-center.config.v3"' in config, "config v2 is not enforced")
+    require('CONFIG_SCHEMA = "home-center.config.v4"' in config, "0.9 config-v4 successor is not enforced")
     require("local_admin_credentials_file" in config + runtime, "local administrator credential path is not wired")
     require("LocalAdminCredentialStore" in runtime, "local credential verifier is not composed into runtime")
 

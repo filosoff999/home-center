@@ -6,12 +6,13 @@ import json
 import logging
 import mimetypes
 import re
+import socket
 import time
 import uuid
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler
 from pathlib import Path
-from typing import Any
+from typing import Any, Mapping
 from urllib.parse import parse_qs, urlsplit
 
 from . import __version__
@@ -24,6 +25,7 @@ from .actions import (
 )
 from .ad_auth import AdAuthError
 from .auth import SessionManager
+from .external_access import ExternalAccessRejected, ExternalRequestContext
 from .local_admin_auth import LocalAdminAuthError
 from .runtime import Runtime
 from .util import utc_now
@@ -31,6 +33,8 @@ from .util import utc_now
 
 LOG = logging.getLogger("home_center.api")
 STATIC_NAME = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9._-]{0,127}$")
+EXTERNAL_INTERNAL_PATHS = frozenset({"/healthz", "/readyz", "/api/v1/meta", "/api/v1/tls/ca.crt"})
+REQUEST_BODY_TIMEOUT_SECONDS = 2.0
 
 
 class RuntimeRequestHandler(BaseHTTPRequestHandler):
@@ -45,6 +49,11 @@ class RuntimeRequestHandler(BaseHTTPRequestHandler):
     def log_message(self, fmt: str, *args: object) -> None:
         LOG.info("request remote=%s message=%s", self.client_address[0], fmt % args)
 
+    def handle_one_request(self) -> None:
+        self._current_request_context: ExternalRequestContext | None = None
+        self._request_body_complete = True
+        super().handle_one_request()
+
     def _correlation_id(self) -> str:
         supplied = self.headers.get("X-Correlation-ID", "")
         if re.fullmatch(r"[A-Za-z0-9._:-]{1,96}", supplied):
@@ -52,6 +61,8 @@ class RuntimeRequestHandler(BaseHTTPRequestHandler):
         return str(uuid.uuid4())
 
     def _base_headers(self, content_type: str, length: int, *, cache: str = "no-store") -> None:
+        if self.command == "POST" and not self._request_body_complete:
+            self.close_connection = True
         self.send_header("Content-Type", content_type)
         self.send_header("Content-Length", str(length))
         self.send_header("Cache-Control", cache)
@@ -63,17 +74,36 @@ class RuntimeRequestHandler(BaseHTTPRequestHandler):
         self.send_header("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=(), usb=()")
         self.send_header("Cross-Origin-Opener-Policy", "same-origin")
         self.send_header("Cross-Origin-Resource-Policy", "same-origin")
+        if self.close_connection:
+            self.send_header("Connection", "close")
 
-    def _json(self, status: int, value: Any, *, cookie: str | None = None) -> None:
+    def _json(
+        self,
+        status: int,
+        value: Any,
+        *,
+        cookie: str | None = None,
+        headers: Mapping[str, str] | None = None,
+    ) -> None:
         body = json.dumps(value, ensure_ascii=False, separators=(",", ":"), sort_keys=True).encode("utf-8")
         self.send_response(status)
         self._base_headers("application/json; charset=utf-8", len(body))
         if cookie:
             self.send_header("Set-Cookie", cookie)
+        for name, value in (headers or {}).items():
+            self.send_header(name, value)
         self.end_headers()
         self.wfile.write(body)
 
-    def _error(self, status: int, code: str, message: str, correlation_id: str) -> None:
+    def _error(
+        self,
+        status: int,
+        code: str,
+        message: str,
+        correlation_id: str,
+        *,
+        headers: Mapping[str, str] | None = None,
+    ) -> None:
         self._json(
             status,
             {
@@ -81,6 +111,7 @@ class RuntimeRequestHandler(BaseHTTPRequestHandler):
                 "error": {"code": code, "message": message},
                 "correlation_id": correlation_id,
             },
+            headers=headers,
         )
 
     def _actor(self) -> str | None:
@@ -92,10 +123,76 @@ class RuntimeRequestHandler(BaseHTTPRequestHandler):
             self._error(HTTPStatus.UNAUTHORIZED, "authentication_required", "Требуется вход", correlation_id)
         return actor
 
+    def _classify_request(self, correlation_id: str) -> ExternalRequestContext | None:
+        if self._current_request_context is not None:
+            return self._current_request_context
+        try:
+            context = self.runtime.external_access.classify(self.client_address[0], self.headers)
+        except ExternalAccessRejected as exc:
+            self.close_connection = True
+            LOG.warning(
+                "request boundary rejected remote=%s reason=%s correlation_id=%s",
+                self.client_address[0],
+                exc.code,
+                correlation_id,
+            )
+            self._error(HTTPStatus.NOT_FOUND, "not_found", "Ресурс не найден", correlation_id)
+            return None
+        if not self.runtime.external_request_limiter.allow(context):
+            self.close_connection = True
+            self.runtime.store.audit(
+                actor=f"network:{context.client_address}",
+                action="request.external-rate-limit",
+                target=self.runtime.config.node_id,
+                outcome="denied",
+                correlation_id=correlation_id,
+                details={"reason": "external_rate_limited", "proxy_address": context.proxy_address},
+            )
+            self._error(
+                HTTPStatus.TOO_MANY_REQUESTS,
+                "rate_limited",
+                "Слишком много запросов",
+                correlation_id,
+                headers={"Retry-After": "60"},
+            )
+            return None
+        self._current_request_context = context
+        return context
+
+    @staticmethod
+    def _blocked_for_external(path: str, context: ExternalRequestContext) -> bool:
+        return context.external and (path in EXTERNAL_INTERNAL_PATHS or path.startswith("/internal/"))
+
+    @staticmethod
+    def _origin_details(context: ExternalRequestContext) -> dict[str, Any]:
+        details: dict[str, Any] = {
+            "remote_address": context.client_address,
+            "access_origin": "external" if context.external else "lan",
+        }
+        if context.proxy_address is not None:
+            details["proxy_address"] = context.proxy_address
+        return details
+
     def do_GET(self) -> None:  # noqa: N802
         correlation_id = self._correlation_id()
         parsed = urlsplit(self.path)
         path = parsed.path
+        context = self._classify_request(correlation_id)
+        if context is None:
+            return
+        if self._blocked_for_external(path, context):
+            self._error(HTTPStatus.NOT_FOUND, "not_found", "Ресурс не найден", correlation_id)
+            return
+        if path == "/external/healthz":
+            if not context.external:
+                self._error(HTTPStatus.NOT_FOUND, "not_found", "Ресурс не найден", correlation_id)
+                return
+            ready, _reasons = self.runtime.ready()
+            self._json(
+                HTTPStatus.OK if ready else HTTPStatus.SERVICE_UNAVAILABLE,
+                {"schema": "home-center.external-health.v1", "status": "ok" if ready else "unavailable"},
+            )
+            return
         if path == "/healthz":
             self._json(200, {"schema": "home-center.health.v1", "status": "ok", "version": __version__, "node_id": self.runtime.config.node_id, "observed_at": utc_now()})
             return
@@ -150,17 +247,19 @@ class RuntimeRequestHandler(BaseHTTPRequestHandler):
             self._json(200, self.runtime.profile)
         elif path == "/api/v1/backups":
             self._json(200, {"schema": "home-center.backup-list.v1", "items": self.runtime.backup_inventory()})
+        elif path == "/api/v1/external-access":
+            self._json(200, self.runtime.external_access.status())
         else:
             self._error(404, "not_found", "Ресурс не найден", correlation_id)
 
-    def _same_origin_post_allowed(self) -> bool:
+    def _same_origin_post_allowed(self, context: ExternalRequestContext) -> bool:
         fetch_site = self.headers.get("Sec-Fetch-Site")
         if fetch_site is not None and fetch_site not in {"same-origin", "none"}:
             return False
         origin = self.headers.get("Origin")
         if origin is None:
             return True
-        host = self.headers.get("Host")
+        host = context.public_hostname if context.external else self.headers.get("Host")
         if not host:
             return False
         try:
@@ -178,16 +277,25 @@ class RuntimeRequestHandler(BaseHTTPRequestHandler):
             return False
 
     def do_POST(self) -> None:  # noqa: N802
+        self._request_body_complete = False
         correlation_id = self._correlation_id()
         path = urlsplit(self.path).path
-        if not self._same_origin_post_allowed():
+        context = self._classify_request(correlation_id)
+        if context is None:
+            return
+        if self._blocked_for_external(path, context):
+            self.close_connection = True
+            self._error(HTTPStatus.NOT_FOUND, "not_found", "Ресурс не найден", correlation_id)
+            return
+        if not self._same_origin_post_allowed(context):
+            self.close_connection = True
             self.runtime.store.audit(
-                actor=f"network:{self.client_address[0]}",
+                actor=f"network:{context.client_address}",
                 action="request.origin",
                 target=self.runtime.config.node_id,
                 outcome="denied",
                 correlation_id=correlation_id,
-                details={"reason": "cross_origin_request"},
+                details={"reason": "cross_origin_request", **self._origin_details(context)},
             )
             self._error(
                 HTTPStatus.FORBIDDEN,
@@ -197,7 +305,7 @@ class RuntimeRequestHandler(BaseHTTPRequestHandler):
             )
             return
         if path == "/api/v1/session":
-            self._login(correlation_id)
+            self._login(correlation_id, context)
             return
         if path == "/api/v1/session/logout":
             actor = self._require_actor(correlation_id)
@@ -274,6 +382,11 @@ class RuntimeRequestHandler(BaseHTTPRequestHandler):
 
     def _reject_mutation(self) -> None:
         correlation_id = self._correlation_id()
+        context = self._classify_request(correlation_id)
+        if context is None or self._blocked_for_external(urlsplit(self.path).path, context):
+            if context is not None:
+                self._error(HTTPStatus.NOT_FOUND, "not_found", "Ресурс не найден", correlation_id)
+            return
         if not self._require_actor(correlation_id):
             return
         self._error(405, "typed_action_not_available", "Изменение не входит в эту сертифицированную версию", correlation_id)
@@ -287,14 +400,28 @@ class RuntimeRequestHandler(BaseHTTPRequestHandler):
         length = int(raw_length)
         if length < 1 or length > max_bytes:
             raise ValueError("body size")
-        value = json.loads(self.rfile.read(length))
+        previous_timeout = self.connection.gettimeout()
+        self.connection.settimeout(REQUEST_BODY_TIMEOUT_SECONDS)
+        try:
+            raw = self.rfile.read(length)
+        except (TimeoutError, socket.timeout) as exc:
+            self.close_connection = True
+            raise ValueError("body timeout") from exc
+        finally:
+            self.connection.settimeout(previous_timeout)
+        if len(raw) != length:
+            self.close_connection = True
+            raise ValueError("body truncated")
+        self._request_body_complete = True
+        value = json.loads(raw)
         if not isinstance(value, dict):
             raise ValueError("object required")
         return value
 
-    def _login(self, correlation_id: str) -> None:
-        remote = self.client_address[0]
-        if not self.runtime.login_limiter.allow(remote):
+    def _login(self, correlation_id: str, context: ExternalRequestContext) -> None:
+        remote = context.client_address
+        limiter_key = context.limiter_key
+        if not self.runtime.login_limiter.allow(limiter_key):
             self._error(429, "rate_limited", "Слишком много попыток входа", correlation_id)
             return
         try:
@@ -328,10 +455,17 @@ class RuntimeRequestHandler(BaseHTTPRequestHandler):
             self._error(401, "invalid_credentials", "Неверные учётные данные", correlation_id)
             return
 
-        self.runtime.login_limiter.clear(remote)
+        self.runtime.login_limiter.clear(limiter_key)
         actor = f"{actor_prefix}:{canonical_username}"
         session, expires = self.runtime.sessions.new_session(actor)
-        self.runtime.store.audit(actor=actor, action="session.login", target=self.runtime.config.node_id, outcome="accepted", correlation_id=correlation_id, details={"remote_address": remote})
+        self.runtime.store.audit(
+            actor=actor,
+            action="session.login",
+            target=self.runtime.config.node_id,
+            outcome="accepted",
+            correlation_id=correlation_id,
+            details=self._origin_details(context),
+        )
         self._json(200, {"schema": "home-center.session.v1", "authenticated": True, "actor": actor, "expires_at_epoch": expires}, cookie=SessionManager.cookie(session, expires - int(time.time())))
 
     def _static(self, name: str) -> None:

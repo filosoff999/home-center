@@ -8,6 +8,7 @@ test:
 security:
 	$(PYTHON) tests/security_gate.py
 	$(PYTHON) tests/security_gate_080.py
+	$(PYTHON) tests/security_gate_090.py
 
 contracts:
 	$(PYTHON) -m json.tool deploy/profiles/hm-dm-two-node.v1.json >/dev/null

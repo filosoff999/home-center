@@ -11,10 +11,11 @@ from pathlib import Path
 from typing import Any
 
 from .ad_auth import AdAuthConfig
+from .external_access import normalize_public_hostname, normalize_trusted_proxy_addresses
 from .util import secure_file
 
 
-CONFIG_SCHEMA = "home-center.config.v3"
+CONFIG_SCHEMA = "home-center.config.v4"
 
 
 @dataclass(frozen=True, slots=True)
@@ -24,6 +25,14 @@ class Peer:
     address: str
     url: str
     certificate_name: str
+
+
+@dataclass(frozen=True, slots=True)
+class ExternalAccessConfig:
+    enabled: bool = False
+    mode: str = "trusted-reverse-proxy"
+    public_hostname: str | None = None
+    trusted_proxy_addresses: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -50,6 +59,7 @@ class Config:
     reconcile_interval_seconds: int
     peer_timeout_seconds: int
     ad_auth: AdAuthConfig = field(default_factory=AdAuthConfig.disabled)
+    external_access: ExternalAccessConfig = field(default_factory=ExternalAccessConfig)
 
     @property
     def web_bind(self) -> tuple[str, int]:
@@ -129,6 +139,33 @@ def _ad_auth(raw: dict[str, Any]) -> AdAuthConfig:
         cache_root=cache_root,
     )
 
+
+def _external_access(raw: dict[str, Any]) -> ExternalAccessConfig:
+    value = _required(raw, "external_access", dict)
+    required = {"enabled", "mode", "public_hostname", "trusted_proxy_addresses"}
+    if set(value) != required:
+        raise ValueError("external_access config shape rejected")
+    enabled = value.get("enabled")
+    if type(enabled) is not bool:
+        raise ValueError("external_access enabled must be boolean")
+    if value.get("mode") != "trusted-reverse-proxy":
+        raise ValueError("external_access mode rejected")
+    hostname_value = value.get("public_hostname")
+    if hostname_value is not None and not isinstance(hostname_value, str):
+        raise ValueError("external_access public_hostname rejected")
+    hostname = normalize_public_hostname(hostname_value) if hostname_value is not None else None
+    proxies_value = value.get("trusted_proxy_addresses")
+    if not isinstance(proxies_value, list):
+        raise ValueError("external_access trusted_proxy_addresses rejected")
+    proxies = normalize_trusted_proxy_addresses(proxies_value)
+    if enabled and (hostname is None or not proxies):
+        raise ValueError("enabled external_access requires public hostname and trusted proxy")
+    return ExternalAccessConfig(
+        enabled=enabled,
+        public_hostname=hostname,
+        trusted_proxy_addresses=proxies,
+    )
+
 def load_config(path: str | Path | None = None) -> Config:
     config_path = Path(path or os.environ.get("HOME_CENTER_CONFIG", "/etc/home-center/config.json"))
     with config_path.open("r", encoding="utf-8") as stream:
@@ -186,6 +223,7 @@ def load_config(path: str | Path | None = None) -> Config:
         reconcile_interval_seconds=max(5, min(int(raw.get("reconcile_interval_seconds", 15)), 300)),
         peer_timeout_seconds=max(1, min(int(raw.get("peer_timeout_seconds", 3)), 15)),
         ad_auth=_ad_auth(raw),
+        external_access=_external_access(raw),
     )
     if cfg.peer.node_id == cfg.node_id or cfg.peer.name == cfg.node_name:
         raise ValueError("peer identity must differ from local node identity")
