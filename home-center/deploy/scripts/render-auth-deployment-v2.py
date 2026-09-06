@@ -131,8 +131,9 @@ def render_installer(source: str) -> str:
         "/readyz",
         "LOCAL_ADMIN_DEPLOYMENT_PREFLIGHT=PASS",
     )
-    if any(item not in rendered for item in required):
-        raise ValueError("auth_v2_installer_required_surface_missing")
+    missing = tuple(item for item in required if item not in rendered)
+    if missing:
+        raise ValueError("auth_v2_installer_required_surface_missing:" + ",".join(missing))
     return rendered
 
 
@@ -227,11 +228,12 @@ def render_bootstrap(source: str) -> str:
         "/readyz",
         "/internal/v1/node",
         "verify_bidirectional_peer_identity",
-        "rollback_cluster",
+        "fail_rollback",
         "publish_cluster_transaction",
     )
-    if any(item not in rendered for item in required):
-        raise ValueError("auth_v2_bootstrap_required_surface_missing")
+    missing = tuple(item for item in required if item not in rendered)
+    if missing:
+        raise ValueError("auth_v2_bootstrap_required_surface_missing:" + ",".join(missing))
     return rendered
 
 
