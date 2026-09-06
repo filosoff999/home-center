@@ -103,7 +103,15 @@ def main() -> None:
     require("os.environ" not in provision_cli, "password/environment credential input is forbidden")
     require("--password-stdin" not in provision_cli, "automation password stdin is forbidden")
     require("provision-local-admin.py" in build, "provisioner is not staged for the future 0.8 artifact")
-    require("HOME_CENTER_080_ARTIFACT_NOT_YET_ADMITTED" in build, "0.8 source artifact admission is not fail-closed")
+    require('[ "$VERSION" = 0.8.0 ] || { echo RELEASE_VERSION_NOT_ADMITTED' in build, "0.8 artifact version is not admitted exactly")
+    require("HOME_CENTER_080_ARTIFACT_NOT_YET_ADMITTED" not in build, "obsolete 0.8 artifact block remains")
+    require("HOME_CENTER_080_CONFIG_SCHEMA_NOT_ADMITTED" in build, "0.8 config-v2 release gate missing")
+    require("render-release-policy.py" in build, "0.8 release-policy renderer is not invoked")
+    require("render-auth-deployment-v2.py" in build, "0.8 auth deployment renderer is not invoked")
+    require(
+        build.index("render-release-policy.py") < build.index("render-auth-deployment-v2.py"),
+        "0.8 deployment renderers execute in an unsafe order",
+    )
 
     renderer = load_deployment_renderer()
     legacy_bootstrap = read(ROOT / "deploy/scripts/bootstrap-hm-dm.sh")
