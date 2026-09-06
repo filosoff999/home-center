@@ -230,6 +230,8 @@ def render_bootstrap(source: str) -> str:
         "verify_bidirectional_peer_identity",
         "fail_rollback",
         "publish_cluster_transaction",
+        "DC02_SOFTWARE_CANARY_30S=PASS",
+        "HOME_CENTER_CLUSTER_DEPLOY=PASS",
     )
     missing = tuple(item for item in required if item not in rendered)
     if missing:
