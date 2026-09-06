@@ -9,16 +9,15 @@ VERSION=${HOME_CENTER_VERSION:-$SOURCE_VERSION}
 [ "$VERSION" = "$SOURCE_VERSION" ] || { echo VERSION_OVERRIDE_MISMATCH >&2; exit 66; }
 # Historical accepted production artifact gate: [ "$VERSION" = 0.5.0 ]
 # Accepted predecessor artifact gate: [ "$VERSION" = 0.6.0 ]
-[ "$VERSION" = 0.7.0 ] || { echo RELEASE_VERSION_NOT_ADMITTED >&2; exit 66; }
+# Immediate predecessor artifact gate: [ "$VERSION" = 0.7.0 ]
+[ "$VERSION" = 0.8.0 ] || { echo RELEASE_VERSION_NOT_ADMITTED >&2; exit 66; }
 REVISION=${HOME_CENTER_REVISION:-$(git -C "$ROOT" rev-parse HEAD 2>/dev/null || printf 'working-tree')}
 [[ "$REVISION" =~ ^[0-9a-f]{40}$ ]] || { echo REVISION_NOT_IMMUTABLE >&2; exit 66; }
 SOURCE_DATE_EPOCH=${SOURCE_DATE_EPOCH:-1767225600}
 [[ "$SOURCE_DATE_EPOCH" =~ ^[1-9][0-9]{8,11}$ ]] || { echo SOURCE_DATE_EPOCH_REJECTED >&2; exit 66; }
 if [ "${HOME_CENTER_RELEASE_BUILD:-0}" = 1 ]; then
-  if grep -q '^CONFIG_SCHEMA = "home-center.config.v2"$' "$ROOT/product/control-plane/src/home_center/config.py"; then
-    echo HOME_CENTER_080_ARTIFACT_NOT_YET_ADMITTED >&2
-    exit 66
-  fi
+  grep -qx 'CONFIG_SCHEMA = "home-center.config.v2"' "$ROOT/product/control-plane/src/home_center/config.py" \
+    || { echo HOME_CENTER_080_CONFIG_SCHEMA_NOT_ADMITTED >&2; exit 66; }
   [ "$(git -C "$ROOT" rev-parse HEAD)" = "$REVISION" ] || { echo RELEASE_REVISION_NOT_HEAD >&2; exit 66; }
   [ -z "$(git -C "$ROOT" status --porcelain --untracked-files=all)" ] || { echo RELEASE_WORKTREE_NOT_CLEAN >&2; exit 66; }
 elif [ "${HOME_CENTER_RELEASE_BUILD:-0}" != 0 ]; then
@@ -65,6 +64,11 @@ cp "$ROOT/deploy/scripts/install-node.sh" \
    "$ROOT/deploy/scripts/rotate-web-tls.sh" \
    "$STAGE/deploy/"
 /usr/bin/python3 -I "$ROOT/deploy/scripts/render-release-policy.py" \
+  "$STAGE/deploy/bootstrap-hm-dm.sh" \
+  "$STAGE/deploy/install-node.sh"
+/usr/bin/python3 -I "$ROOT/deploy/scripts/render-auth-deployment-v2.py" \
+  "$STAGE/deploy/bootstrap-hm-dm.sh" \
+  "$STAGE/deploy/install-node.sh" \
   "$STAGE/deploy/bootstrap-hm-dm.sh" \
   "$STAGE/deploy/install-node.sh"
 cp "$ROOT/deploy/hm-dm/config.dc01.json" "$ROOT/deploy/hm-dm/config.dc02.json" "$STAGE/deploy/"
