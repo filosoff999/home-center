@@ -1,0 +1,111 @@
+"""Composition root for API, state, auth, inventory and cluster health."""
+
+from __future__ import annotations
+
+import json
+import logging
+from pathlib import Path
+from typing import Any
+
+from . import __version__
+from .auth import LoginRateLimiter, SessionManager
+from .config import Config
+from .reconcile import Reconciler
+from .store import StateStore
+from .util import sha256_file, utc_now
+
+
+LOG = logging.getLogger("home_center.runtime")
+
+
+class Runtime:
+    def __init__(self, config: Config) -> None:
+        self.config = config
+        self.profile = self._load_profile(config.deployment_profile)
+        self.store = StateStore(config.state_db, config.audit_key_file.read_bytes(), config.cluster_id)
+        self.sessions = SessionManager(config.admin_token_file, config.session_key_file)
+        self.login_limiter = LoginRateLimiter()
+        self.reconciler = Reconciler(config, self.store)
+
+    def start(self) -> None:
+        self.store.audit(
+            actor="system:runtime",
+            action="runtime.start",
+            target=self.config.node_id,
+            outcome="accepted",
+            correlation_id=f"runtime-{self.config.node_id}",
+            details={"version": __version__, "role": self.config.role},
+        )
+        self.reconciler.start()
+
+    def stop(self) -> None:
+        self.reconciler.stop()
+        self.store.audit(
+            actor="system:runtime",
+            action="runtime.stop",
+            target=self.config.node_id,
+            outcome="accepted",
+            correlation_id=f"runtime-{self.config.node_id}",
+            details={"version": __version__},
+        )
+        self.store.close()
+
+    def ready(self) -> tuple[bool, list[str]]:
+        reasons: list[str] = []
+        try:
+            if not self.store.integrity_check():
+                reasons.append("database_integrity")
+            self.store.verify_audit_chain()
+        except Exception:
+            LOG.exception("readiness integrity validation failed")
+            reasons.append("audit_integrity")
+        if not self.reconciler.local_capability():
+            reasons.append("inventory_unavailable")
+        return not reasons, reasons
+
+    def overview(self) -> dict[str, Any]:
+        nodes = self.store.nodes()
+        ready_nodes = sum(node["status"] == "ready" for node in nodes)
+        status = "healthy" if ready_nodes == 2 and len(nodes) == 2 else "degraded"
+        return {
+            "schema": "home-center.overview.v1",
+            "observed_at": utc_now(),
+            "version": __version__,
+            "cluster": {
+                "id": self.config.cluster_id,
+                "status": status,
+                "profile": self.profile["metadata"]["name"],
+                "profile_version": self.profile["metadata"]["version"],
+                "local_role": self.config.role,
+                "ready_nodes": ready_nodes,
+                "expected_nodes": 2,
+                "automatic_failover": False,
+                "split_brain_policy": "single-writer-manual-failover",
+            },
+            "nodes": nodes,
+            "jobs": self.store.jobs(10),
+            "audit_head": self.store.verify_audit_chain(),
+        }
+
+    def backup_inventory(self) -> list[dict[str, Any]]:
+        items: list[dict[str, Any]] = []
+        if not self.config.backup_dir.exists():
+            return items
+        for manifest in sorted(self.config.backup_dir.glob("home-center-*.manifest.json"), reverse=True)[:100]:
+            try:
+                data = json.loads(manifest.read_text(encoding="utf-8"))
+                data["manifest_sha256"] = sha256_file(manifest)
+                items.append(data)
+            except (OSError, json.JSONDecodeError):
+                continue
+        return items
+
+    @staticmethod
+    def _load_profile(path: Path) -> dict[str, Any]:
+        value = json.loads(path.read_text(encoding="utf-8"))
+        if value.get("schema") != "home-center.deployment-profile.v1":
+            raise ValueError("unsupported deployment profile")
+        nodes = value.get("spec", {}).get("nodes", [])
+        if not isinstance(nodes, list) or len(nodes) != 2:
+            raise ValueError("HM.DM profile must contain exactly two nodes")
+        return value

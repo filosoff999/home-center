@@ -1,0 +1,29 @@
+{
+  "schema": "home-center.config.v1",
+  "cluster_id": "hm-dm-production",
+  "node_id": "hm-dm-dc02",
+  "node_name": "dc02",
+  "role": "standby",
+  "management_address": "192.168.10.253",
+  "web_port": 8443,
+  "peer_port": 9443,
+  "state_db": "/var/lib/home-center/state.sqlite3",
+  "backup_dir": "/var/backups/home-center",
+  "web_root": "/opt/home-center/current/web",
+  "admin_token_file": "/etc/home-center/secrets/admin.token",
+  "session_key_file": "/etc/home-center/secrets/session.key",
+  "audit_key_file": "/etc/home-center/secrets/audit.key",
+  "tls_certificate": "/etc/home-center/pki/node.crt",
+  "tls_private_key": "/etc/home-center/pki/node.key",
+  "cluster_ca": "/etc/home-center/pki/ca.crt",
+  "deployment_profile": "/opt/home-center/current/deployment-profile.json",
+  "reconcile_interval_seconds": 15,
+  "peer_timeout_seconds": 3,
+  "peer": {
+    "node_id": "hm-dm-dc01",
+    "name": "dc01",
+    "address": "192.168.10.254",
+    "url": "https://192.168.10.254:9443",
+    "certificate_name": "home-center-dc01"
+  }
+}

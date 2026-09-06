@@ -1,0 +1,66 @@
+{
+  "schema": "home-center.deployment-profile.v1",
+  "metadata": {
+    "name": "hm-dm-two-node",
+    "version": "1.0.0",
+    "environment": "production",
+    "description": "Двухузловой профиль Home Center для существующего домена HM.DM"
+  },
+  "spec": {
+    "cluster_id": "hm-dm-production",
+    "domain": {
+      "dns_name": "hm.dm",
+      "sid": "S-1-5-21-483832520-828804035-215000592",
+      "preserve_existing": true,
+      "provision_new_domain": false
+    },
+    "nodes": [
+      {
+        "id": "hm-dm-dc01",
+        "name": "dc01",
+        "management_address": "192.168.10.254",
+        "roles": ["control-plane.leader", "node-agent", "external.samba-ad.primary"],
+        "required_capabilities": ["inventory.v1", "health.v1", "audit.v1", "backup.sqlite.v1", "cluster.peer-mtls.v1"]
+      },
+      {
+        "id": "hm-dm-dc02",
+        "name": "dc02",
+        "management_address": "192.168.10.253",
+        "roles": ["control-plane.standby", "node-agent", "external.samba-ad.secondary"],
+        "required_capabilities": ["inventory.v1", "health.v1", "audit.v1", "backup.sqlite.v1", "cluster.peer-mtls.v1"]
+      }
+    ],
+    "network": {
+      "web_port": 8443,
+      "peer_port": 9443,
+      "management_cidr": "192.168.10.0/24",
+      "peer_transport": "mutual-tls-1.3"
+    },
+    "placement": {
+      "writer_count": 1,
+      "leader": "hm-dm-dc01",
+      "standby": "hm-dm-dc02",
+      "automatic_failover": false,
+      "failover_requires": ["explicit-typed-job", "peer-unreachable", "external-service-health", "fencing-or-operator-proof"],
+      "split_brain_policy": "single-writer-manual-failover"
+    },
+    "health": {
+      "reconcile_interval_seconds": 15,
+      "peer_timeout_seconds": 3,
+      "ready_nodes": 2,
+      "degraded_ready_nodes": 1
+    },
+    "backup": {
+      "schedule": "daily",
+      "retention_count": 14,
+      "verify_after_create": true,
+      "cluster_copy": "planned-after-state-replication-gate"
+    },
+    "maintenance": {
+      "minimum_ready_nodes": 1,
+      "block_leader_removal_without_promotion": true,
+      "block_external_ad_role_change": true,
+      "destructive_wipe_separate": true
+    }
+  }
+}

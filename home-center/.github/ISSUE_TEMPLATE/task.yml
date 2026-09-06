@@ -1,0 +1,28 @@
+name: Home Center task
+description: Проверяемый vertical slice Home Center
+title: "[HOME CENTER] "
+body:
+  - type: textarea
+    id: goal
+    attributes:
+      label: Цель
+    validations:
+      required: true
+  - type: textarea
+    id: requirements
+    attributes:
+      label: Requirements / contracts
+    validations:
+      required: true
+  - type: textarea
+    id: safety
+    attributes:
+      label: Safety, failure и recovery
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance evidence
+    validations:
+      required: true
