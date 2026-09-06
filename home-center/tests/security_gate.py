@@ -41,11 +41,15 @@ for required in (
 if "ssl.TLSVersion.TLSv1_1" in server or re.search(r"ssl\.TLSVersion\.TLSv1(?![_0-9])", server):
     errors.append("TLS versions below 1.2 are forbidden")
 
-workflow = (ROOT.parent / ".github/workflows/home-center-ci.yml")
-if workflow.exists():
+workflow = ROOT / ".github/workflows/ci.yml"
+if not workflow.is_file():
+    errors.append("independent GitHub workflow missing")
+else:
     text = workflow.read_text(encoding="utf-8")
     if "runs-on: ubuntu-latest" not in text: errors.append("GitHub-hosted runner missing")
     if "self-hosted" in text: errors.append("self-hosted runner is forbidden for Home Center")
+    if "working-directory: home-center" in text or '"home-center/**"' in text:
+        errors.append("monorepo path assumption is forbidden")
 
 scripts = sorted((ROOT / "deploy/scripts").glob("*.sh"))
 syntax = subprocess.run(["bash", "-n", *map(str, scripts)], check=False, capture_output=True, text=True)

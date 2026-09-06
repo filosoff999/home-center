@@ -57,7 +57,8 @@ jobs:
           SOURCE_DATE_EPOCH: "1767225600"
         run: make contracts security build
       - name: Verify artifact checksum
-        run: sha256sum -c dist/home-center-0.1.0-linux-amd64.tar.gz.sha256
+        working-directory: dist
+        run: sha256sum -c home-center-0.1.0-linux-amd64.tar.gz.sha256
       - name: Upload immutable candidate
         uses: actions/upload-artifact@v4
         with:

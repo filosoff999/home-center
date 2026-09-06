@@ -27,7 +27,7 @@ find "$STAGE" -type f ! -name MANIFEST.sha256 -print0 | sort -z | xargs -0 sha25
 
 ARCHIVE="$OUT/home-center-${VERSION}-linux-amd64.tar.gz"
 tar --sort=name --mtime='UTC 2026-01-01' --owner=0 --group=0 --numeric-owner -C "$STAGE" -cf - . | gzip -n -9 >"$ARCHIVE"
-sha256sum "$ARCHIVE" >"$ARCHIVE.sha256"
+(cd "$OUT" && sha256sum "$(basename "$ARCHIVE")" >"$(basename "$ARCHIVE").sha256")
 printf 'ARTIFACT=%s\n' "$ARCHIVE"
 printf 'SHA256=%s\n' "$(sha256sum "$ARCHIVE" | awk '{print $1}')"
 printf 'BYTES=%s\n' "$(stat -c %s "$ARCHIVE")"
