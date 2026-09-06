@@ -29,6 +29,8 @@ cp -a "$ROOT/product/control-plane/src/home_center/." "$STAGE/home_center/"
 find "$STAGE/home_center" -type f \( -name '*.pyc' -o -name '*.pyo' \) -delete
 find "$STAGE/home_center" -type d -name __pycache__ -empty -delete
 cp -a "$ROOT/product/web/static/." "$STAGE/web/"
+printf '\n' >>"$STAGE/web/app.css"
+cat "$ROOT/product/web/static/hc-web-001.css" >>"$STAGE/web/app.css"
 cat >"$STAGE/web/release.js" <<EOF
 "use strict";
 
