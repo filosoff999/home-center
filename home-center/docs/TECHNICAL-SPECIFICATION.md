@@ -1,14 +1,14 @@
 # Home Center — техническое задание
 
-**Версия документа:** 2.0  
+**Версия документа:** 2.2
 **Дата:** 2026-09-06  
-**Статус продукта:** `DEVELOPMENT_ACTIVE / P1 PRODUCTION ACCEPTED / P2 NEXT`  
+**Статус продукта:** `PRODUCTION 0.3.0 / P2.2 ACCEPTED / P2.3 0.4.1 RELEASE CANDIDATE`
 **Execution epic:** `#1` — независимая разработка и двухузловой HM.DM deployment.  
 **Область действия:** весь отдельный repository `ControlCenterSoft/home-center`.
 
 ## 1. Назначение документа
 
-Настоящее техническое задание является консолидированной нормативной спецификацией Home Center. Оно объединяет ранее принятое ТЗ 1.0, текущий реестр `HC-*`, архитектуру, фактически принятый production baseline Home Center 0.1.0 и дальнейший план P2–P7.
+Настоящее техническое задание является консолидированной нормативной спецификацией Home Center. Оно объединяет ранее принятые требования, текущий реестр `HC-*`, архитектуру, фактически принятый production baseline Home Center 0.3.0/P2.2 и дальнейший план P2.3–P7.
 
 Документ определяет требования к архитектуре, функциям, безопасности, интерфейсам, данным, кластерным сценариям, Market, резервному копированию, обновлению, тестированию, поставке и приемке.
 
@@ -27,11 +27,11 @@
 
 ## 2. Текущий принятый baseline
 
-Home Center 0.1.0 уже принят в production HM.DM как единая управляемая двухузловая инфраструктура:
+Home Center 0.3.0 (`6b0c0db144bfd2a7b7a7db1a868d649f20825721`) принят в production HM.DM как единая управляемая двухузловая инфраструктура:
 
 - `dc01` — leader, `192.168.10.254`, HTTPS `:8443`, peer channel `:9443`;
 - `dc02` — standby, `192.168.10.253`, HTTPS `:8443`, peer channel `:9443`;
-- strict RFC 5280 cluster PKI и TLS 1.3/mTLS между узлами;
+- strict RFC 5280 Ed25519 peer PKI и TLS 1.3/mTLS между узлами;
 - exact immutable release revision на обеих нодах;
 - local SQLite state с integrity verification;
 - HMAC-связанный tamper-evident audit chain;
@@ -43,7 +43,9 @@ Home Center 0.1.0 уже принят в production HM.DM как единая у
 - automatic failover/VIP/active-active отключены до появления witness/fencing и P6 certification;
 - существующий HM.DM Domain SID сохраняется, Home Center deployment не должен неявно изменять Samba AD/DNS/Kerberos.
 
-Этот baseline считается **принятым P1**. P2–P7 должны быть совместимы с ним либо содержать отдельный migration ADR и проверяемый upgrade path.
+Этот cumulative baseline считается **принятым P1–P2.2**. P2.3–P7 должны быть совместимы с ним либо содержать отдельный migration ADR и проверяемый upgrade path.
+
+Версия `0.4.1` является только P2.3 release candidate до exact-head CI и production acceptance. Она вводит отдельную browser-compatible Web PKI ECDSA P-256/SHA-256 для `:8443`, не меняя peer PKI и `:9443`. Версия `0.4.0` quarantined и запрещена к развёртыванию: её Ed25519 Web chain воспроизводит TLS alert 40 на наблюдавшемся Android/Chrome ClientHello.
 
 ## 3. Цель продукта
 
@@ -97,6 +99,7 @@ Home Center — local-first, cloud-independent центр управления �
 - unrestricted Docker socket/module access;
 - destructive wipe как часть обычного remove;
 - автоматическое продолжение опасной операции при неизвестном health/quorum/compatibility/policy state.
+- code/runtime/build/deploy dependency от Control Center и управление `dc01-control-agent.service`.
 
 Production bootstrap/operator transport может существовать отдельно от продукта, но не должен становиться обходным product capability.
 
@@ -117,7 +120,7 @@ Production bootstrap/operator transport может существовать от
 
 ## 6. Технологический baseline и evolution policy
 
-### 6.1. Текущая accepted implementation
+### 6.1. Текущая accepted implementation (`0.3.0`, P2.2)
 
 - Control Plane: Python `>=3.12`;
 - local state: SQLite;
@@ -127,6 +130,8 @@ Production bootstrap/operator transport может существовать от
 - release CI/build: GitHub-hosted runners;
 - contracts: OpenAPI 3.1 + JSON Schemas;
 - release: immutable archive + SHA-256 manifest.
+
+P2.3 `0.4.1` расширяет этот baseline отдельной Web PKI, status/renewal API, fixed TLS activation/reconciliation helper actions и staged rotation. Эти свойства остаются release-candidate до production acceptance и не меняют accepted peer mTLS identity.
 
 ### 6.2. Предыдущая Rust/PostgreSQL рекомендация
 
@@ -169,6 +174,7 @@ Web UI является клиентом versioned API и не выполняе�
 - ошибки имеют human-readable текст + correlation ID;
 - фильтры/поиск/pagination для больших коллекций;
 - скрытие UI элемента не заменяет server-side authorization.
+- TLS health считается исправным только при валидной цепочке/hostname/сроке и точном Web profile `ecdsa-p256-sha256`; UI показывает profile и Web CA fingerprint без private-key data.
 
 Основные разделы:
 
@@ -632,6 +638,22 @@ Current P1 local backup verification remains mandatory regression coverage.
 
 Canary order for HM.DM remains `dc02 → dc01` unless deployment ADR changes it.
 
+### 27.1. P2.3 Web TLS upgrade contract
+
+- source production: `0.3.0`; target candidate: `0.4.1`; `0.4.0` digest is quarantined;
+- `:8443` uses TLS 1.2+ and, after rotation, an exact ECDSA P-256 leaf signed ECDSA-with-SHA-256 by the independent Web CA;
+- `:9443` remains TLS 1.3 with `CERT_REQUIRED`, the existing Ed25519 peer CA and existing node identities;
+- `/etc/home-center/pki/web-ca/ca.key` exists only on `dc01`; public `ca.crt` exists on both nodes; the Web CA is provisioned before installing a config that requires `web_ca`;
+- Web candidates/releases/current live under `/etc/home-center/pki/web`; version rollback never deletes this persistent PKI state;
+- candidate and release staging are bound to a durable root-owned operation marker and exact file digests; same-directory publication and current/release/software symlink switches are directory-fsynced;
+- activation classifies and verifies the previous certificate chain before the atomic switch, including legacy `0.3.0` and possible quarantined `0.4.0` rollback material;
+- interrupted activation is reconciled only from marker-owned state; durable-current/listener divergence is restarted and the exact live fingerprint is proved before a helper recovery latch can clear;
+- cluster deployment journals persist exact source releases and pre-mutation peer CA/node certificate/public-key fingerprints for both nodes; a rollback becomes terminal only after source, readiness, healthy overview/roles and bidirectional peer-mTLS proof;
+- `dc01` promotion is blocked until `dc02` readiness, exact version/revision/digest, restricted-signature TLS 1.2 and 1.3, peer-mTLS and a 30-second soak gate pass;
+- final acceptance additionally requires managed-browser hostname/chain trust, unchanged peer public fingerprints, Samba SID/DRS health and proof of no AD/DNS/DHCP or Control Center mutation.
+
+Continuous update policy must consume only an explicitly promoted immutable stable release, verify signature/provenance/digest, persist two-node checkpoints and quarantine terminally bad digests. Discovery of a newer build alone is never authority to deploy it.
+
 ## 28. Security requirements
 
 Web/API:
@@ -648,6 +670,9 @@ Web/API:
 - sanitize external messages;
 - rate limit sensitive endpoints;
 - no unconditional forwarded-header trust.
+- separate Web and peer trust anchors; public Web CA endpoint never publishes the peer CA;
+- reject Web certificates that are Ed25519, RSA, non-P-256, not SHA-256-signed, clientAuth-enabled or missing exact node/VIP/IP SANs;
+- serialize only certificate metadata, profile validity and public fingerprints, never private keys.
 
 Supply chain:
 
@@ -709,6 +734,8 @@ Reference Linux layout:
 - `/var/lib/home-center` — persistent state;
 - `/var/cache/home-center` — cache;
 - `/var/backups/home-center` — local backups.
+- `/etc/home-center/pki/web-ca` — persistent Web CA (`ca.key` only on `dc01`);
+- `/etc/home-center/pki/web` — persistent fingerprint-addressed Web leaf lifecycle.
 
 Services run under dedicated non-interactive identities with systemd hardening: `NoNewPrivileges`, bounded writable paths, applicable `ProtectSystem/ProtectHome`, crash-loop controls and secret-safe logging.
 
@@ -722,6 +749,7 @@ Current pilot/production topology:
 - `dc02` `192.168.10.253` — secondary writable Samba AD DC, Home Center standby;
 - Domain SID must remain unchanged;
 - Home Center modifications of Samba/DNS/DHCP/file roles are allowed only through later certified typed adapters;
+- Home Center is independent from Control Center and its deployment never changes `dc01-control-agent.service`;
 - build/test compute — GitHub-hosted runners;
 - AI Development Infrastructure is not used;
 - deployment uses audited external operator transport;
@@ -748,6 +776,8 @@ Mandatory levels:
 - concurrency/race;
 - agent/privileged boundary;
 - installer/update/rollback;
+- real TLS 1.2/TLS 1.3 handshakes with browser-representative signature algorithms that omit Ed25519;
+- Web/peer trust-anchor separation, Web CA key absence on `dc02`, concurrency lock and previous-chain rollback classification;
 - Market install/upgrade/backup/restore/remove;
 - enrollment/re-enrollment;
 - second-node bootstrap;

@@ -10,6 +10,7 @@ import stat
 import struct
 import subprocess
 import tempfile
+import time
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -22,6 +23,7 @@ STATE_SCHEMA = "home-center.helper.state.v1"
 MAX_REQUEST_BYTES = 16 * 1024
 MAX_OUTPUT_BYTES = 16 * 1024
 MAX_HISTORY = 1024
+CLIENT_IO_TIMEOUT_SECONDS = 10
 DEFAULT_SOCKET = Path("/run/home-center-helper/helper.sock")
 DEFAULT_STATE = Path("/var/lib/home-center-helper/state.json")
 DEFAULT_POLICY = Path("/etc/home-center/helper-policy.json")
@@ -39,6 +41,7 @@ class Action:
     executable: str
     argv: tuple[str, ...]
     timeout_seconds: int
+    timeout_requires_recovery: bool = False
 
 
 # P2.2 intentionally admits no production mutation. The table is compile-time fixed;
@@ -169,6 +172,73 @@ def _bounded_text(value: bytes | str | None) -> str:
     return raw[:MAX_OUTPUT_BYTES].decode("utf-8", errors="replace")
 
 
+def _classify_bounded_action_failure(action_id: str, stdout: str) -> tuple[str, str]:
+    """Map only fixed, non-secret activation outcomes into helper evidence."""
+    if action_id != "tls.web.activate.v1":
+        return "failed", "action_exit_nonzero"
+    try:
+        value = json.loads(stdout)
+    except (json.JSONDecodeError, TypeError):
+        return "unknown", "action_result_unknown_recovery_required"
+    if (
+        not isinstance(value, dict)
+        or set(value) != {"schema", "status", "reason"}
+        or value.get("schema") != "home-center.tls-activation-result.v1"
+        or not isinstance(value.get("status"), str)
+        or not isinstance(value.get("reason"), str)
+    ):
+        return "unknown", "action_result_unknown_recovery_required"
+    outcome = (value.get("status"), value.get("reason"))
+    if outcome == ("rolled_back", "activation_rolled_back"):
+        return "failed", "activation_rolled_back"
+    if outcome == ("failed", "activation_preflight_failed"):
+        return "failed", "activation_preflight_failed"
+    if outcome == ("unknown", "rollback_failed_recovery_required"):
+        return "unknown", "rollback_failed_recovery_required"
+    if outcome == ("unknown", "activation_switch_outcome_unknown_recovery_required"):
+        return "unknown", "activation_switch_outcome_unknown_recovery_required"
+    return "unknown", "action_result_unknown_recovery_required"
+
+
+def _valid_reconcile_result(stdout: str) -> bool:
+    try:
+        value = json.loads(stdout)
+    except (json.JSONDecodeError, TypeError):
+        return False
+    if not isinstance(value, dict) or set(value) != {
+        "schema",
+        "status",
+        "node_id",
+        "mode",
+        "release",
+        "certificate_sha256",
+    }:
+        return False
+    valid = (
+        value.get("schema") == "home-center.tls-reconcile-result.v1"
+        and value.get("status") == "reconciled"
+        and value.get("node_id") in {"hm-dm-dc01", "hm-dm-dc02"}
+        and value.get("mode") in {
+            "legacy-peer-fallback",
+            "separate-web-identity",
+            "quarantined-peer-web-identity",
+        }
+        and isinstance(value.get("release"), str)
+        and isinstance(value.get("certificate_sha256"), str)
+        and len(value["certificate_sha256"]) == 64
+        and all(character in "0123456789abcdef" for character in value["certificate_sha256"])
+    )
+    if not valid:
+        return False
+    if value["mode"] == "legacy-peer-fallback":
+        return value["release"] == "legacy"
+    return (
+        len(value["release"]) == 24
+        and all(character in "0123456789abcdef" for character in value["release"])
+        and value["release"] == value["certificate_sha256"][:24]
+    )
+
+
 class HelperEngine:
     def __init__(
         self,
@@ -195,6 +265,7 @@ class HelperEngine:
                 "conflicts": {},
                 "last_evidence_sha256": None,
                 "inflight": None,
+                "recovery_required": None,
             }
         state = _load_json(self.state_path)
         if state.get("schema") != STATE_SCHEMA:
@@ -206,6 +277,9 @@ class HelperEngine:
         state.setdefault("conflicts", {})
         state.setdefault("last_evidence_sha256", None)
         state.setdefault("inflight", None)
+        state.setdefault("recovery_required", None)
+        if state["recovery_required"] is not None and not isinstance(state["recovery_required"], dict):
+            raise HelperError("invalid_recovery_required_state")
         return state
 
     def _save(self) -> None:
@@ -288,6 +362,14 @@ class HelperEngine:
         caller_uid = int(inflight.get("caller_uid", 0))
         caller_name = str(inflight.get("caller_name", "unknown"))
         started_at = str(inflight.get("started_at", _utc_now()))
+        definition = ACTIONS.get(action)
+        if definition is not None and definition.timeout_requires_recovery:
+            self.state["recovery_required"] = {
+                "action": action,
+                "request_id": request_id,
+                "reason": "interrupted_execution_requires_operator_recovery",
+                "observed_at": _utc_now(),
+            }
         result = self._terminal_result(
             request_id=request_id,
             action=action,
@@ -384,6 +466,16 @@ class HelperEngine:
                 reason="permission_denied",
             )
             return self._store_request(request_id, request_sha256, result)
+        if action.timeout_requires_recovery and self.state.get("recovery_required") is not None:
+            result = self._rejection(
+                request_id=request_id,
+                action=action_id,
+                request_sha256=request_sha256,
+                caller_uid=caller_uid,
+                caller_name=caller_name,
+                reason="mutation_recovery_required",
+            )
+            return self._store_request(request_id, request_sha256, result)
 
         started_at = _utc_now()
         self.state["inflight"] = {
@@ -416,16 +508,32 @@ class HelperEngine:
             stdout = _bounded_text(completed.stdout)
             stderr = _bounded_text(completed.stderr)
             if completed.returncode != 0:
-                status = "failed"
-                reason = "action_exit_nonzero"
+                status, reason = _classify_bounded_action_failure(action_id, stdout)
+                if action.timeout_requires_recovery and status == "failed" and reason == "action_exit_nonzero":
+                    status, reason = "unknown", "action_result_unknown_recovery_required"
         except subprocess.TimeoutExpired as exc:
-            status = "failed"
-            reason = "action_timeout"
+            status = "unknown" if action.timeout_requires_recovery else "failed"
+            reason = "action_timeout_recovery_required" if action.timeout_requires_recovery else "action_timeout"
             stdout = _bounded_text(exc.stdout)
             stderr = _bounded_text(exc.stderr)
         except OSError:
             status = "failed"
             reason = "action_exec_error"
+
+        if action_id == "tls.web.reconcile.v1" and status == "succeeded":
+            if _valid_reconcile_result(stdout):
+                self.state.pop("recovery_required", None)
+            else:
+                status = "failed"
+                reason = "reconcile_result_invalid"
+
+        if status == "unknown" and action.timeout_requires_recovery:
+            self.state["recovery_required"] = {
+                "action": action_id,
+                "request_id": request_id,
+                "reason": reason,
+                "observed_at": _utc_now(),
+            }
 
         result = self._terminal_result(
             request_id=request_id,
@@ -459,6 +567,26 @@ def _protocol_rejection(reason: str) -> dict[str, Any]:
     }
 
 
+def _receive_request(conn: socket.socket, timeout_seconds: float = CLIENT_IO_TIMEOUT_SECONDS) -> bytes:
+    """Read one bounded newline-delimited request without blocking the singleton server."""
+    deadline = time.monotonic() + timeout_seconds
+    data = bytearray()
+    while len(data) <= MAX_REQUEST_BYTES:
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise TimeoutError("helper request deadline exceeded")
+        conn.settimeout(remaining)
+        chunk = conn.recv(min(4096, MAX_REQUEST_BYTES + 1 - len(data)))
+        if not chunk:
+            break
+        data.extend(chunk)
+        if b"\n" in chunk:
+            break
+    if len(data) > MAX_REQUEST_BYTES:
+        raise HelperError("request_too_large")
+    return bytes(data).split(b"\n", 1)[0]
+
+
 def serve(socket_path: Path, policy_path: Path, state_path: Path) -> None:
     engine = HelperEngine(
         policy_path=policy_path,
@@ -484,28 +612,21 @@ def serve(socket_path: Path, policy_path: Path, state_path: Path) -> None:
             with conn:
                 try:
                     uid, name = _peer_identity(conn)
-                    data = bytearray()
-                    while len(data) <= MAX_REQUEST_BYTES:
-                        chunk = conn.recv(min(4096, MAX_REQUEST_BYTES + 1 - len(data)))
-                        if not chunk:
-                            break
-                        data.extend(chunk)
-                        if b"\n" in chunk:
-                            break
-                    if len(data) > MAX_REQUEST_BYTES:
-                        raise HelperError("request_too_large")
-                    line = bytes(data).split(b"\n", 1)[0]
+                    line = _receive_request(conn)
                     if not line:
                         raise HelperError("empty_request")
                     request = json.loads(line.decode("utf-8"))
                     if not isinstance(request, dict):
                         raise HelperError("request_root_must_be_object")
                     result = engine.execute(request, caller_uid=uid, caller_name=name)
-                except (HelperError, UnicodeDecodeError, json.JSONDecodeError, KeyError, ValueError):
+                except (HelperError, UnicodeDecodeError, json.JSONDecodeError, KeyError, ValueError, TimeoutError):
                     result = _protocol_rejection("invalid_request")
                 except Exception:
                     result = _protocol_rejection("internal_error")
-                conn.sendall(_canonical(result) + b"\n")
+                try:
+                    conn.sendall(_canonical(result) + b"\n")
+                except (BrokenPipeError, ConnectionError, TimeoutError, OSError):
+                    pass
 
 
 def main() -> int:

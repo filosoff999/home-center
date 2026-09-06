@@ -39,10 +39,11 @@ helper_unit = (ROOT / "deploy/systemd/home-center-helper.service").read_text(enc
 for required in (
     "User=root",
     "Group=home-center",
-    "ExecStart=/usr/bin/python3 /opt/home-center/current/home_center/privileged_helper_v2.py --serve",
+    "ExecStart=/usr/bin/python3 -I /opt/home-center/current/home_center/privileged_helper_v2.py --serve",
     "NoNewPrivileges=yes",
     "ProtectSystem=strict",
-    "ReadWritePaths=/etc/home-center/pki/web",
+    "ReadWritePaths=/etc/home-center/pki/web -/run/home-center-locks",
+    "InaccessiblePaths=-/etc/home-center/pki/ca.key -/etc/home-center/pki/web-ca/ca.key -/etc/home-center/pki/node.key",
     "ProtectHome=yes",
     "PrivateDevices=yes",
     "MemoryDenyWriteExecute=yes",
@@ -59,17 +60,27 @@ for required in (
         errors.append(f"helper systemd hardening missing: {required}")
 if "AF_INET6" in helper_unit:
     errors.append("privileged helper must not have IPv6 address families")
-if re.search(r"^ReadWritePaths=(?!/etc/home-center/pki/web$)", helper_unit, re.MULTILINE):
+if re.search(r"^ReadWritePaths=(?!/etc/home-center/pki/web -/run/home-center-locks$)", helper_unit, re.MULTILINE):
     errors.append("privileged helper writable filesystem surface must stay limited to isolated Web PKI")
-if "/etc/home-center/pki/node" in helper_unit or "/etc/home-center/pki/ca.key" in helper_unit:
+if re.search(r"^ReadWritePaths=.*?/etc/home-center/pki/node", helper_unit, re.MULTILINE):
     errors.append("privileged helper must not receive a writable peer/CA identity path")
+
+config_source = (ROOT / "product/control-plane/src/home_center/config.py").read_text(encoding="utf-8")
+for required in (
+    "web_ca: Path",
+    'web_ca=_path(raw, "web_ca")',
+    "cfg.tls_certificate, cfg.cluster_ca, cfg.web_ca, cfg.deployment_profile",
+):
+    if required not in config_source:
+        errors.append(f"separate Web CA config gate missing: {required}")
 
 maintenance_unit = (ROOT / "deploy/systemd/home-center-tls-maintenance.service").read_text(encoding="utf-8")
 for required in (
     "Type=oneshot",
     "User=home-center",
     "Group=home-center",
-    "ExecStart=/usr/bin/python3 /opt/home-center/current/home_center/tls_maintenance.py",
+    "ExecStart=/usr/bin/python3 -I /opt/home-center/current/tls-maintenance-run.py",
+    "TimeoutStartSec=600s",
     "Requires=home-center-helper.service",
     "NoNewPrivileges=yes",
     "ProtectSystem=strict",
@@ -105,7 +116,14 @@ if "generic shell" in api.lower():
     errors.append("generic shell exposed in API")
 
 api_v2 = (ROOT / "product/control-plane/src/home_center/api_v2.py").read_text(encoding="utf-8")
-for required in ('path == "/api/v1/tls/ca.crt"', 'path == "/api/v1/tls"', '"tls_status_unavailable"'):
+for required in (
+    'path == "/api/v1/tls/ca.crt"',
+    'data = _validated_web_ca(self.runtime.config)',
+    'if web_der == peer_der:',
+    '_certificate_profile(web_ca, scope="browser-web-ca")',
+    'path == "/api/v1/tls"',
+    '"tls_status_unavailable"',
+):
     if required not in api_v2:
         errors.append(f"P2.3 TLS API/status surface missing: {required}")
 
@@ -140,6 +158,9 @@ for required in (
     "require_root_controlled_policy=True",
     "MAX_REQUEST_BYTES = 16 * 1024",
     "MAX_OUTPUT_BYTES = 16 * 1024",
+    '"mutation_recovery_required"',
+    '"recovery_required"',
+    '"rollback_failed_recovery_required"',
 ):
     if required not in helper:
         errors.append(f"privileged helper guard missing: {required}")
@@ -156,20 +177,26 @@ for forbidden in (
 if helper.count("Action(") != 1:
     errors.append("P2.2 base helper action table must remain exactly one synthetic action")
 
-# P2.3 extends the frozen helper only through one compile-time TLS action.
+# P2.3 extends the frozen helper only through bounded activation and
+# fail-closed reconciliation actions.
 helper_v2 = (ROOT / "product/control-plane/src/home_center/privileged_helper_v2.py").read_text(encoding="utf-8")
 for required in (
     'base.ACTIONS["tls.web.activate.v1"] = base.Action(',
     'permission="tls.web.rotate"',
     'executable="/usr/bin/python3"',
     'argv=("/opt/home-center/current/home_center/tls_activate.py",)',
+    'timeout_seconds=ACTIVATION_HELPER_TIMEOUT_SECONDS',
+    'timeout_requires_recovery=True',
+    'base.ACTIONS["tls.web.reconcile.v1"] = base.Action(',
+    'permission="tls.web.reconcile"',
+    'argv=("/opt/home-center/current/home_center/tls_reconcile.py",)',
     'timeout_seconds=60',
     'base.PERMISSIONS = frozenset(action.permission for action in base.ACTIONS.values())',
 ):
     if required not in helper_v2:
         errors.append(f"P2.3 helper extension guard missing: {required}")
-if helper_v2.count("base.Action(") != 1:
-    errors.append("P2.3 helper extension must admit exactly one additional action")
+if helper_v2.count("base.Action(") != 2:
+    errors.append("P2.3 helper extension must admit exactly activation plus reconciliation")
 for forbidden in ("shell=True", "shell = True", "os.system(", "subprocess.Popen"):
     if forbidden in helper_v2:
         errors.append(f"P2.3 helper extension forbidden primitive present: {forbidden}")
@@ -177,10 +204,10 @@ for forbidden in ("shell=True", "shell = True", "os.system(", "subprocess.Popen"
 helper_policy = json.loads((ROOT / "deploy/helper-policy.v1.json").read_text(encoding="utf-8"))
 if helper_policy != {
     "schema": "home-center.helper.policy.v1",
-    "callers": {"home-center": ["helper.probe", "tls.web.rotate"]},
-    "enabled_actions": ["helper.probe.v1", "tls.web.activate.v1"],
+    "callers": {"home-center": ["helper.probe", "tls.web.rotate", "tls.web.reconcile"]},
+    "enabled_actions": ["helper.probe.v1", "tls.web.activate.v1", "tls.web.reconcile.v1"],
 }:
-    errors.append("P2.3 helper policy must expose only probe plus bounded Web TLS activation")
+    errors.append("P2.3 helper policy must expose only probe plus bounded Web TLS activation/reconciliation")
 
 registry = json.loads((ROOT / "product/control-plane/src/home_center/action_registry.v1.json").read_text(encoding="utf-8"))
 registered = {item.get("id"): item for item in registry.get("actions", [])}
@@ -199,12 +226,14 @@ else:
 version_source = (ROOT / "product/control-plane/src/home_center/__init__.py").read_text(encoding="utf-8")
 project = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
 builder = (ROOT / "deploy/scripts/build-artifact.sh").read_text(encoding="utf-8")
-if '__version__ = "0.4.0"' not in version_source or 'version = "0.4.0"' not in project:
+if '__version__ = "0.4.1"' not in version_source or 'version = "0.4.1"' not in project:
     errors.append("runtime/package version mismatch")
-if "HOME_CENTER_VERSION:-0.4.0" not in builder:
+if "HOME_CENTER_VERSION:-$SOURCE_VERSION" not in builder or '[ "$VERSION" = 0.4.1 ]' not in builder:
     errors.append("artifact version mismatch")
 if 'git -C "$ROOT" rev-parse HEAD' not in builder or 'git -C "$ROOT/../.."' in builder:
     errors.append("artifact revision must resolve from the independent repository root")
+if '[[ "$REVISION" =~ ^[0-9a-f]{40}$ ]]' not in builder:
+    errors.append("artifact revision must be an immutable Git commit")
 for required in (
     'cp "$ROOT/deploy/helper-policy.v1.json" "$STAGE/deploy/"',
     '"$ROOT/deploy/scripts/rotate-web-tls.sh"',
@@ -222,8 +251,10 @@ for required in (
     "context.minimum_version = WEB_MINIMUM_TLS_VERSION",
     "context.minimum_version = PEER_MINIMUM_TLS_VERSION",
     "context.verify_mode = ssl.CERT_REQUIRED",
-    'WEB_CERTIFICATE = Path("/etc/home-center/pki/web/current/tls.crt")',
-    'WEB_PRIVATE_KEY = Path("/etc/home-center/pki/web/current/tls.key")',
+    'WEB_CURRENT = WEB_ROOT / "current"',
+    'WEB_CERTIFICATE = WEB_CURRENT / "tls.crt"',
+    'WEB_PRIVATE_KEY = WEB_CURRENT / "tls.key"',
+    'raise RuntimeError("web_identity_incomplete")',
 ):
     if required not in server:
         errors.append(f"TLS policy missing: {required}")
@@ -235,6 +266,8 @@ for required in (
     'OPENSSL = "/usr/bin/openssl"',
     'SYSTEMCTL = "/usr/bin/systemctl"',
     'WEB_ROOT = PKI / "web"',
+    'PEER_CA_CERT = PKI / "ca.crt"',
+    'WEB_CA_CERT = PKI / "web-ca" / "ca.crt"',
     'WEB_RELEASES = WEB_ROOT / "releases"',
     'WEB_CURRENT = WEB_ROOT / "current"',
     'CANDIDATE = WEB_ROOT / "candidate"',
@@ -250,13 +283,26 @@ for required in (
     '"-checkip", spec["ip"]',
     'if _key_public(key) != _cert_public(cert):',
     'raise ActivationError("key_mismatch")',
+    'raise ActivationError("web_ca_algorithm_rejected" if authority else "web_algorithm_rejected")',
+    'raise ActivationError("web_ca_signature_rejected" if authority else "web_signature_rejected")',
+    '"Public Key Algorithm: id-ecPublicKey"',
+    '"ASN1 OID: prime256v1"',
+    '"Signature Algorithm: ecdsa-with-SHA256"',
     'if WEB_RELEASES not in current.parents:',
     'pending = WEB_ROOT / f".current.{suffix}"',
     'os.replace(pending, WEB_CURRENT)',
     '_point_current(previous, "rollback")',
-    '_presented_fingerprint(spec, fingerprint)',
+    '_presented_fingerprint(spec, fingerprint, WEB_CA_CERT)',
+    'rollback_fingerprint, rollback_anchor = _rollback_identity(spec, previous)',
+    'raise ActivationError("previous_chain_rejected")',
     'raise ActivationError("rollback_failed")',
     '_clear_candidate()',
+    'MUTATION_LOCK_DIR = Path("/run/home-center-locks")',
+    'ROOT_UID = 0',
+    'fcntl.LOCK_EX | fcntl.LOCK_NB',
+    'ACTIVATION_ROLLBACK_RESERVE_SECONDS = 130',
+    'ACTIVATION_HELPER_TIMEOUT_SECONDS = 360',
+    'raise ActivationError("activation_budget_exhausted_before_switch")',
 ):
     if required not in tls_activate:
         errors.append(f"TLS activation guard missing: {required}")
@@ -267,10 +313,16 @@ for forbidden in ("shell=True", "shell = True", "os.system(", "subprocess.Popen"
 tls_maintenance = (ROOT / "product/control-plane/src/home_center/tls_maintenance.py").read_text(encoding="utf-8")
 for required in (
     'call_helper("tls.web.activate.v1", request_prefix="tls-maintenance")',
-    '"partial_candidate"',
+    'candidate.get("partial")',
+    'call_helper("tls.web.reconcile.v1", request_prefix="tls-reconcile")',
     '"candidate_not_staged"',
-    '"post_activation_validation_failed"',
-    'parser.add_argument("--activate-staged", action="store_true")',
+    '"post_activation_validation_failed_recovery_required"',
+    'mode.add_argument("--activate-staged", action="store_true")',
+    'mode.add_argument("--reconcile", action="store_true")',
+    'or not web.get("profile_valid")',
+    'helper_status == "unknown"',
+    '"mutation_recovery_required"',
+    '"rolled_back"',
 ):
     if required not in tls_maintenance:
         errors.append(f"TLS maintenance guard missing: {required}")
@@ -280,14 +332,25 @@ for forbidden in ("subprocess.", "socket.", "tls.key", "ca.key"):
 
 tls_status = (ROOT / "product/control-plane/src/home_center/tls_status.py").read_text(encoding="utf-8")
 for required in (
-    'WEB_CERTIFICATE = Path("/etc/home-center/pki/web/current/tls.crt")',
-    'WEB_PRIVATE_KEY = Path("/etc/home-center/pki/web/current/tls.key")',
+    'WEB_CURRENT = WEB_ROOT / "current"',
+    'WEB_CERTIFICATE = WEB_CURRENT / "tls.crt"',
+    'WEB_PRIVATE_KEY = WEB_CURRENT / "tls.key"',
     'CANDIDATE_CERTIFICATE = Path("/etc/home-center/pki/web/candidate/tls.crt")',
     'CANDIDATE_PRIVATE_KEY = Path("/etc/home-center/pki/web/candidate/tls.key")',
-    'mode="separate-web-identity" if separate else "legacy-peer-fallback"',
-    '"candidate": _candidate_state()',
+    'ROOT_UID = 0',
+    'if _chain_valid(WEB_CERTIFICATE, config.web_ca):',
+    'if _chain_valid(WEB_CERTIFICATE, config.cluster_ca):',
+    '"quarantined-peer-web-identity"',
+    'candidate = _candidate_state()',
+    '"candidate": candidate',
+    '"operational": {',
+    '"recovery_required": operational_state == "recovery_required"',
     'not bool(web.get("chain_valid"))',
     'not bool(web.get("hostname_match"))',
+    'not bool(web.get("profile_valid"))',
+    'profile = "ecdsa-p256-sha256" if browser_profile_valid else "unsupported-for-browser-web"',
+    'or not bool(web.get("san_policy_valid"))',
+    'int(web_ca_days_remaining) <= WEB_CA_RENEWAL_DAYS',
     'int(days_remaining) <= RENEWAL_DAYS',
 ):
     if required not in tls_status:
@@ -315,42 +378,57 @@ if syntax.returncode != 0:
     errors.append(f"deployment shell syntax failed: {syntax.stderr.strip()}")
 
 installer = (ROOT / "deploy/scripts/install-node.sh").read_text(encoding="utf-8")
-release_dir = installer.find("install -d -m 0755 -o root -g root /opt/home-center /opt/home-center/releases")
+release_dir = installer.find("for release_directory in /opt/home-center /opt/home-center/releases")
 release_stage = installer.find("STAGE=$(mktemp -d /opt/home-center/releases/.stage.XXXXXX)")
 if release_dir < 0 or release_stage < 0 or release_dir > release_stage:
     errors.append("release directory must exist before atomic staging")
-if "if [ -L /opt/home-center/current ]; then" not in installer:
+if "if [ -e /opt/home-center/current ] || [ -L /opt/home-center/current ]; then" not in installer:
     errors.append("previous release discovery must require an existing symlink")
 if "chown root:home-center /etc/home-center /etc/home-center/secrets /etc/home-center/pki" not in installer:
     errors.append("runtime identity must be able to traverse root-owned configuration directories")
 for required in (
-    'install -d -m 0750 -o root -g home-center /etc/home-center/pki/web /etc/home-center/pki/web/candidate',
+    'for web_directory in /etc/home-center/pki/web /etc/home-center/pki/web/candidate',
     'install -m 0644 -o root -g root "$RELEASE/deploy/helper-policy.v1.json" /etc/home-center/helper-policy.json',
     'install -m 0644 -o root -g root "$RELEASE/deploy/home-center-helper.service" /etc/systemd/system/home-center-helper.service',
     'install -m 0644 -o root -g root "$RELEASE/deploy/home-center-tls-maintenance.service" /etc/systemd/system/home-center-tls-maintenance.service',
     'install -m 0644 -o root -g root "$RELEASE/deploy/home-center-tls-maintenance.timer" /etc/systemd/system/home-center-tls-maintenance.timer',
     "systemctl restart home-center-helper.service",
     "systemctl start home-center-tls-maintenance.timer",
-    "/usr/sbin/runuser -u home-center -- python3",
+    "/usr/sbin/runuser -u home-center -- /usr/bin/python3 -I",
     "HOME_CENTER_HELPER_PROBE=PASS",
     "BACKUP_READY=1",
     "restore_optional_files",
     "home-center-tls-maintenance.timer",
+    'WEB_HEALTH_CA=/etc/home-center/pki/ca.crt',
+    'WEB_HEALTH_CA=/etc/home-center/pki/web-ca/ca.crt',
+    "PARTIAL_WEB_IDENTITY_REJECTED",
+    "MISSING_OR_UNSAFE_DC01_WEB_CA_PRIVATE_KEY",
+    "DC02_WEB_CA_PRIVATE_KEY_FORBIDDEN",
+    '[[ "$REVISION" =~ ^[0-9a-f]{40}$ ]]',
+    "LOCK_FILE=$LOCK_DIR/node-mutation.lock",
+    "TRANSACTION_FILE=$TRANSACTION_DIR/$TRANSACTION_ID-$NODE.json",
+    '"schema":"home-center.deploy-transaction.v1"',
 ):
     if required not in installer:
         errors.append(f"P2.3 installer gate missing: {required}")
 
 rollback = (ROOT / "deploy/scripts/rollback-node.sh").read_text(encoding="utf-8")
 for required in (
-    "systemctl stop home-center-tls-maintenance.timer home-center-tls-maintenance.service home-center-helper.service home-center.service",
+    "for unit in home-center-tls-maintenance.timer home-center-tls-maintenance.service home-center-helper.service",
+    'stop_unit_checked "$unit"',
     "helper-policy.json",
     "home-center-helper.service",
     "home-center-tls-maintenance.service",
     "home-center-tls-maintenance.timer",
-    "restore_optional helper-policy.json",
-    "restore_optional home-center-helper.service",
-    "restore_optional home-center-tls-maintenance.service",
-    "restore_optional home-center-tls-maintenance.timer",
+    'validate_slot "$slot"',
+    "restore_slot helper-policy.json",
+    "restore_slot home-center-helper.service",
+    "restore_slot home-center-tls-maintenance.service",
+    "restore_slot home-center-tls-maintenance.timer",
+    "PREVIOUS_RELEASE_PATH_IDENTITY_MISMATCH",
+    "rollback_readiness_rejected",
+    "rollback_helper_probe_rejected",
+    "HOME_CENTER_NODE_ROLLBACK=FAILED",
 ):
     if required not in rollback:
         errors.append(f"P2.3 rollback gate missing: {required}")
@@ -359,9 +437,16 @@ rotate = (ROOT / "deploy/scripts/rotate-web-tls.sh").read_text(encoding="utf-8")
 for required in (
     '[ "$(id -u)" -eq 0 ]',
     '[ "$(hostname -s)" = dc01 ]',
-    "CA_CERT=/etc/home-center/pki/ca.crt",
-    "CA_KEY=/etc/home-center/pki/ca.key",
-    "WEB_CANDIDATE=/etc/home-center/pki/web/candidate",
+    "PEER_CA_CERT=/etc/home-center/pki/ca.crt",
+    "WEB_CA_CERT=$WEB_CA_DIR/ca.crt",
+    "WEB_CA_KEY=$WEB_CA_DIR/ca.key",
+    'WEB_CANDIDATE=$WEB_ROOT/candidate',
+    'WEB_CANDIDATE_OWNER=$WEB_CANDIDATE/.owner.json',
+    "flock -n 9",
+    "ec_paramgen_curve:prime256v1",
+    "Signature Algorithm: ecdsa-with-SHA256",
+    "HOME_CENTER_WEB_CA_PARTIAL_STATE_REJECTED",
+    "sudo -n test ! -e '$WEB_CA_KEY'",
     "extendedKeyUsage=serverAuth",
     "subjectAltName=DNS:$fqdn,DNS:home-center.hm.dm,IP:$ip",
     "openssl verify -x509_strict",
@@ -373,24 +458,39 @@ for required in (
     "TLS Web Client Authentication",
     '"$WEB_CANDIDATE/tls.crt"',
     '"$WEB_CANDIDATE/tls.key"',
-    "tls_maintenance.py --activate-staged",
+    "tls-maintenance-run.py --activate-staged",
+    "candidate_cas_local cleanup-owned",
+    "candidate_cas_remote cleanup-owned",
     'activate_remote "$TMP/dc02" "$DC02_EXPECTED"',
+    "DC02_RESTRICTED_BROWSER_HANDSHAKES=PASS",
+    "DC02_WEB_TLS_CANARY_30S=PASS",
     'activate_local "$TMP/dc01" "$DC01_EXPECTED"',
     "DC02_PEER_MTLS_AFTER_WEB_ROTATION=PASS",
     "DC01_PEER_MTLS_AFTER_WEB_ROTATION=PASS",
     "AUTOMATIC_FAILOVER=DISABLED",
+    "WEB_PKI_ALGORITHM=ECDSA_P256_SHA256",
+    "PEER_MTLS_PKI=UNCHANGED",
+    "rollback_web_local",
+    "rollback_web_remote",
+    "HOME_CENTER_WEB_TLS_ROTATION=ROLLBACK_FAILED",
+    "systemctl stop home-center-tls-maintenance.timer home-center-tls-maintenance.service",
 ):
     if required not in rotate:
         errors.append(f"staged Web TLS rotation gate missing: {required}")
 if rotate.find('activate_remote "$TMP/dc02"') > rotate.find('activate_local "$TMP/dc01"'):
     errors.append("dc02 Web TLS canary must precede dc01 promotion")
-if '"$CA_KEY"' in re.sub(r"openssl (x509|verify)[^\n]*", "", rotate):
+if rotate.find("DC02_RESTRICTED_BROWSER_HANDSHAKES=PASS") > rotate.find('activate_local "$TMP/dc01"'):
+    errors.append("dc02 restricted browser handshake gate must precede dc01 promotion")
+if '"$WEB_CA_KEY"' in re.sub(r"openssl (x509|verify|req|pkey)[^\n]*", "", rotate):
     for line in rotate.splitlines():
-        if "$CA_KEY" in line and not ("-CAkey" in line or "stat -c" in line or "-L" in line or "-s" in line):
+        uses_web_ca_key = re.search(r"\$WEB_CA_KEY(?![A-Za-z0-9_])|\$\{WEB_CA_KEY\}", line)
+        if uses_web_ca_key and not ("-CAkey" in line or "openssl pkey -in" in line or "stat -c" in line or "-L" in line or "-s" in line or "-e" in line or "test ! -e" in line):
             errors.append("CA private key use is outside the bounded signing/validation path")
             break
 if re.search(r"(?:scp|tar|cp|install).*ca\.key", rotate, re.IGNORECASE):
     errors.append("CA private key must never be copied or staged")
+if "genpkey -algorithm ED25519" in rotate:
+    errors.append("Web PKI must not use the browser-incompatible Ed25519 profile")
 
 bootstrap = (ROOT / "deploy/scripts/bootstrap-hm-dm.sh").read_text(encoding="utf-8")
 if "/etc/home-center/pki/*" in bootstrap or "/etc/home-center/secrets/*" in bootstrap:
@@ -405,8 +505,16 @@ for required in (
     "basicConstraints=critical,CA:TRUE,pathlen:0",
     "keyUsage=critical,keyCertSign,cRLSign",
     "subjectKeyIdentifier=hash",
-    "authorityKeyIdentifier=keyid,issuer",
+    "authorityKeyIdentifier=keyid:always",
     "openssl verify -x509_strict",
+    "WEB_CA_PROVISIONING=PASS",
+    "HOME_CENTER_WEB_CA_PARTIAL_STATE_REJECTED",
+    "sudo -n test ! -e '$WEB_CA_KEY'",
+    "TRANSACTION_ID=$(date -u +%Y%m%dT%H%M%SZ)-$(openssl rand -hex 6)",
+    "REMOTE_TRANSACTION_FILE=/var/lib/home-center-deploy/transactions/$TRANSACTION_ID-dc02.json",
+    "DC02_SOFTWARE_CANARY_30S=PASS",
+    '"peer_identity"',
+    "cluster_source_overview_rejected",
 ):
     if required not in bootstrap:
         errors.append(f"strict X.509 bootstrap profile missing: {required}")

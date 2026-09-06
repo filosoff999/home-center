@@ -48,7 +48,7 @@ Accepted:
 
 ## P2 — Managed Node / Typed Actions / Reconcile
 
-Status: **IN PROGRESS** — P2.1 and P2.2 are production accepted; P2.3 Web TLS lifecycle is active.
+Status: **IN PROGRESS** — P2.1 and P2.2 are production accepted on `0.3.0`; P2.3 is an unaccepted `0.4.1` release candidate. The `0.4.0` artifact is quarantined and must never be deployed.
 
 Accepted foundations:
 
@@ -74,14 +74,43 @@ Status: **ACTIVE / ENGINEERING**.
 - [x] unprivileged scheduled maintenance coordinator;
 - [x] staged internal-CA issuance/rotation workflow `dc02 → dc01` with fixed node identities;
 - [x] packaging/install/rollback integration for maintenance units;
+- [x] RCA for Android/Chrome TLS alert 40: browser ClientHello omitted Ed25519;
+- [x] dedicated ECDSA P-256/SHA-256 Web CA and leaf profile, independent of Ed25519 peer mTLS;
+- [x] real TLS 1.2/TLS 1.3 restricted-signature handshake regression tests;
+- [x] pre-switch rollback-chain classification for legacy `0.3.0` and quarantined `0.4.0` states;
+- [x] durable owner-marker/digest CAS, crash reconciliation and helper recovery-latch proof;
+- [x] fsync-stable node/cluster journals with pre-mutation peer identity snapshots and exact rollback overview gates;
 - [ ] exact-head branch CI final PASS after all P2.3 changes;
 - [ ] immutable release artifact and PR/main gates;
 - [ ] production canary `dc02` Web rotation acceptance;
 - [ ] production `dc01` promotion only after dc02 PASS;
 - [ ] managed Windows OS/browser trust acceptance with no certificate warning;
+- [ ] Android/Chrome acceptance with no TLS alert 40 or `ERR_SSL_VERSION_OR_CIPHER_MISMATCH`;
 - [ ] synthetic expiry/renewal and failed-rotation rollback acceptance;
 - [ ] peer mTLS post-rotation PASS both directions;
+- [ ] peer CA, node certificate and node public-key fingerprints unchanged on both nodes;
 - [ ] final Samba domain SID/DRS no-regression evidence.
+
+### P2.4 — Signed stable release channel
+
+Status: **PLANNED / outside 0.4.1 scope**.
+
+- [ ] immutable promoted release record independent of expiring CI artifacts;
+- [ ] signature/provenance and digest verification policy;
+- [ ] explicit `stable`, `quarantined` and `superseded` states;
+- [ ] dedicated Home Center deployment credential/channel, separate from Control Center;
+- [ ] release ledger linking source SHA, artifact SHA, CI run and production acceptance.
+
+### P2.5 — Persisted two-node update reconcile
+
+Status: **PLANNED / outside 0.4.1 scope**.
+
+- [ ] periodically compare promoted stable release with both nodes;
+- [ ] persisted checkpointed state machine: discover → verify → dc02 → soak → dc01 → accept;
+- [ ] bounded retry/backoff for transient failures and digest quarantine for terminal regressions;
+- [ ] automatic rollback to the last accepted release when a health gate fails;
+- [ ] exact version/revision/artifact parity, peer-mTLS and DRS postconditions;
+- [ ] never mutate Control Center, `dc01-control-agent.service`, Samba AD/DNS/DHCP or automatic failover state.
 
 Remaining P2 after P2.3:
 

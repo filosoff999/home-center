@@ -1,13 +1,25 @@
 from __future__ import annotations
 
 import json
+import socket
 import subprocess
 import tempfile
 import unittest
 from pathlib import Path
 from unittest import mock
 
-from home_center.privileged_helper import HelperEngine, HelperError, MAX_OUTPUT_BYTES, _sha256, _validate_request
+import home_center.privileged_helper as privileged_helper
+from home_center.privileged_helper import (
+    ACTIONS,
+    Action,
+    HelperEngine,
+    HelperError,
+    MAX_OUTPUT_BYTES,
+    _classify_bounded_action_failure,
+    _receive_request,
+    _sha256,
+    _validate_request,
+)
 
 
 class HelperTests(unittest.TestCase):
@@ -155,6 +167,160 @@ class HelperTests(unittest.TestCase):
         self.assertEqual(result["status"], "failed")
         self.assertEqual(result["reason"], "action_timeout")
         self.assertIsNone(engine.state["inflight"])
+
+    def test_mutating_action_timeout_requires_recovery(self) -> None:
+        recovery_action = Action(
+            permission="helper.probe",
+            executable="/usr/bin/true",
+            argv=(),
+            timeout_seconds=5,
+            timeout_requires_recovery=True,
+        )
+        with (
+            mock.patch.dict(ACTIONS, {"helper.probe.v1": recovery_action}),
+            mock.patch(
+                "home_center.privileged_helper.subprocess.run",
+                side_effect=subprocess.TimeoutExpired(cmd=["/usr/bin/true"], timeout=5),
+            ),
+        ):
+            engine = HelperEngine(self.policy, self.state)
+            result = engine.execute(self.req("req-timeout-recovery"), 1234, "home-center")
+        self.assertEqual(result["status"], "unknown")
+        self.assertEqual(result["reason"], "action_timeout_recovery_required")
+        self.assertIsNone(engine.state["inflight"])
+        self.assertEqual(engine.state["recovery_required"]["request_id"], "req-timeout-recovery")
+        with mock.patch.dict(ACTIONS, {"helper.probe.v1": recovery_action}):
+            blocked = engine.execute(self.req("req-timeout-blocked"), 1234, "home-center")
+        self.assertEqual(blocked["status"], "rejected")
+        self.assertEqual(blocked["reason"], "mutation_recovery_required")
+
+    def test_activation_failure_classification_is_fixed_and_non_secret(self) -> None:
+        rolled_back = json.dumps(
+            {
+                "schema": "home-center.tls-activation-result.v1",
+                "status": "rolled_back",
+                "reason": "activation_rolled_back",
+            }
+        )
+        unknown = json.dumps(
+            {
+                "schema": "home-center.tls-activation-result.v1",
+                "status": "unknown",
+                "reason": "rollback_failed_recovery_required",
+            }
+        )
+        self.assertEqual(
+            _classify_bounded_action_failure("tls.web.activate.v1", rolled_back),
+            ("failed", "activation_rolled_back"),
+        )
+        self.assertEqual(
+            _classify_bounded_action_failure("tls.web.activate.v1", unknown),
+            ("unknown", "rollback_failed_recovery_required"),
+        )
+        self.assertEqual(
+            _classify_bounded_action_failure("tls.web.activate.v1", "not-json secret"),
+            ("unknown", "action_result_unknown_recovery_required"),
+        )
+        rolled_back_with_extra_field = json.dumps(
+            {
+                "schema": "home-center.tls-activation-result.v1",
+                "status": "rolled_back",
+                "reason": "activation_rolled_back",
+                "untrusted": "must-not-become-a-reason",
+            }
+        )
+        self.assertEqual(
+            _classify_bounded_action_failure("tls.web.activate.v1", rolled_back_with_extra_field),
+            ("unknown", "action_result_unknown_recovery_required"),
+        )
+        preflight = json.dumps(
+            {
+                "schema": "home-center.tls-activation-result.v1",
+                "status": "failed",
+                "reason": "activation_preflight_failed",
+            }
+        )
+        self.assertEqual(
+            _classify_bounded_action_failure("tls.web.activate.v1", preflight),
+            ("failed", "activation_preflight_failed"),
+        )
+
+    def test_unstructured_mutating_failure_sets_recovery_latch(self) -> None:
+        recovery_action = Action(
+            permission="helper.probe",
+            executable="/usr/bin/true",
+            argv=(),
+            timeout_seconds=5,
+            timeout_requires_recovery=True,
+        )
+        completed = subprocess.CompletedProcess(
+            args=["/usr/bin/true"],
+            returncode=-9,
+            stdout=b'{"truncated":',
+            stderr=b"",
+        )
+        with (
+            mock.patch.dict(ACTIONS, {"helper.probe.v1": recovery_action}),
+            mock.patch("home_center.privileged_helper.subprocess.run", return_value=completed),
+        ):
+            engine = HelperEngine(self.policy, self.state)
+            result = engine.execute(self.req("req-mutating-crash"), 1234, "home-center")
+        self.assertEqual(result["status"], "unknown")
+        self.assertEqual(result["reason"], "action_result_unknown_recovery_required")
+        self.assertEqual(engine.state["recovery_required"]["request_id"], "req-mutating-crash")
+
+    def test_request_receive_timeout_bounds_slow_client(self) -> None:
+        server, client = socket.socketpair()
+        self.addCleanup(server.close)
+        self.addCleanup(client.close)
+        with self.assertRaises(TimeoutError):
+            _receive_request(server, timeout_seconds=0.01)
+
+    def test_reconcile_action_clears_latch_only_with_strict_evidence(self) -> None:
+        reconcile_action = Action(
+            permission="tls.web.reconcile",
+            executable="/usr/bin/python3",
+            argv=("/opt/home-center/current/home_center/tls_reconcile.py",),
+            timeout_seconds=60,
+        )
+        self.policy.write_text(
+            json.dumps(
+                {
+                    "schema": "home-center.helper.policy.v1",
+                    "callers": {"home-center": ["tls.web.reconcile"]},
+                    "enabled_actions": ["tls.web.reconcile.v1"],
+                }
+            ),
+            encoding="utf-8",
+        )
+        request = {
+            "schema": "home-center.helper.request.v1",
+            "request_id": "req-reconcile-valid",
+            "action": "tls.web.reconcile.v1",
+            "params": {},
+            "nonce": "0123456789abcdef0123456789abcdef",
+        }
+        evidence = {
+            "schema": "home-center.tls-reconcile-result.v1",
+            "status": "reconciled",
+            "node_id": "hm-dm-dc02",
+            "mode": "separate-web-identity",
+            "release": "a" * 24,
+            "certificate_sha256": "a" * 64,
+        }
+        completed = subprocess.CompletedProcess(
+            args=["/usr/bin/python3"], returncode=0, stdout=json.dumps(evidence).encode(), stderr=b""
+        )
+        with (
+            mock.patch.dict(ACTIONS, {"tls.web.reconcile.v1": reconcile_action}),
+            mock.patch.object(privileged_helper, "PERMISSIONS", frozenset({"tls.web.reconcile"})),
+            mock.patch("home_center.privileged_helper.subprocess.run", return_value=completed),
+        ):
+            engine = HelperEngine(self.policy, self.state)
+            engine.state["recovery_required"] = {"reason": "test"}
+            result = engine.execute(request, 1234, "home-center")
+        self.assertEqual(result["status"], "succeeded")
+        self.assertNotIn("recovery_required", engine.state)
 
     def test_output_is_bounded_in_bytes(self) -> None:
         engine = HelperEngine(self.policy, self.state)

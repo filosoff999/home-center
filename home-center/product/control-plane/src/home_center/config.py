@@ -42,6 +42,7 @@ class Config:
     tls_certificate: Path
     tls_private_key: Path
     cluster_ca: Path
+    web_ca: Path
     deployment_profile: Path
     peer: Peer
     reconcile_interval_seconds: int
@@ -115,6 +116,7 @@ def load_config(path: str | Path | None = None) -> Config:
         tls_certificate=_path(raw, "tls_certificate"),
         tls_private_key=_path(raw, "tls_private_key"),
         cluster_ca=_path(raw, "cluster_ca"),
+        web_ca=_path(raw, "web_ca"),
         deployment_profile=_path(raw, "deployment_profile"),
         peer=Peer(
             node_id=_required(peer_raw, "node_id", str),
@@ -128,9 +130,11 @@ def load_config(path: str | Path | None = None) -> Config:
     )
     if cfg.peer.node_id == cfg.node_id or cfg.peer.name == cfg.node_name:
         raise ValueError("peer identity must differ from local node identity")
+    if cfg.web_ca.resolve() == cfg.cluster_ca.resolve():
+        raise ValueError("web_ca must be independent from cluster_ca")
     for secret in (cfg.admin_token_file, cfg.session_key_file, cfg.audit_key_file, cfg.tls_private_key):
         secure_file(secret, allow_group_read=True)
-    for public_file in (cfg.tls_certificate, cfg.cluster_ca, cfg.deployment_profile):
+    for public_file in (cfg.tls_certificate, cfg.cluster_ca, cfg.web_ca, cfg.deployment_profile):
         if not public_file.is_file():
             raise FileNotFoundError(public_file)
     if not cfg.web_root.is_dir():

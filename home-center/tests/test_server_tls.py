@@ -41,7 +41,7 @@ class TLSPolicyTests(unittest.TestCase):
     def test_web_listener_accepts_tls12_and_newer_with_peer_fallback(self) -> None:
         fake = _FakeContext()
         with (
-            patch.object(Path, "is_file", return_value=False),
+            patch("home_center.server._separate_web_identity_present", return_value=False),
             patch("home_center.server._server_context", return_value=fake) as server_context,
         ):
             context = _web_context(self.runtime)
@@ -53,13 +53,22 @@ class TLSPolicyTests(unittest.TestCase):
     def test_web_listener_prefers_separate_web_identity(self) -> None:
         fake = _FakeContext()
         with (
-            patch.object(Path, "is_file", return_value=True),
+            patch("home_center.server._separate_web_identity_present", return_value=True),
             patch("home_center.server._server_context", return_value=fake) as server_context,
         ):
             context = _web_context(self.runtime)
         self.assertIs(context, fake)
         self.assertEqual(context.minimum_version, ssl.TLSVersion.TLSv1_2)
         server_context.assert_called_once_with(WEB_CERTIFICATE, WEB_PRIVATE_KEY)
+
+    def test_corrupt_web_identity_never_silently_falls_back(self) -> None:
+        with (
+            patch("home_center.server._separate_web_identity_present", side_effect=RuntimeError("web_identity_incomplete")),
+            patch("home_center.server._server_context") as server_context,
+        ):
+            with self.assertRaisesRegex(RuntimeError, "web_identity_incomplete"):
+                _web_context(self.runtime)
+        server_context.assert_not_called()
 
     def test_peer_listener_keeps_tls13_mtls_and_peer_identity(self) -> None:
         fake = _FakeContext()

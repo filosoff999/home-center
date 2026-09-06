@@ -1,6 +1,6 @@
 # Home Center
 
-> **Статус: PRODUCTION_ACCEPTED / P2.1 / INDEPENDENT PRODUCT**
+> **Статус: PRODUCTION 0.3.0 / P2.2 ACCEPTED · P2.3 0.4.1 RELEASE CANDIDATE**
 
 Home Center — самостоятельный local-first продукт для управления домашней и малой серверной инфраструктурой через единый Web UI и API.
 
@@ -26,14 +26,17 @@ Home Center является полностью независимым прод�
 
 ## Production
 
-Версия `0.2.0`, revision `853215871f0840b8cc05fc900d572bef87a7dc58`, развёрнута и принята на `dc01` и `dc02`.
+Версия `0.3.0`, revision `6b0c0db144bfd2a7b7a7db1a868d649f20825721`, развёрнута и принята на `dc01` и `dc02`.
 
-P2.1 добавляет immutable typed Action Registry и единственное разрешённое действие `service.state.read.v1`: локальное, read-only, с permission/risk metadata, строгим allowlist, persisted idempotency и audit evidence. Универсальный shell и mutation actions отсутствуют.
+Принятый P2.2 добавляет bounded privileged helper с deny-by-construction policy и сохраняет immutable typed Action Registry. Универсальный shell отсутствует; Samba AD/DNS/DHCP не изменяются.
+
+P2.3 готовится как immutable `0.4.1`: отдельный ECDSA P-256/SHA-256 Web CA и Web leaf устраняют TLS alert 40 на Android/Chrome, а существующая Ed25519 peer-mTLS PKI остаётся неизменной. Артефакт `0.4.0` заблокирован и не подлежит развёртыванию, поскольку сохранял несовместимую Ed25519 Web identity. До CI, canary `dc02`, promotion `dc01` и browser/DRS acceptance версия `0.4.1` не считается production-accepted.
 
 Проверяемые записи:
 
 - [P1 production acceptance](ops/PRODUCTION-ACCEPTANCE-2026-09-06.md);
 - [P2.1 production acceptance](ops/P2.1-PRODUCTION-ACCEPTANCE-2026-09-06.md).
+- [upgrade 0.3.0 → 0.4.1](docs/UPGRADE-0.3.0-TO-0.4.1.md).
 
 ## Разработка и CI
 

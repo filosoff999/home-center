@@ -16,6 +16,7 @@
   "tls_certificate": "/etc/home-center/pki/node.crt",
   "tls_private_key": "/etc/home-center/pki/node.key",
   "cluster_ca": "/etc/home-center/pki/ca.crt",
+  "web_ca": "/etc/home-center/pki/web-ca/ca.crt",
   "deployment_profile": "/opt/home-center/current/deployment-profile.json",
   "reconcile_interval_seconds": 15,
   "peer_timeout_seconds": 3,

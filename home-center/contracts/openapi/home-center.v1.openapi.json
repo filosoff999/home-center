@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Home Center Control Plane API",
-    "version": "0.4.0",
+    "version": "0.4.1",
     "description": "P2.3 API with a fail-closed typed Action Registry, bounded Web TLS lifecycle and metadata-only certificate health surface."
   },
   "servers": [
@@ -202,7 +202,7 @@
       "get": {
         "operationId": "getTlsTrustAnchor",
         "security": [],
-        "description": "Downloads only the public Home Center HM.DM CA certificate used to validate managed Web endpoints.",
+        "description": "Downloads only the public, browser-compatible Home Center HM.DM Web CA. The independent peer-mTLS cluster CA is never published by this endpoint.",
         "responses": {
           "200": {
             "description": "Public X.509 trust anchor",
@@ -346,19 +346,29 @@
       },
       "CertificateStatus": {
         "type": "object",
-        "additionalProperties": true,
+        "additionalProperties": false,
         "required": [
           "mode",
           "fingerprint_sha256",
           "subject",
           "issuer",
+          "serial_number",
+          "not_before",
           "not_after",
           "days_remaining",
           "san_dns",
           "san_ip",
           "expected_hostname",
           "hostname_match",
-          "chain_valid"
+          "chain_valid",
+          "profile",
+          "profile_valid",
+          "public_key_algorithm",
+          "public_key_curve",
+          "signature_algorithm",
+          "required_san_dns",
+          "required_san_ip",
+          "san_policy_valid"
         ],
         "properties": {
           "mode": {
@@ -373,6 +383,15 @@
           },
           "issuer": {
             "type": "string"
+          },
+          "serial_number": {
+            "type": "string"
+          },
+          "not_before": {
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "not_after": {
             "type": [
@@ -406,6 +425,39 @@
           },
           "chain_valid": {
             "type": "boolean"
+          },
+          "profile": {
+            "type": "string"
+          },
+          "profile_valid": {
+            "type": "boolean"
+          },
+          "public_key_algorithm": {
+            "type": "string"
+          },
+          "public_key_curve": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "signature_algorithm": {
+            "type": "string"
+          },
+          "required_san_dns": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "required_san_ip": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "san_policy_valid": {
+            "type": "boolean"
           }
         }
       },
@@ -421,9 +473,11 @@
           "web_url",
           "web",
           "peer",
-          "trust_anchor",
-          "candidate",
-          "renewal"
+          "web_ca",
+        "trust_anchor",
+        "candidate",
+        "operational",
+        "renewal"
         ],
         "properties": {
           "schema": {
@@ -450,6 +504,45 @@
           },
           "peer": {
             "$ref": "#/components/schemas/CertificateStatus"
+          },
+          "web_ca": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "fingerprint_sha256",
+              "subject",
+              "not_after",
+              "days_remaining",
+              "profile",
+              "profile_valid"
+            ],
+            "properties": {
+              "fingerprint_sha256": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              "subject": {
+                "type": "string"
+              },
+              "not_after": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "days_remaining": {
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              },
+              "profile": {
+                "type": "string"
+              },
+              "profile_valid": {
+                "type": "boolean"
+              }
+            }
           },
           "trust_anchor": {
             "type": "object",
@@ -478,37 +571,82 @@
           "candidate": {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "certificate_present",
-              "private_key_present",
-              "complete",
-              "partial"
+          "required": [
+            "certificate_present",
+            "private_key_present",
+            "owner_marker_present",
+            "complete",
+            "partial",
+            "invalid"
             ],
             "properties": {
               "certificate_present": {
                 "type": "boolean"
               },
-              "private_key_present": {
-                "type": "boolean"
-              },
+            "private_key_present": {
+              "type": "boolean"
+            },
+            "owner_marker_present": {
+              "type": "boolean"
+            },
               "complete": {
                 "type": "boolean"
               },
-              "partial": {
-                "type": "boolean"
-              }
+            "partial": {
+              "type": "boolean"
+            },
+            "invalid": {
+              "type": "boolean"
             }
-          },
-          "renewal": {
+          }
+        },
+        "operational": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "state",
+            "healthy",
+            "recovery_required",
+            "reason"
+          ],
+          "properties": {
+            "state": {
+              "type": "string",
+              "enum": [
+                "ready",
+                "degraded",
+                "recovery_required"
+              ]
+            },
+            "healthy": {
+              "type": "boolean"
+            },
+            "recovery_required": {
+              "type": "boolean"
+            },
+            "reason": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        },
+        "renewal": {
             "type": "object",
             "additionalProperties": false,
             "required": [
               "threshold_days",
+              "web_ca_threshold_days",
               "due",
               "last_maintenance"
             ],
             "properties": {
               "threshold_days": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "web_ca_threshold_days": {
                 "type": "integer",
                 "minimum": 1
               },

@@ -2,9 +2,13 @@
 
 from __future__ import annotations
 
+import hashlib
 import logging
+import pwd
+import re
 import signal
 import ssl
+import stat
 import threading
 from http.server import ThreadingHTTPServer
 from pathlib import Path
@@ -19,8 +23,11 @@ LOG = logging.getLogger("home_center")
 
 WEB_MINIMUM_TLS_VERSION = ssl.TLSVersion.TLSv1_2
 PEER_MINIMUM_TLS_VERSION = ssl.TLSVersion.TLSv1_3
-WEB_CERTIFICATE = Path("/etc/home-center/pki/web/current/tls.crt")
-WEB_PRIVATE_KEY = Path("/etc/home-center/pki/web/current/tls.key")
+WEB_ROOT = Path("/etc/home-center/pki/web")
+WEB_RELEASES = WEB_ROOT / "releases"
+WEB_CURRENT = WEB_ROOT / "current"
+WEB_CERTIFICATE = WEB_CURRENT / "tls.crt"
+WEB_PRIVATE_KEY = WEB_CURRENT / "tls.key"
 
 
 class HomeCenterServer(ThreadingHTTPServer):
@@ -38,8 +45,51 @@ def _server_context(certificate: Path, private_key: Path) -> ssl.SSLContext:
     return context
 
 
+def _separate_web_identity_present() -> bool:
+    if not (WEB_CURRENT.exists() or WEB_CURRENT.is_symlink()):
+        return False
+    if not WEB_CURRENT.is_symlink():
+        raise RuntimeError("web_current_must_be_symlink")
+    try:
+        release = WEB_CURRENT.resolve(strict=True)
+    except OSError as exc:
+        raise RuntimeError("web_current_dangling") from exc
+    if release.parent != WEB_RELEASES or re.fullmatch(r"[0-9a-f]{24}", release.name) is None:
+        raise RuntimeError("web_current_outside_release_root")
+    account = pwd.getpwnam("home-center")
+    release_info = release.lstat()
+    if (
+        not stat.S_ISDIR(release_info.st_mode)
+        or stat.S_ISLNK(release_info.st_mode)
+        or release_info.st_uid != 0
+        or release_info.st_gid != account.pw_gid
+        or stat.S_IMODE(release_info.st_mode) != 0o750
+    ):
+        raise RuntimeError("web_current_release_metadata_rejected")
+    for path, mode in ((WEB_CERTIFICATE, 0o644), (WEB_PRIVATE_KEY, 0o640)):
+        try:
+            info = path.lstat()
+        except FileNotFoundError as exc:
+            raise RuntimeError("web_identity_incomplete") from exc
+        if (
+            not stat.S_ISREG(info.st_mode)
+            or stat.S_ISLNK(info.st_mode)
+            or info.st_uid != 0
+            or info.st_gid != account.pw_gid
+            or stat.S_IMODE(info.st_mode) != mode
+        ):
+            raise RuntimeError("web_identity_metadata_rejected")
+    try:
+        certificate_der = ssl.PEM_cert_to_DER_cert(WEB_CERTIFICATE.read_text(encoding="ascii"))
+    except (OSError, UnicodeDecodeError, ValueError, ssl.SSLError) as exc:
+        raise RuntimeError("web_certificate_rejected") from exc
+    if hashlib.sha256(certificate_der).hexdigest()[:24] != release.name:
+        raise RuntimeError("web_release_identity_mismatch")
+    return True
+
+
 def _web_context(runtime: Runtime) -> ssl.SSLContext:
-    separate = WEB_CERTIFICATE.is_file() and WEB_PRIVATE_KEY.is_file()
+    separate = _separate_web_identity_present()
     certificate = WEB_CERTIFICATE if separate else runtime.config.tls_certificate
     private_key = WEB_PRIVATE_KEY if separate else runtime.config.tls_private_key
     context = _server_context(certificate, private_key)
@@ -77,7 +127,7 @@ def main() -> None:
     peer_thread = threading.Thread(target=peer.serve_forever, name="home-center-peer", daemon=True)
     web_thread.start()
     peer_thread.start()
-    LOG.info("Home Center started node=%s role=%s web_tls=%s", config.node_name, config.role, "separate" if WEB_CERTIFICATE.is_file() else "legacy-fallback")
+    LOG.info("Home Center started node=%s role=%s web_tls=%s", config.node_name, config.role, "separate" if _separate_web_identity_present() else "legacy-fallback")
     stop.wait()
     web.shutdown()
     peer.shutdown()

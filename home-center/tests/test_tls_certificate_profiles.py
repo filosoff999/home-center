@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import subprocess
+import socket
 import tempfile
+import time
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -30,10 +32,26 @@ class TLSCertificateProfileTests(unittest.TestCase):
     def _run(self, *argv: str) -> None:
         subprocess.run(argv, check=True, capture_output=True, cwd=self.root)
 
-    def _make_ca(self, name: str) -> tuple[Path, Path]:
+    def _make_key(self, path: Path, profile: str) -> None:
+        if profile == "p256":
+            self._run(
+                "openssl", "genpkey", "-algorithm", "EC",
+                "-pkeyopt", "ec_paramgen_curve:prime256v1", "-out", str(path),
+            )
+        elif profile == "p384":
+            self._run(
+                "openssl", "genpkey", "-algorithm", "EC",
+                "-pkeyopt", "ec_paramgen_curve:secp384r1", "-out", str(path),
+            )
+        elif profile == "ed25519":
+            self._run("openssl", "genpkey", "-algorithm", "ED25519", "-out", str(path))
+        else:
+            raise AssertionError(f"unsupported test key profile: {profile}")
+
+    def _make_ca(self, name: str, *, key_profile: str = "p256") -> tuple[Path, Path]:
         key = self.root / f"{name}.key"
         cert = self.root / f"{name}.crt"
-        self._run("openssl", "genpkey", "-algorithm", "ED25519", "-out", str(key))
+        self._make_key(key, key_profile)
         self._run(
             "openssl", "req", "-x509", "-new", "-key", str(key), "-days", "3650",
             "-subj", f"/CN=Home Center Test {name}",
@@ -53,13 +71,14 @@ class TLSCertificateProfileTests(unittest.TestCase):
         ip: str = "192.168.10.253",
         days: int = 397,
         eku: str = "serverAuth",
+        key_profile: str = "p256",
     ) -> tuple[Path, Path]:
         ca_cert, ca_key = ca or self.ca1
         key = self.root / f"{name}.key"
         csr = self.root / f"{name}.csr"
         cert = self.root / f"{name}.crt"
         ext = self.root / f"{name}.cnf"
-        self._run("openssl", "genpkey", "-algorithm", "ED25519", "-out", str(key))
+        self._make_key(key, key_profile)
         self._run("openssl", "req", "-new", "-key", str(key), "-subj", f"/CN={dns[0]}/O=Home Center", "-out", str(csr))
         san = ",".join([*(f"DNS:{value}" for value in dns), f"IP:{ip}"])
         ext.write_text(
@@ -83,15 +102,79 @@ class TLSCertificateProfileTests(unittest.TestCase):
 
     def _validate(self, cert: Path, key: Path) -> str:
         with (
-            mock.patch.object(tls_activate, "CA_CERT", self.ca1[0]),
+            mock.patch.object(tls_activate, "WEB_CA_CERT", self.ca1[0]),
             mock.patch.object(tls_activate, "_regular_secure"),
         ):
             return tls_activate.validate_candidate(self.spec, cert, key)
+
+    def _restricted_sigalg_handshake(self, cert: Path, key: Path, protocol: str) -> None:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
+            probe.bind(("127.0.0.1", 0))
+            port = int(probe.getsockname()[1])
+        server = subprocess.Popen(
+            (
+                "openssl", "s_server", "-accept", f"127.0.0.1:{port}",
+                "-cert", str(cert), "-key", str(key), "-www", "-naccept", "1", protocol,
+            ),
+            cwd=self.root,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        try:
+            time.sleep(0.15)
+            client = subprocess.run(
+                (
+                    "openssl", "s_client", "-connect", f"127.0.0.1:{port}",
+                    "-servername", "dc02.hm.dm", "-CAfile", str(self.ca1[0]),
+                    "-verify_return_error", "-sigalgs", "ecdsa_secp256r1_sha256", protocol,
+                ),
+                input=b"GET / HTTP/1.0\r\n\r\n",
+                check=False,
+                capture_output=True,
+                timeout=5,
+                cwd=self.root,
+            )
+        finally:
+            if server.poll() is None:
+                server.terminate()
+            try:
+                server.wait(timeout=2)
+            except subprocess.TimeoutExpired:
+                server.kill()
+                server.wait(timeout=2)
+        self.assertEqual(client.returncode, 0, (client.stdout + client.stderr).decode(errors="replace"))
+        self.assertIn(b"Verify return code: 0", client.stdout + client.stderr)
 
     def test_valid_server_only_profile_is_accepted(self) -> None:
         cert, key = self._make_leaf("valid")
         fingerprint = self._validate(cert, key)
         self.assertEqual(len(fingerprint), 64)
+
+    def test_p256_web_chain_negotiates_without_ed25519_sigalgs(self) -> None:
+        cert, key = self._make_leaf("restricted-sigalgs")
+        for protocol in ("-tls1_2", "-tls1_3"):
+            with self.subTest(protocol=protocol):
+                self._restricted_sigalg_handshake(cert, key, protocol)
+
+    def test_ed25519_web_leaf_is_rejected_for_browser_compatibility(self) -> None:
+        cert, key = self._make_leaf("ed25519-leaf", key_profile="ed25519")
+        with self.assertRaisesRegex(ActivationError, "web_algorithm_rejected"):
+            self._validate(cert, key)
+
+    def test_p384_web_leaf_is_rejected_by_exact_p256_profile(self) -> None:
+        cert, key = self._make_leaf("p384-leaf", key_profile="p384")
+        with self.assertRaisesRegex(ActivationError, "web_algorithm_rejected"):
+            self._validate(cert, key)
+
+    def test_ed25519_web_ca_is_rejected_even_with_p256_leaf(self) -> None:
+        ed_ca = self._make_ca("ed25519-ca", key_profile="ed25519")
+        cert, key = self._make_leaf("ed25519-chain", ca=ed_ca)
+        with (
+            mock.patch.object(tls_activate, "WEB_CA_CERT", ed_ca[0]),
+            mock.patch.object(tls_activate, "_regular_secure"),
+        ):
+            with self.assertRaisesRegex(ActivationError, "web_ca_algorithm_rejected"):
+                tls_activate.validate_candidate(self.spec, cert, key)
 
     def test_wrong_chain_is_rejected(self) -> None:
         cert, key = self._make_leaf("wrong-chain", ca=self.ca2)
@@ -112,6 +195,25 @@ class TLSCertificateProfileTests(unittest.TestCase):
         cert, key = self._make_leaf("missing-vip", dns=("dc02.hm.dm",))
         with self.assertRaises(ActivationError):
             self._validate(cert, key)
+
+    def test_extra_dns_identity_is_rejected(self) -> None:
+        cert, key = self._make_leaf("extra-dns", dns=("dc02.hm.dm", "home-center.hm.dm", "unexpected.hm.dm"))
+        with self.assertRaisesRegex(ActivationError, "unexpected_dns_san"):
+            self._validate(cert, key)
+
+    def test_extra_ip_identity_is_rejected(self) -> None:
+        cert, key = self._make_leaf("extra-ip-base")
+        # Exercise the exact-set gate directly so the fixture remains concise.
+        with mock.patch.object(
+            tls_activate,
+            "_san_identities",
+            return_value=(
+                frozenset({"dc02.hm.dm", "home-center.hm.dm"}),
+                frozenset({"192.168.10.253", "192.168.10.252"}),
+            ),
+        ):
+            with self.assertRaisesRegex(ActivationError, "unexpected_ip_san"):
+                tls_activate._require_expected_identities(self.spec, cert)
 
     def test_wrong_node_ip_is_rejected(self) -> None:
         cert, key = self._make_leaf("wrong-ip", ip="192.168.10.252")

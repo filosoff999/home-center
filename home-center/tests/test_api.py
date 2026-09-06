@@ -29,10 +29,11 @@ class ApiTests(unittest.TestCase):
         secrets = root / "secrets"; secrets.mkdir()
         for name, value in (("admin.token", b"t" * 64), ("session.key", b"s" * 32), ("audit.key", b"a" * 32), ("node.key", b"not-used")):
             path = secrets / name; path.write_bytes(value); os.chmod(path, 0o600)
-        for name in ("node.crt", "ca.crt"):
-            (secrets / name).write_text("not-used", encoding="utf-8")
+        (secrets / "node.crt").write_text("not-used", encoding="utf-8")
+        (secrets / "ca.crt").write_text("peer-ca-must-not-be-public", encoding="utf-8")
+        web_ca = root / "web-ca.crt"; web_ca.write_text("not-used", encoding="utf-8")
         profile = root / "profile.json"; profile.write_text((ROOT / "deploy/profiles/hm-dm-two-node.v1.json").read_text(encoding="utf-8"), encoding="utf-8")
-        cfg = Config(cluster_id="hm-dm-production", node_id="hm-dm-dc01", node_name="dc01", role="leader", management_address="127.0.0.1", web_port=8443, peer_port=9443, state_db=root / "state.sqlite3", backup_dir=root / "backups", web_root=web, admin_token_file=secrets / "admin.token", session_key_file=secrets / "session.key", audit_key_file=secrets / "audit.key", tls_certificate=secrets / "node.crt", tls_private_key=secrets / "node.key", cluster_ca=secrets / "ca.crt", deployment_profile=profile, peer=Peer(node_id="hm-dm-dc02", name="dc02", address="127.0.0.2", url="https://127.0.0.2:9443", certificate_name="home-center-dc02"), reconcile_interval_seconds=15, peer_timeout_seconds=1)
+        cfg = Config(cluster_id="hm-dm-production", node_id="hm-dm-dc01", node_name="dc01", role="leader", management_address="127.0.0.1", web_port=8443, peer_port=9443, state_db=root / "state.sqlite3", backup_dir=root / "backups", web_root=web, admin_token_file=secrets / "admin.token", session_key_file=secrets / "session.key", audit_key_file=secrets / "audit.key", tls_certificate=secrets / "node.crt", tls_private_key=secrets / "node.key", cluster_ca=secrets / "ca.crt", web_ca=web_ca, deployment_profile=profile, peer=Peer(node_id="hm-dm-dc02", name="dc02", address="127.0.0.2", url="https://127.0.0.2:9443", certificate_name="home-center-dc02"), reconcile_interval_seconds=15, peer_timeout_seconds=1)
         self.runtime = Runtime(cfg)
         self.action_calls = 0
 
@@ -84,13 +85,29 @@ class ApiTests(unittest.TestCase):
             self.assertIn("Secure", cookie); self.assertIn("HttpOnly", cookie); self.assertIn("SameSite=Strict", cookie)
 
     def test_tls_trust_anchor_is_public_but_private_key_is_not_exposed(self) -> None:
-        with self.request("/api/v1/tls/ca.crt") as response:
-            self.assertEqual(response.read(), b"not-used")
-            self.assertEqual(response.headers["Content-Type"], "application/x-pem-file")
-            self.assertIn("attachment", response.headers["Content-Disposition"])
+        with patch("home_center.api_v2._validated_web_ca", return_value=b"not-used"):
+            with self.request("/api/v1/tls/ca.crt") as response:
+                data = response.read()
+                self.assertEqual(data, b"not-used")
+                self.assertNotIn(b"peer-ca", data)
+                self.assertEqual(response.headers["Content-Type"], "application/x-pem-file")
+                self.assertIn("attachment", response.headers["Content-Disposition"])
         with self.assertRaises(urllib.error.HTTPError) as caught:
             self.request("/api/v1/tls", token=False)
         self.assertEqual(caught.exception.code, 401)
+
+    def test_tls_trust_anchor_download_follows_separate_web_pki(self) -> None:
+        web_ca = self.runtime.config.web_ca
+        web_ca.write_bytes(b"browser-compatible-web-ca")
+        with patch("home_center.api_v2._validated_web_ca", return_value=b"browser-compatible-web-ca"):
+            with self.request("/api/v1/tls/ca.crt") as response:
+                self.assertEqual(response.read(), b"browser-compatible-web-ca")
+                self.assertIn("web-ca.crt", response.headers["Content-Disposition"])
+
+    def test_invalid_web_ca_is_fail_closed(self) -> None:
+        with self.assertRaises(urllib.error.HTTPError) as caught:
+            self.request("/api/v1/tls/ca.crt")
+        self.assertEqual(caught.exception.code, 503)
 
     def test_authenticated_tls_status_is_versioned_and_metadata_only(self) -> None:
         value = {

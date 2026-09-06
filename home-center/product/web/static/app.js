@@ -181,33 +181,47 @@ function renderTls() {
   const web = state.tls.web || {};
   const renewal = state.tls.renewal || {};
   const candidate = state.tls.candidate || {};
+  const operational = state.tls.operational || {};
   const trust = state.tls.trust_anchor || {};
+  const webCa = state.tls.web_ca || {};
   const chainOk = web.chain_valid === true;
   const hostnameOk = web.hostname_match === true;
+  const profileOk = web.profile_valid === true;
+  const sanOk = web.san_policy_valid === true;
+  const webCaOk = webCa.profile_valid === true && Number(webCa.days_remaining) > Number(renewal.web_ca_threshold_days ?? 427);
   const separate = web.mode === "separate-web-identity";
   const due = renewal.due === true;
-  const healthy = chainOk && hostnameOk && !due && separate;
-  $("#tlsMetric").textContent = healthy ? "Исправен" : (due ? "Требует ротации" : "Проверка");
+  const operationalHealthy = operational.healthy === true;
+  const recoveryRequired = operational.recovery_required === true;
+  const healthy = chainOk && hostnameOk && profileOk && sanOk && webCaOk && !due && separate && operationalHealthy;
+  $("#tlsMetric").textContent = healthy ? "Исправен" : (recoveryRequired ? "Требует восстановления" : (due ? "Требует ротации" : "Проверка"));
   $("#tlsMetricNote").textContent = `${web.days_remaining ?? "—"} дн. · ${separate ? "separate Web ID" : "legacy fallback"}`;
   $("#tlsWebHostname").textContent = state.tls.web_url || state.tls.web_hostname || "—";
-  $("#tlsViewTag").textContent = healthy ? "TLS HEALTHY" : (due ? "RENEWAL DUE" : "CHECK");
+  $("#tlsViewTag").textContent = healthy ? "TLS HEALTHY" : (recoveryRequired ? "RECOVERY REQUIRED" : (due ? "RENEWAL DUE" : "CHECK"));
   $("#tlsViewTag").className = healthy ? "tag" : "tag warning";
-  const candidateText = candidate.complete ? "готов к активации" : (candidate.partial ? "неполный — заблокирован" : "не подготовлен");
+  const candidateText = candidate.complete ? "готов к активации" : (candidate.invalid ? "недопустимый — восстановление обязательно" : (candidate.partial ? "неполный — восстановление обязательно" : "не подготовлен"));
   [
     ["Режим", web.mode || "—"],
+    ["Web PKI", profileOk ? "ECDSA P-256 / SHA-256" : (web.profile || "несовместимый профиль")],
     ["Издатель", web.issuer || "—"],
     ["SAN DNS", (web.san_dns || []).join(", ") || "—"],
     ["Действителен до", formatTime(web.not_after)],
     ["Осталось", Number.isFinite(web.days_remaining) ? `${web.days_remaining} дн.` : "—"],
     ["Web SHA-256", shortHash(web.fingerprint_sha256)],
     ["Trust anchor SHA-256", shortHash(trust.fingerprint_sha256)],
+    ["Web CA SHA-256", shortHash(webCa.fingerprint_sha256)],
     ["Candidate", candidateText],
+    ["Операционное состояние", operational.state || "—"],
   ].forEach(([label, value]) => { const d=node("div","detail"); d.append(node("span","",label)); d.append(node("strong","",value)); root.append(d); });
   checks.append(tlsCheck("Цепочка доверия", chainOk ? "Строгая проверка CA проходит" : "Цепочка не подтверждена", chainOk));
   checks.append(tlsCheck("Имя узла", hostnameOk ? `${web.expected_hostname} присутствует в SAN` : "Hostname не соответствует SAN", hostnameOk));
+  checks.append(tlsCheck("Профиль браузера", profileOk ? "ECDSA P-256 / SHA-256" : "Алгоритм Web-сертификата несовместим", profileOk));
+  checks.append(tlsCheck("SAN policy", sanOk ? "Node FQDN, reserved VIP и management IP присутствуют" : "Неполный обязательный SAN", sanOk));
+  checks.append(tlsCheck("Web CA horizon", webCaOk ? "CA покрывает полный срок следующего leaf" : "Требуется ротация Web CA до выпуска leaf", webCaOk));
   checks.append(tlsCheck("Отдельная Web identity", separate ? "Peer mTLS ключ не используется Web listener" : "Работает миграционный peer-cert fallback", separate));
   checks.append(tlsCheck("Срок действия", due ? `Ротация требуется при пороге ${renewal.threshold_days ?? 30} дней` : "Ротация пока не требуется", !due));
   checks.append(tlsCheck("Staged candidate", candidate.partial ? "Обнаружена неполная пара cert/key" : candidateText, !candidate.partial));
+  checks.append(tlsCheck("Состояние ротации", operationalHealthy ? "Нет незавершённой или неопределённой мутации" : (operational.reason || "Требуется проверка"), operationalHealthy));
   $("#tlsJson").textContent = JSON.stringify(state.tls, null, 2);
 }
 

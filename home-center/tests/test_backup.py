@@ -35,7 +35,7 @@ class BackupTests(unittest.TestCase):
             path = secrets / name
             path.write_bytes(value)
             os.chmod(path, 0o600)
-        for name in ("node.crt", "ca.crt"):
+        for name in ("node.crt", "ca.crt", "web-ca.crt"):
             (secrets / name).write_text("test-public-certificate", encoding="utf-8")
 
         profile = root / "profile.json"
@@ -63,6 +63,7 @@ class BackupTests(unittest.TestCase):
             "tls_certificate": str(secrets / "node.crt"),
             "tls_private_key": str(secrets / "node.key"),
             "cluster_ca": str(secrets / "ca.crt"),
+            "web_ca": str(secrets / "web-ca.crt"),
             "deployment_profile": str(profile),
             "peer": {
                 "node_id": "hm-dm-dc02",
