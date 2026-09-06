@@ -74,7 +74,7 @@ Release PR tests/security и reproducible artifact проходят; после 
 
 ## `0.8.0` parallel development
 
-Интегрированный code baseline `25e275dc301c9e7c9463b12170b2016ae4b6009b`:
+Интегрированный code baseline `e9bb45415b105ea510d0774380b98108fa5f0fc1`:
 
 - local administrator credential/session model;
 - bootstrap Bearer/token authority удалена из 0.8 Web runtime;
@@ -84,9 +84,12 @@ Release PR tests/security и reproducible artifact проходят; после 
 - optional AD provider: disabled by default, exact KDC list, explicit administrator groups, bounded Kerberos/NSS execution, no password persistence;
 - local administrator fallback не зависит от доступности AD;
 - config schema `home-center.config.v3`;
-- provider-aware Web UI и versioned auth contracts.
+- provider-aware Web UI и versioned auth contracts;
+- public secret-free provider discovery; AD login скрыт и отключён до явного `ad_auth.enabled=true`;
+- fail-closed exact HTTPS Origin/Host и Fetch Metadata gate для browser POST до credential/action processing;
+- authenticated audited logout и COOP/CORP response hardening.
 
-GitHub Actions run `34061141479`: Python 3.12 PASS, Python 3.14 PASS; 202 tests и security/contracts gates прошли. Reproducible artifact job намеренно не выполняется на `develop/**`; tarball construction и содержимое staged deployment проверяются release-cut тестом.
+GitHub Actions run `34063493261` на exact baseline выше: Python 3.12 PASS, Python 3.14 PASS; deterministic tests и security/contracts gates прошли. Reproducible artifact job намеренно не выполняется на `develop/**`; tarball construction и содержимое staged deployment проверяются release-cut тестом.
 
 Не выполнены и не заявлены как выполненные:
 
