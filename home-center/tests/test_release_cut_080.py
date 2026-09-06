@@ -85,6 +85,7 @@ class ReleaseCut080Tests(unittest.TestCase):
             "/etc/home-center/secrets/local-admin.json",
             "LOCAL_ADMIN_CLUSTER_PREFLIGHT=PASS",
             "LOCAL_ADMIN_DEPLOYMENT_PREFLIGHT=PASS",
+            "/var/lib/home-center/ad-auth",
             "CLUSTER_AUTH_FREE_ACCEPTANCE=PASS",
             "DC02_SOFTWARE_CANARY_30S=PASS",
             "HOME_CENTER_CLUSTER_DEPLOY=PASS",

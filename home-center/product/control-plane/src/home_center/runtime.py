@@ -10,6 +10,7 @@ from typing import Any
 
 from . import __version__
 from .actions import ActionRegistry
+from .ad_auth import AdAuthenticator
 from .auth import LoginRateLimiter, SessionManager
 from .config import Config
 from .local_admin_auth import LocalAdminCredentialStore
@@ -34,6 +35,7 @@ class Runtime:
         )
         self.sessions = SessionManager(config.session_key_file)
         self.login_limiter = LoginRateLimiter()
+        self.ad_auth = AdAuthenticator(config.ad_auth)
         self.actions = ActionRegistry(config.node_id, self.store)
         self.reconciler = Reconciler(config, self.store)
 

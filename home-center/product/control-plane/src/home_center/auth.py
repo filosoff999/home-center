@@ -19,7 +19,7 @@ from .util import canonical_json
 
 
 SESSION_COOKIE = "hc_session"
-LOCAL_ADMIN_ACTOR = re.compile(r"^local-admin:[a-z][a-z0-9._-]{2,63}$")
+SESSION_ACTOR = re.compile(r"^(?:local-admin:[a-z][a-z0-9._-]{2,63}|ad-admin:[a-z0-9][a-z0-9._-]{0,63}@[A-Z0-9][A-Z0-9.-]{2,254})$")
 
 
 def _b64(value: bytes) -> str:
@@ -38,7 +38,7 @@ class SessionManager:
         self._lifetime = lifetime_seconds
 
     def new_session(self, actor: str) -> tuple[str, int]:
-        if LOCAL_ADMIN_ACTOR.fullmatch(actor) is None:
+        if SESSION_ACTOR.fullmatch(actor) is None:
             raise ValueError("unsupported session actor")
         expires = int(time.time()) + self._lifetime
         payload = {"actor": actor, "exp": expires, "nonce": secrets.token_hex(16), "v": 2}

@@ -35,6 +35,7 @@ class AuthDeploymentV2Tests(unittest.TestCase):
         self.assertIn("/etc/home-center/secrets/local-admin.json", rendered)
         self.assertIn("validate_local_admin_credential", rendered)
         self.assertIn("LOCAL_ADMIN_DEPLOYMENT_PREFLIGHT=PASS", rendered)
+        self.assertIn("/var/lib/home-center/ad-auth", rendered)
         self.assertIn("/readyz", rendered)
         self.assertIn("publish_transaction started", rendered)
         self.assertIn("verify_previous_runtime", rendered)

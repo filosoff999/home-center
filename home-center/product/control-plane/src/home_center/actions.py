@@ -20,6 +20,7 @@ ACTION_ID = re.compile(r"^[a-z][a-z0-9.-]+\.v[0-9]+$")
 IDEMPOTENCY_KEY = re.compile(r"^[A-Za-z0-9._:-]{8,128}$")
 SERVICE_VALUE = re.compile(r"^[A-Za-z0-9_.@:-]{1,128}$")
 LOCAL_ADMIN_ACTOR = re.compile(r"^local-admin:[a-z][a-z0-9._-]{2,63}$")
+AD_ADMIN_ACTOR = re.compile(r"^ad-admin:[a-z0-9][a-z0-9._-]{0,63}@[A-Z0-9][A-Z0-9.-]{2,254}$")
 SYSTEMCTL = "/usr/bin/systemctl"
 SUPPORTED_ACTION = "service.state.read.v1"
 LOCAL_ADMIN_PERMISSIONS = frozenset({"service.read"})
@@ -51,7 +52,7 @@ Runner = Callable[..., subprocess.CompletedProcess[str]]
 
 
 def _actor_permissions(actor: str) -> frozenset[str]:
-    if LOCAL_ADMIN_ACTOR.fullmatch(actor):
+    if LOCAL_ADMIN_ACTOR.fullmatch(actor) or AD_ADMIN_ACTOR.fullmatch(actor):
         return LOCAL_ADMIN_PERMISSIONS
     return frozenset()
 

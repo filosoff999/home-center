@@ -16,7 +16,7 @@ REVISION=${HOME_CENTER_REVISION:-$(git -C "$ROOT" rev-parse HEAD 2>/dev/null || 
 SOURCE_DATE_EPOCH=${SOURCE_DATE_EPOCH:-1767225600}
 [[ "$SOURCE_DATE_EPOCH" =~ ^[1-9][0-9]{8,11}$ ]] || { echo SOURCE_DATE_EPOCH_REJECTED >&2; exit 66; }
 if [ "${HOME_CENTER_RELEASE_BUILD:-0}" = 1 ]; then
-  grep -qx 'CONFIG_SCHEMA = "home-center.config.v2"' "$ROOT/product/control-plane/src/home_center/config.py" \
+  grep -qx 'CONFIG_SCHEMA = "home-center.config.v3"' "$ROOT/product/control-plane/src/home_center/config.py" \
     || { echo HOME_CENTER_080_CONFIG_SCHEMA_NOT_ADMITTED >&2; exit 66; }
   [ "$(git -C "$ROOT" rev-parse HEAD)" = "$REVISION" ] || { echo RELEASE_REVISION_NOT_HEAD >&2; exit 66; }
   [ -z "$(git -C "$ROOT" status --porcelain --untracked-files=all)" ] || { echo RELEASE_WORKTREE_NOT_CLEAN >&2; exit 66; }
