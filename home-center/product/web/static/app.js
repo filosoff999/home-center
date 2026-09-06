@@ -3,6 +3,11 @@
 const state = { overview: null, profile: null, backups: [], audit: [], tls: null, currentView: "overview" };
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
+const LOGIN_ERROR_MESSAGES = Object.freeze({
+  invalid_credentials: "Неверный токен администратора.",
+  rate_limited: "Слишком много попыток входа. Подождите и попробуйте снова.",
+  authentication_unavailable: "Сервис авторизации временно недоступен. Повторите попытку позже.",
+});
 
 function node(tag, className, text) {
   const el = document.createElement(tag);
@@ -46,27 +51,69 @@ async function optionalApi(path) {
   }
 }
 
-function showLogin() { $("#loginLayer").hidden = false; $("#tokenInput").focus(); }
-function hideLogin() { $("#loginLayer").hidden = true; $("#loginError").textContent = ""; $("#loginForm").reset(); }
+function showLoginError(kind) {
+  $("#loginError").textContent = kind ? (LOGIN_ERROR_MESSAGES[kind] || LOGIN_ERROR_MESSAGES.authentication_unavailable) : "";
+}
+
+function showLogin(errorKind = null) {
+  $("#loginLayer").hidden = false;
+  $("#loginForm").reset();
+  showLoginError(errorKind);
+  $("#tokenInput").focus();
+}
+
+function hideLogin() {
+  $("#loginLayer").hidden = true;
+  showLoginError(null);
+  $("#loginForm").reset();
+}
+
+function loginFailure(kind) {
+  const error = new Error(kind);
+  error.kind = kind;
+  return error;
+}
+
+async function authenticate(token) {
+  let response;
+  try {
+    response = await fetch("/api/v1/session", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "Accept": "application/json", "Content-Type": "application/json" },
+      body: JSON.stringify({ token }),
+    });
+  } catch (_) {
+    throw loginFailure("authentication_unavailable");
+  }
+  if (response.ok) return;
+  if (response.status === 401) throw loginFailure("invalid_credentials");
+  if (response.status === 429) throw loginFailure("rate_limited");
+  throw loginFailure("authentication_unavailable");
+}
 
 async function login(event) {
   event.preventDefault();
   const button = event.currentTarget.querySelector("button");
   const token = $("#tokenInput").value;
   button.disabled = true;
-  $("#loginError").textContent = "";
+  showLoginError(null);
   try {
-    await api("/api/v1/session", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token }) });
+    await authenticate(token);
+    await api("/api/v1/session");
     hideLogin();
     await refresh();
   } catch (error) {
-    if (error.message !== "authentication_required") $("#loginError").textContent = error.message;
+    showLoginError(error.kind || "authentication_unavailable");
+    $("#tokenInput").value = "";
+    $("#tokenInput").focus();
   } finally { button.disabled = false; }
 }
 
 async function logout() {
-  try { await api("/api/v1/session/logout", { method: "POST" }); } catch (_) { /* cookie is cleared best effort */ }
-  showLogin();
+  try { await api("/api/v1/session/logout", { method: "POST" }); }
+  catch (_) { /* local UI still locks if server-side expiry is unavailable */ }
+  finally { showLogin(); }
 }
 
 function switchView(view) {
@@ -263,9 +310,10 @@ async function refresh() {
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
-  $("#loginForm").addEventListener("submit", login); $("#logoutButton").addEventListener("click", logout); $("#refreshButton").addEventListener("click", refresh);
+  $("#loginForm").addEventListener("submit", login); $("#logoutButton").addEventListener("click", logout); $("#mobileLogoutButton").addEventListener("click", logout); $("#refreshButton").addEventListener("click", refresh);
   $$(".nav-item").forEach((item)=>item.addEventListener("click",()=>switchView(item.dataset.view)));
   $$("[data-go]").forEach((item)=>item.addEventListener("click",()=>switchView(item.dataset.go)));
-  try { await api("/api/v1/session"); hideLogin(); await refresh(); } catch (error) { if (error.message !== "authentication_required") showLogin(); }
+  try { await api("/api/v1/session"); hideLogin(); await refresh(); }
+  catch (error) { if (error.message !== "authentication_required") showLogin("authentication_unavailable"); }
   setInterval(()=>{ if ($("#loginLayer").hidden) refresh(); },15000);
 });

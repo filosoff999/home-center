@@ -8,6 +8,7 @@ on:
       - "bootstrap/**"
       - "dev/**"
       - "fix/**"
+      - "maintenance/**"
   workflow_dispatch:
 
 permissions:
@@ -41,11 +42,59 @@ jobs:
       - name: Run contracts, tests and security gates
         run: make contracts test security
 
+  browser-acceptance:
+    name: HC-WEB-001 immutable artifact browser acceptance
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    outputs:
+      artifact_sha256: ${{ steps.browser-artifact.outputs.sha256 }}
+    steps:
+      - name: Checkout exact revision
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Resolve artifact version
+        id: browser-version
+        shell: bash
+        run: |
+          VERSION=$(awk -F'"' '/^__version__ = / {print $2}' product/control-plane/src/home_center/__init__.py)
+          [ "$VERSION" = 0.7.0 ]
+          echo "value=$VERSION" >>"$GITHUB_OUTPUT"
+      - name: Build immutable browser-test artifact
+        env:
+          HOME_CENTER_VERSION: ${{ steps.browser-version.outputs.value }}
+          HOME_CENTER_REVISION: ${{ github.sha }}
+          HOME_CENTER_RELEASE_BUILD: "1"
+          SOURCE_DATE_EPOCH: "1767225600"
+        run: bash deploy/scripts/build-artifact.sh "$RUNNER_TEMP/home-center-browser-dist"
+      - name: Extract and identify immutable browser-test artifact
+        id: browser-artifact
+        env:
+          HOME_CENTER_VERSION: ${{ steps.browser-version.outputs.value }}
+        run: |
+          ARCHIVE="$RUNNER_TEMP/home-center-browser-dist/home-center-${HOME_CENTER_VERSION}-linux-amd64.tar.gz"
+          SHA256=$(sha256sum "$ARCHIVE" | awk '{print $1}')
+          [[ "$SHA256" =~ ^[0-9a-f]{64}$ ]]
+          echo "sha256=$SHA256" >>"$GITHUB_OUTPUT"
+          mkdir -p "$RUNNER_TEMP/home-center-browser-release"
+          tar -xzf "$ARCHIVE" -C "$RUNNER_TEMP/home-center-browser-release"
+      - name: Run desktop and Android-like Chrome acceptance
+        env:
+          HOME_CENTER_VERSION: ${{ steps.browser-version.outputs.value }}
+          HOME_CENTER_REVISION: ${{ github.sha }}
+        run: |
+          google-chrome --version
+          chromedriver --version
+          python3 tests/browser_hc_web_070.py \
+            --web-root "$RUNNER_TEMP/home-center-browser-release/web" \
+            --expected-version "$HOME_CENTER_VERSION" \
+            --expected-revision "$HOME_CENTER_REVISION"
+
   artifact:
     name: Reproducible deployment artifact
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
-    needs: deterministic-gates
+    needs: [deterministic-gates, browser-acceptance]
     steps:
       - name: Checkout exact revision
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -64,12 +113,16 @@ jobs:
           HOME_CENTER_REVISION: ${{ github.sha }}
           HOME_CENTER_RELEASE_BUILD: "1"
           SOURCE_DATE_EPOCH: "1767225600"
+          BROWSER_ACCEPTED_SHA256: ${{ needs.browser-acceptance.outputs.artifact_sha256 }}
         run: |
           make contracts security
           bash deploy/scripts/build-artifact.sh "$RUNNER_TEMP/home-center-dist-first"
           bash deploy/scripts/build-artifact.sh "$RUNNER_TEMP/home-center-dist-second"
           cmp "$RUNNER_TEMP/home-center-dist-first/home-center-${{ steps.version.outputs.value }}-linux-amd64.tar.gz" \
               "$RUNNER_TEMP/home-center-dist-second/home-center-${{ steps.version.outputs.value }}-linux-amd64.tar.gz"
+          [[ "$BROWSER_ACCEPTED_SHA256" =~ ^[0-9a-f]{64}$ ]]
+          BUILT_SHA256=$(sha256sum "$RUNNER_TEMP/home-center-dist-first/home-center-${{ steps.version.outputs.value }}-linux-amd64.tar.gz" | awk '{print $1}')
+          [ "$BUILT_SHA256" = "$BROWSER_ACCEPTED_SHA256" ]
           mkdir dist
           cp "$RUNNER_TEMP/home-center-dist-first/home-center-${{ steps.version.outputs.value }}-linux-amd64.tar.gz" \
              "$RUNNER_TEMP/home-center-dist-first/home-center-${{ steps.version.outputs.value }}-linux-amd64.tar.gz.sha256" dist/
