@@ -30,7 +30,8 @@ Architecture Decision Record обязателен для решений, кот�
 5. [ADR-0005 — bounded privileged helper](0005-bounded-privileged-helper.md);
 6. [ADR-0006 — Web TLS certificate lifecycle and trust model](0006-web-tls-certificate-lifecycle.md);
 7. [ADR-0007 — signed stable release channel](0007-signed-stable-release-channel.md);
-8. [ADR-0008 — local administrator authentication for Home Center 0.8](0008-local-administrator-authentication.md).
+8. [ADR-0008 — local administrator authentication for Home Center 0.8](0008-local-administrator-authentication.md);
+9. [ADR-0009 — authentication-free deployment probes for Home Center 0.8](0009-auth-free-deployment-v2.md).
 
 ## Следующие решения
 
