@@ -23,9 +23,13 @@ def main() -> None:
     config = read(SRC / "config.py")
     runtime = read(SRC / "runtime.py")
     local = read(SRC / "local_admin_auth.py")
+    provision = read(SRC / "local_admin_provision.py")
+    provision_cli = read(ROOT / "deploy/runtime/provision-local-admin.py")
+    build = read(ROOT / "deploy/scripts/build-artifact.sh")
     index = read(WEB / "index.html")
     browser = read(WEB / "app.js")
     api_tests = read(ROOT / "tests/test_api.py")
+    provision_tests = read(ROOT / "tests/test_local_admin_provision.py")
     openapi = read(ROOT / "contracts/openapi/home-center-auth.v2.openapi.json")
     login_contract = read(ROOT / "contracts/auth/login-request.v1.schema.json")
     credential_contract = read(ROOT / "contracts/auth/local-admin-credential.v1.schema.json")
@@ -70,8 +74,30 @@ def main() -> None:
     for marker in ('"n": {\n      "const": 32768', '"r": {\n      "const": 8', '"p": {\n      "const": 1', '"dklen": {\n      "const": 32'):
         require(marker in credential_contract, f"credential contract KDF marker missing: {marker}")
 
+    for marker in (
+        "os.O_EXCL",
+        "O_NOFOLLOW",
+        "os.link(",
+        "follow_symlinks=False",
+        "os.fsync",
+        "credential_file_exists",
+        "credential_directory_metadata_rejected",
+    ):
+        require(marker in provision, f"provisioning hardening marker missing: {marker}")
+    require("os.replace" not in provision, "credential publication must not overwrite the destination")
+    require("getpass.getpass" in provision_cli, "provisioning CLI does not use hidden TTY input")
+    require("sys.stdin.isatty()" in provision_cli, "provisioning CLI accepts non-interactive password input")
+    require('parser.add_argument("--username"' in provision_cli, "provisioning CLI username option missing")
+    require('parser.add_argument("--password"' not in provision_cli, "password command-line option is forbidden")
+    require("os.environ" not in provision_cli, "password/environment credential input is forbidden")
+    require("--password-stdin" not in provision_cli, "automation password stdin is forbidden")
+    require("provision-local-admin.py" in build, "provisioner is not staged for the future 0.8 artifact")
+    require("HOME_CENTER_080_ARTIFACT_NOT_YET_ADMITTED" in build, "0.8 source artifact admission is not fail-closed")
+
     require("test_bearer_bootstrap_token_cannot_bypass_local_login" in api_tests, "Bearer bypass regression test missing")
     require("test_invalid_login_is_generic_and_legacy_token_shape_is_rejected" in api_tests, "legacy token-shape regression test missing")
+    require("test_existing_symlink_is_never_followed_or_replaced" in provision_tests, "provision symlink regression test missing")
+    require("test_existing_regular_file_is_never_overwritten" in provision_tests, "provision overwrite regression test missing")
     print("SECURITY_GATE_080=PASS")
 
 
