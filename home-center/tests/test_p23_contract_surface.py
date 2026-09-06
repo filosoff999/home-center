@@ -59,6 +59,26 @@ class P23ContractSurfaceTests(unittest.TestCase):
         self.assertNotIn("ADMITTED_SOURCE_VERSION=", bootstrap)
         self.assertNotIn("ADMITTED_SOURCE_REVISION=", bootstrap)
 
+    def test_software_rollout_preserves_existing_web_identity_transactionally(self) -> None:
+        bootstrap = (ROOT / "deploy/scripts/bootstrap-hm-dm.sh").read_text(encoding="utf-8")
+        for required in (
+            "web_public_state_local()",
+            "web_public_state_remote()",
+            "LOCAL_WEB_STATE_BEFORE=$(web_public_state_local)",
+            "REMOTE_WEB_STATE_BEFORE=$(web_public_state_remote)",
+            '[ "$(web_public_state_local)" = "$LOCAL_WEB_STATE_BEFORE" ]',
+            '[ "$(web_public_state_remote)" = "$REMOTE_WEB_STATE_BEFORE" ]',
+            "DC01_FINAL_WEB_IDENTITY_CHANGED",
+            "DC02_FINAL_WEB_IDENTITY_CHANGED",
+            "FINAL_EXACT_RELEASE_AND_WEB_PEER_INVARIANTS=PASS",
+        ):
+            self.assertIn(required, bootstrap)
+        rollback_proof = bootstrap.split("verify_cluster_source_restored()", 1)[1].split("cleanup()", 1)[0]
+        self.assertIn('web_public_state_local)" = "$LOCAL_WEB_STATE_BEFORE"', rollback_proof)
+        self.assertIn('web_public_state_remote)" = "$REMOTE_WEB_STATE_BEFORE"', rollback_proof)
+        self.assertIn("--cacert /etc/home-center/pki/web-ca/ca.crt", rollback_proof)
+        self.assertNotIn("--cacert /etc/home-center/pki/ca.crt --max-time 5 https://192.168.10.254:8443", rollback_proof)
+
     def test_prior_cluster_recovery_ignores_valid_terminal_old_target_only(self) -> None:
         bootstrap = (ROOT / "deploy/scripts/bootstrap-hm-dm.sh").read_text(encoding="utf-8")
         recovery_block = bootstrap.split("PRIOR_CLUSTER_RECOVERY_JSON=", 1)[1]

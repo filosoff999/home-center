@@ -715,6 +715,30 @@ test "$key_public_sha" = "$certificate_public_sha"
 printf "%s:%s:%s\n" "$ca_sha" "$certificate_sha" "$key_public_sha"'
 }
 
+web_public_state_local() {
+  local ca_sha certificate_sha key_public_sha certificate_public_sha
+  ca_sha=$(openssl x509 -in /etc/home-center/pki/web-ca/ca.crt -outform DER | sha256sum | awk '{print $1}') || return 1
+  certificate_sha=$(openssl x509 -in /etc/home-center/pki/web/current/tls.crt -outform DER | sha256sum | awk '{print $1}') || return 1
+  key_public_sha=$(openssl pkey -in /etc/home-center/pki/web/current/tls.key -pubout -outform DER | sha256sum | awk '{print $1}') || return 1
+  certificate_public_sha=$(openssl x509 -in /etc/home-center/pki/web/current/tls.crt -pubkey -noout |
+    openssl pkey -pubin -outform DER | sha256sum | awk '{print $1}') || return 1
+  [ "$key_public_sha" = "$certificate_public_sha" ] || return 1
+  openssl verify -x509_strict -CAfile /etc/home-center/pki/web-ca/ca.crt \
+    /etc/home-center/pki/web/current/tls.crt >/dev/null || return 1
+  printf '%s:%s:%s\n' "$ca_sha" "$certificate_sha" "$key_public_sha"
+}
+
+web_public_state_remote() {
+  "${SSH[@]}" 'set -Eeuo pipefail
+ca_sha=$(sudo -n openssl x509 -in /etc/home-center/pki/web-ca/ca.crt -outform DER | sha256sum | awk "{print \$1}")
+certificate_sha=$(sudo -n openssl x509 -in /etc/home-center/pki/web/current/tls.crt -outform DER | sha256sum | awk "{print \$1}")
+key_public_sha=$(sudo -n openssl pkey -in /etc/home-center/pki/web/current/tls.key -pubout -outform DER | sha256sum | awk "{print \$1}")
+certificate_public_sha=$(sudo -n openssl x509 -in /etc/home-center/pki/web/current/tls.crt -pubkey -noout | sudo -n openssl pkey -pubin -outform DER | sha256sum | awk "{print \$1}")
+test "$key_public_sha" = "$certificate_public_sha"
+sudo -n openssl verify -x509_strict -CAfile /etc/home-center/pki/web-ca/ca.crt /etc/home-center/pki/web/current/tls.crt >/dev/null
+printf "%s:%s:%s\n" "$ca_sha" "$certificate_sha" "$key_public_sha"'
+}
+
 verify_bidirectional_peer_identity() {
   local dc02_peer dc01_peer
   dc02_peer=$(curl --fail --silent --show-error \
@@ -741,8 +765,8 @@ verify_cluster_source_restored() {
   [ "$local_snapshot" = "$LOCAL_SOURCE_SNAPSHOT" ] || return 1
   remote_snapshot=$("${SSH[@]}" 'set -Eeuo pipefail; release=$(readlink -f /opt/home-center/current); version=$(tr -d "\r\n" <"$release/VERSION"); revision=$(tr -d "\r\n" <"$release/REVISION"); printf "%s|%s|%s\n" "$release" "$version" "$revision"') || return 1
   [ "$remote_snapshot" = "$REMOTE_SOURCE_SNAPSHOT" ] || return 1
-  local_ready=$(curl --fail --silent --show-error --cacert /etc/home-center/pki/ca.crt --max-time 5 https://192.168.10.254:8443/readyz) || return 1
-  remote_ready=$(curl --fail --silent --show-error --cacert /etc/home-center/pki/ca.crt --max-time 5 https://192.168.10.253:8443/readyz) || return 1
+  local_ready=$(curl --fail --silent --show-error --cacert /etc/home-center/pki/web-ca/ca.crt --max-time 5 https://192.168.10.254:8443/readyz) || return 1
+  remote_ready=$(curl --fail --silent --show-error --cacert /etc/home-center/pki/web-ca/ca.crt --max-time 5 https://192.168.10.253:8443/readyz) || return 1
   /usr/bin/python3 -I - "$local_ready" "$remote_ready" "$LOCAL_SOURCE_VERSION" <<'PY' || return 1
 import json, sys
 for node, raw in zip(("dc01", "dc02"), sys.argv[1:3]):
@@ -757,6 +781,8 @@ for node, raw in zip(("dc01", "dc02"), sys.argv[1:3]):
 PY
   [ "$(peer_public_state_local)" = "$LOCAL_PEER_STATE_BEFORE" ] || return 1
   [ "$(peer_public_state_remote)" = "$REMOTE_PEER_STATE_BEFORE" ] || return 1
+  [ "$(web_public_state_local)" = "$LOCAL_WEB_STATE_BEFORE" ] || return 1
+  [ "$(web_public_state_remote)" = "$REMOTE_WEB_STATE_BEFORE" ] || return 1
   verify_bidirectional_peer_identity || return 1
   auth_file=$(mktemp "$TMP/.rollback-auth.XXXXXX") || return 1
   chmod 0600 "$auth_file" || return 1
@@ -766,10 +792,10 @@ PY
   printf 'header = "Authorization: Bearer %s"\n' "$admin_token" >"$auth_file" || return 1
   unset admin_token
   local_overview=$(curl --config "$auth_file" --fail --silent --show-error \
-    --cacert /etc/home-center/pki/ca.crt --max-time 5 \
+    --cacert /etc/home-center/pki/web-ca/ca.crt --max-time 5 \
     https://192.168.10.254:8443/api/v1/overview) || return 1
   remote_overview=$(curl --config "$auth_file" --fail --silent --show-error \
-    --cacert /etc/home-center/pki/ca.crt --max-time 5 \
+    --cacert /etc/home-center/pki/web-ca/ca.crt --max-time 5 \
     https://192.168.10.253:8443/api/v1/overview) || return 1
   rm -f -- "$auth_file" || return 1
   /usr/bin/python3 -I - "$local_overview" "$remote_overview" <<'PY' || return 1
@@ -1060,8 +1086,10 @@ REMOTE_CERT_CN=$("${SSH[@]}" sudo -n openssl x509 -in /etc/home-center/pki/node.
 [ "$REMOTE_CERT_CN" = home-center-dc02 ] || { echo DC02_CERT_IDENTITY_MISMATCH >&2; false; }
 LOCAL_PEER_STATE_BEFORE=$(peer_public_state_local) || { echo DC01_PEER_KEY_CERT_MISMATCH >&2; false; }
 REMOTE_PEER_STATE_BEFORE=$(peer_public_state_remote) || { echo DC02_PEER_KEY_CERT_MISMATCH >&2; false; }
+LOCAL_WEB_STATE_BEFORE=$(web_public_state_local) || { echo DC01_WEB_KEY_CERT_MISMATCH >&2; false; }
+REMOTE_WEB_STATE_BEFORE=$(web_public_state_remote) || { echo DC02_WEB_KEY_CERT_MISMATCH >&2; false; }
 verify_bidirectional_peer_identity || { echo CLUSTER_PEER_PREFLIGHT_REJECTED >&2; false; }
-echo CLUSTER_PEER_PREFLIGHT=PASS
+echo CLUSTER_PEER_AND_WEB_IDENTITY_PREFLIGHT=PASS
 
 CLUSTER_TRANSACTION_OWNED=1
 publish_cluster_transaction started
@@ -1295,6 +1323,10 @@ printf "%s|%s|%s\n" "$release" "$version" "$revision"')
   || { echo DC01_FINAL_PEER_IDENTITY_CHANGED >&2; false; }
 [ "$(peer_public_state_remote)" = "$REMOTE_PEER_STATE_BEFORE" ] \
   || { echo DC02_FINAL_PEER_IDENTITY_CHANGED >&2; false; }
+[ "$(web_public_state_local)" = "$LOCAL_WEB_STATE_BEFORE" ] \
+  || { echo DC01_FINAL_WEB_IDENTITY_CHANGED >&2; false; }
+[ "$(web_public_state_remote)" = "$REMOTE_WEB_STATE_BEFORE" ] \
+  || { echo DC02_FINAL_WEB_IDENTITY_CHANGED >&2; false; }
 verify_bidirectional_peer_identity || { echo FINAL_PEER_IDENTITY_PROOF_REJECTED >&2; false; }
 FINAL_LOCAL_READY=$(curl --fail --silent --show-error --cacert "$WEB_CURL_CA" --max-time 5 https://192.168.10.254:8443/readyz)
 FINAL_REMOTE_READY=$(curl --fail --silent --show-error --cacert "$WEB_CURL_CA" --max-time 5 https://192.168.10.253:8443/readyz)
@@ -1339,7 +1371,7 @@ systemctl is-active --quiet home-center.service
 systemctl is-active --quiet home-center-helper.service
 systemctl is-active --quiet home-center-tls-maintenance.timer
 systemctl is-active --quiet home-center-backup.timer'
-echo FINAL_EXACT_RELEASE_AND_PEER_INVARIANTS=PASS
+echo FINAL_EXACT_RELEASE_AND_WEB_PEER_INVARIANTS=PASS
 
 publish_cluster_transaction succeeded
 trap - ERR INT TERM HUP

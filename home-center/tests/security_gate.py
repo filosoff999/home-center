@@ -523,6 +523,12 @@ for required in (
     "ADMITTED_SOURCE_V043_REVISION=64f798ceae0b669cbac01b452c3cf4fd96070136",
     "ADMITTED_SOURCE_V043_RELEASE=/opt/home-center/releases/0.4.3-64f798ceae0b-b2dde6a51ec9",
     'source_identity_admitted "$LOCAL_SOURCE_VERSION" "$LOCAL_SOURCE_REVISION" "$LOCAL_SOURCE_RELEASE"',
+    "LOCAL_WEB_STATE_BEFORE=$(web_public_state_local)",
+    "REMOTE_WEB_STATE_BEFORE=$(web_public_state_remote)",
+    "DC01_FINAL_WEB_IDENTITY_CHANGED",
+    "DC02_FINAL_WEB_IDENTITY_CHANGED",
+    "FINAL_EXACT_RELEASE_AND_WEB_PEER_INVARIANTS=PASS",
+    "local_ready=$(curl --fail --silent --show-error --cacert /etc/home-center/pki/web-ca/ca.crt",
 ):
     if required not in bootstrap:
         errors.append(f"strict X.509 bootstrap profile missing: {required}")
