@@ -38,6 +38,15 @@
 - [`ops/PRODUCTION-ACCEPTANCE-2026-09-06.md`](ops/PRODUCTION-ACCEPTANCE-2026-09-06.md);
 - [`ops/P2.1-PRODUCTION-ACCEPTANCE-2026-09-06.md`](ops/P2.1-PRODUCTION-ACCEPTANCE-2026-09-06.md).
 
-## Следующий этап
+## Roadmap
 
-P2.2: отдельный bounded privileged helper, полный policy scope и failure/recovery доказательства. Ни одна mutation action не допускается в registry до отдельного ADR, тестов и canary acceptance.
+1. **P2.2 — bounded privileged helper и policy gate** ([#9](https://github.com/ControlCenterSoft/home-center/issues/9)).  
+   Отдельный минимальный privileged execution boundary, deny-by-default policy scope и failure/recovery доказательства. Ни одна mutation action не допускается в registry до отдельного ADR, тестов и canary acceptance.
+
+2. **P2.3 — HTTPS/TLS certificate lifecycle и доверенный Web UI** ([#10](https://github.com/ControlCenterSoft/home-center/issues/10)).  
+   Исправление текущих проблем HTTPS-сертификата Web UI и перевод управления сертификатами в штатную функцию Home Center: корректные SAN/hostname/chain checks, доверие доменных клиентов, issuance/import, renewal/rotation, expiry monitoring, `dc02 → dc01` rollout, atomic rollback, certificate health в Web UI и отсутствие регрессии peer mTLS. Production mutation path зависит от acceptance P2.2.
+
+3. **После P2.3 — bounded infrastructure mutations и cluster/node management.**  
+   Расширение Action Registry только сертифицированными типизированными действиями с отдельными admission gates, rollback и production evidence.
+
+Automatic failover остаётся запрещён до отдельной witness/fencing certification.
