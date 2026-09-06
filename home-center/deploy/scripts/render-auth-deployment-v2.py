@@ -201,7 +201,7 @@ def render_bootstrap(source: str) -> str:
 
     rendered = _regex_once(
         rendered,
-        r'for _ in \$\(seq 1 30\); do\n  LOCAL_CLUSTER=\$\(curl --config "\$AUTH_CONFIG".*?\nPY\n(?=curl --fail --silent --show-error --cert /etc/home-center/pki/node\.crt)',
+        r'for _ in \$\(seq 1 30\); do\n  LOCAL_CLUSTER=\$\(curl --config "\$AUTH_CONFIG".*?\nPY\n\n(?=curl --fail --silent --show-error --cert /etc/home-center/pki/node\.crt)',
         "echo CLUSTER_AUTH_FREE_ACCEPTANCE=PASS\n",
         "bootstrap_final_overview",
     )
