@@ -2,16 +2,70 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Home Center Control Plane API",
-    "version": "0.1.0",
-    "description": "Read-only P1 API. Privileged mutations remain fail-closed until typed action contracts are certified."
+    "version": "0.2.0",
+    "description": "P2 API with a fail-closed typed Action Registry. Only certified read-only actions are available."
   },
-  "servers": [{"url": "https://home-center.hm.dm:8443"}],
+  "servers": [
+    {
+      "url": "https://home-center.hm.dm:8443"
+    }
+  ],
   "paths": {
-    "/healthz": {"get": {"operationId": "getLiveness", "security": [], "responses": {"200": {"description": "Local process is live", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Liveness"}}}}}}},
-    "/readyz": {"get": {"operationId": "getReadiness", "security": [], "responses": {"200": {"description": "Local state and audit chain are ready"}, "503": {"description": "Local readiness failed"}}}},
-    "/api/v1/meta": {"get": {"operationId": "getMetadata", "security": [], "responses": {"200": {"description": "Non-sensitive product metadata"}}}},
+    "/healthz": {
+      "get": {
+        "operationId": "getLiveness",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Local process is live",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Liveness"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/readyz": {
+      "get": {
+        "operationId": "getReadiness",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Local state and audit chain are ready"
+          },
+          "503": {
+            "description": "Local readiness failed"
+          }
+        }
+      }
+    },
+    "/api/v1/meta": {
+      "get": {
+        "operationId": "getMetadata",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Non-sensitive product metadata"
+          }
+        }
+      }
+    },
     "/api/v1/session": {
-      "get": {"operationId": "getSession", "responses": {"200": {"description": "Current session"}, "401": {"description": "Authentication required"}}},
+      "get": {
+        "operationId": "getSession",
+        "responses": {
+          "200": {
+            "description": "Current session"
+          },
+          "401": {
+            "description": "Authentication required"
+          }
+        }
+      },
       "post": {
         "operationId": "createSession",
         "security": [],
@@ -22,32 +76,227 @@
               "schema": {
                 "type": "object",
                 "additionalProperties": false,
-                "required": ["token"],
-                "properties": {"token": {"type": "string", "minLength": 32, "writeOnly": true}}
+                "required": [
+                  "token"
+                ],
+                "properties": {
+                  "token": {
+                    "type": "string",
+                    "minLength": 32,
+                    "writeOnly": true
+                  }
+                }
               }
             }
           }
         },
         "responses": {
-          "200": {"description": "Session created"},
-          "401": {"description": "Invalid credentials"},
-          "429": {"description": "Rate limited"}
+          "200": {
+            "description": "Session created"
+          },
+          "401": {
+            "description": "Invalid credentials"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
         }
       }
     },
-    "/api/v1/overview": {"get": {"operationId": "getOverview", "responses": {"200": {"description": "Cluster overview"}}}},
-    "/api/v1/nodes": {"get": {"operationId": "listNodes", "responses": {"200": {"description": "Observed nodes"}}}},
-    "/api/v1/jobs": {"get": {"operationId": "listJobs", "responses": {"200": {"description": "Typed jobs"}}}},
-    "/api/v1/audit": {"get": {"operationId": "listAudit", "responses": {"200": {"description": "HMAC chained audit events"}}}},
-    "/api/v1/desired-state": {"get": {"operationId": "listDesiredState", "responses": {"200": {"description": "Desired state resources"}}}},
-    "/api/v1/deployment-profile": {"get": {"operationId": "getDeploymentProfile", "responses": {"200": {"description": "Active profile"}}}},
-    "/api/v1/backups": {"get": {"operationId": "listBackups", "responses": {"200": {"description": "Verified restore points"}}}}
-  },
-  "components": {
-    "securitySchemes": {"sessionCookie": {"type": "apiKey", "in": "cookie", "name": "hc_session"}, "bootstrapBearer": {"type": "http", "scheme": "bearer"}},
-    "schemas": {
-      "Liveness": {"type": "object", "additionalProperties": false, "required": ["schema", "status", "version", "node_id", "observed_at"], "properties": {"schema": {"const": "home-center.health.v1"}, "status": {"const": "ok"}, "version": {"type": "string"}, "node_id": {"type": "string"}, "observed_at": {"type": "string", "format": "date-time"}}}
+    "/api/v1/overview": {
+      "get": {
+        "operationId": "getOverview",
+        "responses": {
+          "200": {
+            "description": "Cluster overview"
+          }
+        }
+      }
+    },
+    "/api/v1/nodes": {
+      "get": {
+        "operationId": "listNodes",
+        "responses": {
+          "200": {
+            "description": "Observed nodes"
+          }
+        }
+      }
+    },
+    "/api/v1/jobs": {
+      "get": {
+        "operationId": "listJobs",
+        "responses": {
+          "200": {
+            "description": "Typed jobs"
+          }
+        }
+      }
+    },
+    "/api/v1/audit": {
+      "get": {
+        "operationId": "listAudit",
+        "responses": {
+          "200": {
+            "description": "HMAC chained audit events"
+          }
+        }
+      }
+    },
+    "/api/v1/desired-state": {
+      "get": {
+        "operationId": "listDesiredState",
+        "responses": {
+          "200": {
+            "description": "Desired state resources"
+          }
+        }
+      }
+    },
+    "/api/v1/deployment-profile": {
+      "get": {
+        "operationId": "getDeploymentProfile",
+        "responses": {
+          "200": {
+            "description": "Active profile"
+          }
+        }
+      }
+    },
+    "/api/v1/backups": {
+      "get": {
+        "operationId": "listBackups",
+        "responses": {
+          "200": {
+            "description": "Verified restore points"
+          }
+        }
+      }
+    },
+    "/api/v1/actions": {
+      "get": {
+        "operationId": "listActions",
+        "responses": {
+          "200": {
+            "description": "Immutable typed Action Registry",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "../actions/action-registry.v1.schema.json"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required"
+          }
+        }
+      }
+    },
+    "/api/v1/actions/{action_id}": {
+      "post": {
+        "operationId": "runAction",
+        "parameters": [
+          {
+            "name": "action_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9.-]+\\.v[0-9]+$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "../actions/action-request.v1.schema.json"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Persisted terminal action job or idempotent replay",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "../actions/action-result.v1.schema.json"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid typed request"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Permission denied"
+          },
+          "404": {
+            "description": "Action not registered"
+          },
+          "409": {
+            "description": "Target or idempotency conflict"
+          }
+        }
+      }
     }
   },
-  "security": [{"sessionCookie": []}, {"bootstrapBearer": []}]
+  "components": {
+    "securitySchemes": {
+      "sessionCookie": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "hc_session"
+      },
+      "bootstrapBearer": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    },
+    "schemas": {
+      "Liveness": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schema",
+          "status",
+          "version",
+          "node_id",
+          "observed_at"
+        ],
+        "properties": {
+          "schema": {
+            "const": "home-center.health.v1"
+          },
+          "status": {
+            "const": "ok"
+          },
+          "version": {
+            "type": "string"
+          },
+          "node_id": {
+            "type": "string"
+          },
+          "observed_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    }
+  },
+  "security": [
+    {
+      "sessionCookie": []
+    },
+    {
+      "bootstrapBearer": []
+    }
+  ]
 }

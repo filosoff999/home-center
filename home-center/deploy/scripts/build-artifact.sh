@@ -4,8 +4,8 @@ export LC_ALL=C
 
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)
 OUT=${1:-"$ROOT/dist"}
-VERSION=${HOME_CENTER_VERSION:-0.1.0}
-REVISION=${HOME_CENTER_REVISION:-$(git -C "$ROOT/../.." rev-parse HEAD 2>/dev/null || printf 'working-tree')}
+VERSION=${HOME_CENTER_VERSION:-0.2.0}
+REVISION=${HOME_CENTER_REVISION:-$(git -C "$ROOT" rev-parse HEAD 2>/dev/null || printf 'working-tree')}
 STAGE=$(mktemp -d)
 trap 'rm -rf -- "$STAGE"' EXIT
 

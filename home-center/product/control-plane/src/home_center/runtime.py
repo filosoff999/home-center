@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from . import __version__
+from .actions import ActionRegistry
 from .auth import LoginRateLimiter, SessionManager
 from .config import Config
 from .reconcile import Reconciler
@@ -25,6 +26,7 @@ class Runtime:
         self.store = StateStore(config.state_db, config.audit_key_file.read_bytes(), config.cluster_id)
         self.sessions = SessionManager(config.admin_token_file, config.session_key_file)
         self.login_limiter = LoginRateLimiter()
+        self.actions = ActionRegistry(config.node_id, self.store)
         self.reconciler = Reconciler(config, self.store)
 
     def start(self) -> None:

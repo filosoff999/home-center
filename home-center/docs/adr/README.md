@@ -21,15 +21,19 @@ Architecture Decision Record обязателен для решений, кот�
 - Validation/evidence;
 - Supersedes / Superseded by.
 
-## Первые ADR, требующие отдельного утверждения
+## Accepted decisions
 
-1. repository/product naming boundary для Home Center;
-2. canonical control-plane architecture и process boundaries;
-3. node trust/enrollment protocol;
-4. persistence/database architecture;
-5. secrets boundary;
-6. module isolation/privilege model;
-7. cluster membership/quorum model;
-8. update/signing/supply-chain model.
+1. [ADR-0001 — repository and execution boundary](0001-repository-and-execution-boundary.md);
+2. [ADR-0002 — P1 runtime foundation](0002-p1-runtime-foundation.md);
+3. [ADR-0003 — two-node single-writer topology](0003-two-node-single-writer.md);
+4. [ADR-0004 — typed action registry](0004-typed-action-registry.md).
 
-README не принимает эти решения автоматически; он задаёт процесс их фиксации.
+## Следующие решения
+
+- node trust/enrollment protocol;
+- persistence/database architecture beyond local single-writer state;
+- module isolation/privilege model;
+- cluster membership/quorum and witness/fencing model;
+- update/signing/supply-chain evolution.
+
+README не принимает будущие решения автоматически; он задаёт процесс их фиксации.

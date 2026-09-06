@@ -72,7 +72,25 @@ MIGRATIONS: tuple[tuple[int, str], ...] = (
         );
         """,
     ),
+    (
+        2,
+        """
+        CREATE TABLE IF NOT EXISTS action_job_metadata (
+            job_id TEXT PRIMARY KEY REFERENCES jobs(job_id) ON DELETE CASCADE,
+            actor TEXT NOT NULL,
+            action_id TEXT NOT NULL,
+            idempotency_key TEXT NOT NULL,
+            request_hash TEXT NOT NULL,
+            steps_json TEXT NOT NULL,
+            UNIQUE(actor, action_id, idempotency_key)
+        );
+        """,
+    ),
 )
+
+
+class IdempotencyConflict(ValueError):
+    """The same idempotency key was reused with different request material."""
 
 
 class StateStore:
@@ -265,17 +283,167 @@ class StateStore:
             for row in rows
         ]
 
+    @staticmethod
+    def _decode_job(row: sqlite3.Row) -> dict[str, Any]:
+        return {
+            "schema": "home-center.job.v1",
+            "job_id": row["job_id"],
+            "job_type": row["job_type"],
+            "state": row["state"],
+            "initiator": row["initiator"],
+            "reason": row["reason"],
+            "idempotency_key": row["idempotency_key"] or f"legacy:{row['job_id']}",
+            "preflight": json.loads(row["preflight_json"]),
+            "steps": json.loads(row["steps_json"]) if row["steps_json"] else [],
+            "result": json.loads(row["result_json"]) if row["result_json"] else None,
+            "evidence": json.loads(row["evidence_json"]) if row["evidence_json"] else None,
+            "recovery": json.loads(row["recovery_json"]),
+            "created_at": row["created_at"],
+            "updated_at": row["updated_at"],
+        }
+
     def jobs(self, limit: int = 100) -> list[dict[str, Any]]:
         limit = max(1, min(limit, 500))
         with self._lock:
-            rows = self._connection.execute("SELECT * FROM jobs ORDER BY created_at DESC LIMIT ?", (limit,)).fetchall()
-        result: list[dict[str, Any]] = []
-        for row in rows:
-            item = dict(row)
-            for key in ("preflight_json", "result_json", "evidence_json", "recovery_json"):
-                item[key.removesuffix("_json")] = json.loads(item.pop(key)) if item[key] else None
-            result.append(item)
-        return result
+            rows = self._connection.execute(
+                """SELECT j.*,m.idempotency_key,m.request_hash,m.steps_json
+                FROM jobs AS j LEFT JOIN action_job_metadata AS m ON m.job_id=j.job_id
+                ORDER BY j.created_at DESC LIMIT ?""",
+                (limit,),
+            ).fetchall()
+        return [self._decode_job(row) for row in rows]
+
+    def job(self, job_id: str) -> dict[str, Any] | None:
+        with self._lock:
+            row = self._connection.execute(
+                """SELECT j.*,m.idempotency_key,m.request_hash,m.steps_json
+                FROM jobs AS j LEFT JOIN action_job_metadata AS m ON m.job_id=j.job_id
+                WHERE j.job_id=?""",
+                (job_id,),
+            ).fetchone()
+        return self._decode_job(row) if row else None
+
+    def create_action_job(
+        self,
+        *,
+        action_id: str,
+        actor: str,
+        reason: str,
+        idempotency_key: str,
+        request_hash: str,
+        preflight: dict[str, Any],
+        steps: list[dict[str, Any]],
+    ) -> tuple[dict[str, Any], bool]:
+        now = utc_now()
+        job_id = str(uuid.uuid4())
+        with self._lock:
+            self._connection.execute("BEGIN IMMEDIATE")
+            try:
+                row = self._connection.execute(
+                    """SELECT j.*,m.idempotency_key,m.request_hash,m.steps_json
+                    FROM action_job_metadata AS m JOIN jobs AS j ON j.job_id=m.job_id
+                    WHERE m.actor=? AND m.action_id=? AND m.idempotency_key=?""",
+                    (actor, action_id, idempotency_key),
+                ).fetchone()
+                if row:
+                    if row["request_hash"] != request_hash:
+                        raise IdempotencyConflict(idempotency_key)
+                    self._connection.commit()
+                    return self._decode_job(row), False
+                self._connection.execute(
+                    """INSERT INTO jobs(
+                    job_id,job_type,state,initiator,reason,preflight_json,result_json,evidence_json,
+                    recovery_json,created_at,updated_at
+                    ) VALUES(?,?,?,?,?,?,?,?,?,?,?)""",
+                    (
+                        job_id,
+                        action_id,
+                        "preflight",
+                        actor,
+                        reason,
+                        canonical_json(preflight),
+                        None,
+                        None,
+                        canonical_json({"strategy": "none-read-only", "checkpoint": None}),
+                        now,
+                        now,
+                    ),
+                )
+                self._connection.execute(
+                    """INSERT INTO action_job_metadata(
+                    job_id,actor,action_id,idempotency_key,request_hash,steps_json
+                    ) VALUES(?,?,?,?,?,?)""",
+                    (job_id, actor, action_id, idempotency_key, request_hash, canonical_json(steps)),
+                )
+                row = self._connection.execute(
+                    """SELECT j.*,m.idempotency_key,m.request_hash,m.steps_json
+                    FROM jobs AS j JOIN action_job_metadata AS m ON m.job_id=j.job_id
+                    WHERE j.job_id=?""",
+                    (job_id,),
+                ).fetchone()
+                self._connection.commit()
+            except Exception:
+                self._connection.rollback()
+                raise
+        if row is None:
+            raise RuntimeError("action job persistence failed")
+        return self._decode_job(row), True
+
+    def transition_action_job(
+        self,
+        job_id: str,
+        *,
+        expected_state: str,
+        new_state: str,
+        result: dict[str, Any] | None = None,
+        evidence: dict[str, Any] | None = None,
+        steps: list[dict[str, Any]] | None = None,
+    ) -> dict[str, Any]:
+        allowed = {
+            "preflight": {"running", "failed"},
+            "running": {"verifying", "failed"},
+            "verifying": {"succeeded", "failed"},
+        }
+        if new_state not in allowed.get(expected_state, set()):
+            raise ValueError(f"invalid job transition {expected_state}->{new_state}")
+        with self._lock, self._connection:
+            row = self._connection.execute(
+                """SELECT j.*,m.idempotency_key,m.request_hash,m.steps_json
+                FROM jobs AS j JOIN action_job_metadata AS m ON m.job_id=j.job_id
+                WHERE j.job_id=?""",
+                (job_id,),
+            ).fetchone()
+            if row is None:
+                raise KeyError(job_id)
+            if row["state"] != expected_state:
+                raise RuntimeError("job state changed concurrently")
+            self._connection.execute(
+                """UPDATE jobs SET state=?, result_json=COALESCE(?,result_json),
+                evidence_json=COALESCE(?,evidence_json), updated_at=?
+                WHERE job_id=? AND state=?""",
+                (
+                    new_state,
+                    canonical_json(result) if result is not None else None,
+                    canonical_json(evidence) if evidence is not None else None,
+                    utc_now(),
+                    job_id,
+                    expected_state,
+                ),
+            )
+            if steps is not None:
+                self._connection.execute(
+                    "UPDATE action_job_metadata SET steps_json=? WHERE job_id=?",
+                    (canonical_json(steps), job_id),
+                )
+            row = self._connection.execute(
+                """SELECT j.*,m.idempotency_key,m.request_hash,m.steps_json
+                FROM jobs AS j JOIN action_job_metadata AS m ON m.job_id=j.job_id
+                WHERE j.job_id=?""",
+                (job_id,),
+            ).fetchone()
+        if row is None:
+            raise RuntimeError("action job transition failed")
+        return self._decode_job(row)
 
     def desired_state(self) -> list[dict[str, Any]]:
         with self._lock:

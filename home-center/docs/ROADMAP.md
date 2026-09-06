@@ -1,6 +1,6 @@
 # Roadmap Home Center
 
-**Статус:** `DEVELOPMENT_ACTIVE / P1 PRODUCTION ACCEPTED / P2 NEXT`  
+**Статус:** `DEVELOPMENT_ACTIVE / P1 PRODUCTION ACCEPTED / P2 ACTIVE`  
 **Execution epic:** `#1`.
 
 Roadmap определяет последовательность продуктовых gates. Home Center уже имеет accepted production P1 на `dc01/dc02`; дальнейшая работа начинается с P2 и не должна регрессировать принятые P1 safety/evidence свойства.
@@ -48,9 +48,9 @@ Accepted:
 
 ## P2 — Managed Node / Typed Actions / Reconcile
 
-Current next milestone.
+Status: **IN PROGRESS** — P2.1 candidate is tracked in `#6`.
 
-- [ ] typed Action Registry;
+- [ ] typed Action Registry — `0.2.0` candidate in `#6`;
 - [ ] persisted Change/Job state machine;
 - [ ] complete RBAC/policy for mutations;
 - [ ] bounded privileged helper;

@@ -2,8 +2,8 @@
 
 **Версия:** 2.0  
 **Дата:** 2026-09-06  
-**Статус:** `DEVELOPMENT_ACTIVE / P1 PRODUCTION ACCEPTED / P2 NEXT`  
-**Execution epic:** `#19`.  
+**Статус:** `DEVELOPMENT_ACTIVE / P1 PRODUCTION ACCEPTED / P2.1 IN PROGRESS`  
+**Execution epic:** `#6`.  
 **Основание:** `TECHNICAL-SPECIFICATION.md`, `REQUIREMENTS.md`, `ARCHITECTURE.md`, production acceptance 0.1.0.
 
 ## 1. Исходная точка
@@ -147,6 +147,8 @@ Security-negative, failure injection, canary, production evidence.
 Перейти от read-only P1 к безопасным управляемым изменениям одной ноды через typed actions, сохранив fail-closed модель.
 
 ### P2.1 — Action Contract Registry
+
+**Status:** implementation candidate `0.2.0` tracked in `#6`.
 
 Создать machine-readable registry, где каждый action содержит:
 

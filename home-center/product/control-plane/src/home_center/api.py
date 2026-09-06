@@ -14,6 +14,13 @@ from typing import Any
 from urllib.parse import parse_qs, urlsplit
 
 from . import __version__
+from .actions import (
+    ActionIdempotencyConflict,
+    ActionNotFound,
+    ActionPermissionDenied,
+    ActionRequestError,
+    ActionTargetConflict,
+)
 from .auth import SessionManager
 from .runtime import Runtime
 from .util import utc_now
@@ -111,6 +118,8 @@ class RuntimeRequestHandler(BaseHTTPRequestHandler):
             self._json(200, self.runtime.overview())
         elif path == "/api/v1/nodes":
             self._json(200, {"schema": "home-center.nodes.v1", "items": self.runtime.store.nodes()})
+        elif path == "/api/v1/actions":
+            self._json(200, self.runtime.actions.catalog())
         elif path == "/api/v1/jobs":
             self._json(200, {"schema": "home-center.jobs.v1", "items": self.runtime.store.jobs(100)})
         elif path == "/api/v1/audit":
@@ -138,7 +147,53 @@ class RuntimeRequestHandler(BaseHTTPRequestHandler):
         if path == "/api/v1/session/logout":
             self._json(200, {"schema": "home-center.session.v1", "authenticated": False}, cookie=SessionManager.expired_cookie())
             return
-        if not self._require_actor(correlation_id):
+        actor = self._require_actor(correlation_id)
+        if not actor:
+            return
+        if path.startswith("/api/v1/actions/"):
+            action_id = path.removeprefix("/api/v1/actions/")
+            try:
+                body = self._read_json(max_bytes=8192)
+                job, replay = self.runtime.actions.run(
+                    actor=actor,
+                    action_id=action_id,
+                    request=body,
+                    correlation_id=correlation_id,
+                )
+            except (ValueError, TypeError, json.JSONDecodeError) as exc:
+                if isinstance(exc, ActionNotFound):
+                    status, code, message = HTTPStatus.NOT_FOUND, exc.code, "Действие не зарегистрировано"
+                elif isinstance(exc, ActionPermissionDenied):
+                    status, code, message = HTTPStatus.FORBIDDEN, exc.code, "Недостаточно прав"
+                elif isinstance(exc, ActionIdempotencyConflict):
+                    status, code, message = HTTPStatus.CONFLICT, exc.code, "Ключ идемпотентности уже использован"
+                elif isinstance(exc, ActionTargetConflict):
+                    status, code, message = HTTPStatus.CONFLICT, exc.code, "Целевой узел не является локальным"
+                else:
+                    status, code, message = HTTPStatus.BAD_REQUEST, "invalid_action_request", "Некорректный запрос действия"
+                safe_target = action_id if re.fullmatch(r"[a-z][a-z0-9.-]{0,127}", action_id) else "invalid-action"
+                self.runtime.store.audit(
+                    actor=actor,
+                    action="action.request",
+                    target=safe_target,
+                    outcome="denied",
+                    correlation_id=correlation_id,
+                    details={"reason": code},
+                )
+                self._error(status, code, message, correlation_id)
+                return
+            except Exception:
+                LOG.exception("typed action request failed")
+                self._error(HTTPStatus.INTERNAL_SERVER_ERROR, "action_internal_error", "Внутренняя ошибка действия", correlation_id)
+                return
+            self._json(
+                HTTPStatus.OK,
+                {
+                    "schema": "home-center.action-result.v1",
+                    "idempotent_replay": replay,
+                    "job": job,
+                },
+            )
             return
         self._error(405, "typed_action_not_available", "Изменение не входит в эту сертифицированную версию", correlation_id)
 

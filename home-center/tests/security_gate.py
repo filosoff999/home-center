@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import re
 import subprocess
 import sys
@@ -28,6 +29,46 @@ api = (ROOT / "product/control-plane/src/home_center/api.py").read_text(encoding
 if "typed_action_not_available" not in api: errors.append("fail-closed mutation gate missing")
 if "generic shell" in api.lower(): errors.append("generic shell exposed in API")
 
+actions = (ROOT / "product/control-plane/src/home_center/actions.py").read_text(encoding="utf-8")
+for required in (
+    'SYSTEMCTL = "/usr/bin/systemctl"',
+    '"bootstrap-admin": frozenset({"service.read"})',
+    'set(value) != required',
+    'service not in allowed',
+    'request_sha256',
+    'result_sha256',
+):
+    if required not in actions:
+        errors.append(f"typed action guard missing: {required}")
+if "shell=True" in actions or "shell = True" in actions:
+    errors.append("typed actions must never invoke a shell")
+
+registry = json.loads(
+    (ROOT / "product/control-plane/src/home_center/action_registry.v1.json").read_text(encoding="utf-8")
+)
+registered = {item.get("id"): item for item in registry.get("actions", [])}
+if set(registered) != {"service.state.read.v1"}:
+    errors.append("certified action registry must exactly match the implemented P2 action set")
+else:
+    action = registered["service.state.read.v1"]
+    if action.get("risk") != "read-only":
+        errors.append("first P2 action must remain read-only")
+    if action.get("recovery") != {"strategy": "none-read-only"}:
+        errors.append("read-only action recovery contract mismatch")
+    services = action.get("input", {}).get("properties", {}).get("service", {}).get("enum")
+    if services != ["home-center.service", "home-center-backup.timer"]:
+        errors.append("service action allowlist mismatch")
+
+version_source = (ROOT / "product/control-plane/src/home_center/__init__.py").read_text(encoding="utf-8")
+project = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
+builder = (ROOT / "deploy/scripts/build-artifact.sh").read_text(encoding="utf-8")
+if '__version__ = "0.2.0"' not in version_source or 'version = "0.2.0"' not in project:
+    errors.append("runtime/package version mismatch")
+if "HOME_CENTER_VERSION:-0.2.0" not in builder:
+    errors.append("artifact version mismatch")
+if 'git -C "$ROOT" rev-parse HEAD' not in builder or 'git -C "$ROOT/../.."' in builder:
+    errors.append("artifact revision must resolve from the independent repository root")
+
 server = (ROOT / "product/control-plane/src/home_center/server.py").read_text(encoding="utf-8")
 for required in (
     "WEB_MINIMUM_TLS_VERSION = ssl.TLSVersion.TLSv1_2",
@@ -50,6 +91,10 @@ else:
     if "self-hosted" in text: errors.append("self-hosted runner is forbidden for Home Center")
     if "working-directory: home-center" in text or '"home-center/**"' in text:
         errors.append("monorepo path assumption is forbidden")
+    if "steps.version.outputs.value" not in text or "Resolve artifact version" not in text:
+        errors.append("artifact workflow must derive its version from runtime source")
+    if "home-center-0.1.0-linux" in text:
+        errors.append("artifact workflow contains a stale hard-coded version")
 
 scripts = sorted((ROOT / "deploy/scripts").glob("*.sh"))
 syntax = subprocess.run(["bash", "-n", *map(str, scripts)], check=False, capture_output=True, text=True)

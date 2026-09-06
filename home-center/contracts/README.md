@@ -9,6 +9,7 @@ contracts/
 ├── openapi/                  # Control Plane API
 ├── agent/                    # Control Plane ↔ Node Agent protocol
 ├── capabilities/             # node capability schemas
+├── actions/                  # typed action registry/request/result
 ├── desired-state/            # desired/actual state schemas
 ├── jobs/                     # Change/Job/action/result schemas
 ├── events/                   # audit/domain/health events
@@ -56,3 +57,12 @@ contracts/
 - positive/negative examples;
 - migration/recovery semantics;
 - тестовые fixtures.
+
+## P2.1 active contracts
+
+- `actions/action-registry.v1.schema.json` — immutable executable action catalog;
+- `actions/action-request.v1.schema.json` — strict request envelope with local target and idempotency key;
+- `actions/action-result.v1.schema.json` — persisted terminal job response;
+- `jobs/job.v1.schema.json` — lifecycle, steps, evidence and recovery model.
+
+P2.1 admits only `service.state.read.v1` for Home Center-owned allowlisted units. A registry entry without a matching certified executor fails startup.
