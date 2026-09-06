@@ -2,7 +2,7 @@
 
 **Дата:** 06.09.2026  
 **Repository:** `ControlCenterSoft/home-center`  
-**Статус:** `0.5.0 PRODUCTION_ACCEPTED / 0.8.0 RELEASED / 0.8.0 PRODUCTION_ROLLOUT_PENDING / MANAGED_CLIENT_TRUST_PENDING`
+**Статус:** `0.5.0 PRODUCTION_ACCEPTED / 0.8.0 RELEASED_PRODUCTION_PENDING / 0.9.0 DEVELOPMENT_ACTIVE`
 
 ## Принятые границы
 
@@ -24,7 +24,7 @@
 - cluster transaction: `20260906T180027Z-3bd073793891`;
 - production acceptance evidence: `serverops-control#1624 / 5561312312`.
 
-Managed-client Web CA enrollment/browser acceptance остаётся отдельным gate. Фактического rollout 0.6/0.7 на dc01/dc02 в текущем GitHub-сеансе не выполнялось.
+Managed-client Web CA enrollment/browser acceptance остаётся отдельным gate. Фактического rollout 0.6/0.7/0.8/0.9 на dc01/dc02 в текущем GitHub-сеансе не выполнялось.
 
 ## Exact merged-main `0.6.0` candidate
 
@@ -72,9 +72,22 @@ Managed-client Web CA enrollment/browser acceptance остаётся отдел�
 
 Release PR tests/security и reproducible artifact проходят; после финального docs head требуется ещё один exact-head CI PASS, merge и exact-main artifact evidence.
 
-## `0.8.0` released
+## `0.8.0` released, production pending
 
-Интегрированный code baseline `e9bb45415b105ea510d0774380b98108fa5f0fc1`:
+Published release identity:
+
+- revision: `bbb2b1e952b2072c8ce30ad6b3220c7c14280949`;
+- artifact SHA-256: `25fb72fdffab972703d9be2b7e457b1f4ed053bc1c013a6237558fd693e73ca8`;
+- artifact bytes: `136606`.
+
+Release evidence:
+
+- tag/release: `v0.8.0`;
+- exact-main CI `34064080930`: Python 3.12 PASS, Python 3.14 PASS, build-twice PASS;
+- pinned publisher `34064461198`: exact source/digest PASS, tag and both assets published;
+- issue #29: completed.
+
+Release includes:
 
 - local administrator credential/session model;
 - bootstrap Bearer/token authority удалена из 0.8 Web runtime;
@@ -89,30 +102,36 @@ Release PR tests/security и reproducible artifact проходят; после 
 - fail-closed exact HTTPS Origin/Host и Fetch Metadata gate для browser POST до credential/action processing;
 - authenticated audited logout и COOP/CORP response hardening.
 
-Exact release evidence:
+Не выполнены и не заявлены как выполненные публикацией релиза:
 
-- release: `v0.8.0`;
-- URL: https://github.com/ControlCenterSoft/home-center/releases/tag/v0.8.0;
-- revision/tag target: `bbb2b1e952b2072c8ce30ad6b3220c7c14280949`;
-- artifact: `home-center-0.8.0-linux-amd64.tar.gz`;
-- artifact SHA-256: `25fb72fdffab972703d9be2b7e457b1f4ed053bc1c013a6237558fd693e73ca8`;
-- exact-main CI `34064080930`: Python 3.12 PASS, Python 3.14 PASS, build-twice PASS;
-- pinned publisher `34064461198`: exact source/digest PASS, tag and both assets published;
-- issue #29: completed.
-
-Не выполнены и не заявлены как выполненные:
-
-- production rollout на dc01/dc02 — tracked in #44;
-- optional live HM.DM AD activation/acceptance — tracked in #44;
+- production activation AD provider;
+- live HM.DM Kerberos/NSS acceptance;
+- deployment 0.8 на dc01/dc02;
 - automatic update/failover.
+
+## `0.9.0` development
+
+Integrated development scope:
+
+- source/package/Web identity `0.9.0`;
+- exact predecessor `0.8.0 / bbb2b1e952b2072c8ce30ad6b3220c7c14280949 / 25fb72fdffab972703d9be2b7e457b1f4ed053bc1c013a6237558fd693e73ca8`;
+- config schema v4 and external access disabled in both packaged HM.DM configs;
+- trusted reverse-proxy provenance, HTTPS/public-host/origin gates and two-level rate limiting;
+- internal endpoint hiding and minimal external health;
+- closed release-candidate evidence/verifier;
+- deterministic build-twice + two runtime nodes + external login + backup/restore verification E2E;
+- inherited HC-WEB-001 release guard from published 0.8.0.
+
+Production-only evidence remains pending by definition: exact merged-main 0.9 revision/artifact, real gateway TLS, desktop/mobile browser acceptance, dc02/dc01 rollout, rollback drill and live two-node parity. No production server was changed.
 
 ## Upgrade
 
 - `0.5.0 → 0.6.0`: [`docs/UPGRADE-TO-0.6.0.md`](docs/UPGRADE-TO-0.6.0.md)
 - `0.6.0 → 0.7.0`: [`docs/UPGRADE-TO-0.7.0.md`](docs/UPGRADE-TO-0.7.0.md)
 - `0.7.0 → 0.8.0`: [`docs/UPGRADE-TO-0.8.0.md`](docs/UPGRADE-TO-0.8.0.md) — exact release published
+- `0.8.0 → 0.9.0`: [`docs/UPGRADE-TO-0.9.0.md`](docs/UPGRADE-TO-0.9.0.md) — exact predecessor; target identity pending release cut
 
-Прямой переход `0.5.x/0.4.x → 0.7.0` запрещён release policy.
+Прямой переход `0.7.x` или старше → `0.9.0` запрещён release policy.
 
 ## Roadmap к 1.0.0
 

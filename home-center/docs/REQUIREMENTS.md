@@ -29,6 +29,9 @@ Control Plane должен понимать зависимости между н
 ### HC-SEC-004 — Destructive action gate
 Удаление данных, wipe, irreversible migration и эквивалентные операции требуют усиленного preflight и отдельного явного подтверждаемого intent.
 
+### HC-SEC-005 — External request provenance
+Внешний запрос допускается только через явно настроенный trusted gateway с однозначными client/proto/host данными. Неизвестный, составной или подменённый provenance должен отклоняться до authentication/mutation processing; внутренние operational endpoints не публикуются наружу.
+
 ## Nodes / Enrollment
 
 ### HC-NODE-001 — Node enrollment
@@ -136,6 +139,9 @@ Capability, Desired State, events, module manifests и job schemas должны 
 ### HC-TEST-003 — Production gate
 Capability объявляется готовой только при наличии acceptance evidence по happy path, failure/recovery, security и observability.
 
+### HC-TEST-004 — Release-candidate E2E
+Release candidate обязан пройти детерминированную цепочку artifact build-twice → runtime/API → authentication → backup/restore verification → exact acceptance validation и отдельную live двухузловую production acceptance после появления exact artifact.
+
 ## Release / Supply Chain
 
 ### HC-REL-001 — Explicit signed promotion
@@ -152,6 +158,9 @@ Release trust root и signing credentials принадлежат только Ho
 
 ### HC-REL-005 — Verification/deployment separation
 Проверка канала выдаёт только immutable `VerifiedStableRelease`. Сетевой fetch, root-owned admission, `dc02 → dc01` rollout, soak, retry и rollback реализуются отдельным persisted update workflow и не входят в verifier.
+
+### HC-REL-006 — Closed release-candidate acceptance
+Release-candidate evidence должно быть bounded closed-schema документом, связанным с exact predecessor/candidate identities и доказывающим `dc02 → dc01`, reverse rollback `dc01 → dc02`, backup/restore verification, двухузловую parity, сохранность Web/peer PKI, Domain SID/DRS и отсутствие запрещённых mutations. Evidence не является release authority и не заменяет подписанное stable-решение.
 
 ## Трассируемость
 

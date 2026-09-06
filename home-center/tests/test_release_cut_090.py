@@ -15,15 +15,15 @@ sys.path.insert(0, str(ROOT / "product/control-plane/src"))
 from home_center import __version__  # noqa: E402
 
 
-TARGET = "0.8.0"
-SOURCE = "0.7.0"
-SOURCE_REVISION = "f28fc1c820b065616758ca3c220794555c30a25a"
-SOURCE_ARTIFACT_SHA256 = "6ab15ef38b5d4b064ddb45c47009c73de3f5425553a059d75c9fb3c77bc82b82"
-SOURCE_RELEASE = "/opt/home-center/releases/0.7.0-f28fc1c820b0-6ab15ef38b5d"
+TARGET = "0.9.0"
+SOURCE = "0.8.0"
+SOURCE_REVISION = "bbb2b1e952b2072c8ce30ad6b3220c7c14280949"
+SOURCE_ARTIFACT_SHA256 = "25fb72fdffab972703d9be2b7e457b1f4ed053bc1c013a6237558fd693e73ca8"
+SOURCE_RELEASE = "/opt/home-center/releases/0.8.0-bbb2b1e952b2-25fb72fdffab"
 TEST_REVISION = "8" * 40
 
 
-class ReleaseCut080Tests(unittest.TestCase):
+class ReleaseCut090Tests(unittest.TestCase):
     def test_runtime_package_and_web_source_versions_are_exact(self) -> None:
         with (ROOT / "pyproject.toml").open("rb") as handle:
             project = tomllib.load(handle)
@@ -31,18 +31,17 @@ class ReleaseCut080Tests(unittest.TestCase):
 
         self.assertEqual(__version__, TARGET)
         self.assertEqual(project["project"]["version"], TARGET)
-        self.assertIn('version: "0.8.0"', release_js)
+        self.assertIn('version: "0.9.0"', release_js)
 
-    def test_artifact_builder_admits_only_080_and_orders_renderers(self) -> None:
+    def test_artifact_builder_admits_only_090_and_orders_renderers(self) -> None:
         builder = (ROOT / "deploy/scripts/build-artifact.sh").read_text(encoding="utf-8")
-        self.assertIn('[ "$VERSION" = 0.8.0 ] || { echo RELEASE_VERSION_NOT_ADMITTED', builder)
-        self.assertNotIn("HOME_CENTER_080_ARTIFACT_NOT_YET_ADMITTED", builder)
-        self.assertIn("HOME_CENTER_080_CONFIG_SCHEMA_NOT_ADMITTED", builder)
+        self.assertIn('[ "$VERSION" = 0.9.0 ] || { echo RELEASE_VERSION_NOT_ADMITTED', builder)
+        self.assertIn("HOME_CENTER_090_CONFIG_SCHEMA_NOT_ADMITTED", builder)
         release_index = builder.index('render-release-policy.py"')
         auth_index = builder.index('render-auth-deployment-v2.py"')
         self.assertLess(release_index, auth_index)
 
-    def test_non_release_artifact_contains_exact_auth_free_080_deployment(self) -> None:
+    def test_non_release_artifact_contains_exact_080_to_090_deployment(self) -> None:
         builder = ROOT / "deploy/scripts/build-artifact.sh"
         with tempfile.TemporaryDirectory() as temporary:
             out = Path(temporary) / "dist"
@@ -64,13 +63,15 @@ class ReleaseCut080Tests(unittest.TestCase):
                 timeout=30,
             )
             self.assertEqual(result.returncode, 0, result.stderr)
-            archive = out / "home-center-0.8.0-linux-amd64.tar.gz"
+            archive = out / "home-center-0.9.0-linux-amd64.tar.gz"
             self.assertTrue(archive.is_file())
             with tarfile.open(archive, "r:gz") as package:
-                self.assertEqual(package.extractfile("./VERSION").read().decode(), "0.8.0\n")
+                self.assertEqual(package.extractfile("./VERSION").read().decode(), "0.9.0\n")
                 self.assertEqual(package.extractfile("./REVISION").read().decode(), TEST_REVISION + "\n")
                 bootstrap = package.extractfile("./deploy/bootstrap-hm-dm.sh").read().decode()
                 installer = package.extractfile("./deploy/install-node.sh").read().decode()
+                acceptance = package.extractfile("./release-candidate-verify.py").read().decode()
+                web_css = package.extractfile("./web/app.css").read().decode()
 
         deployment = bootstrap + "\n" + installer
         for forbidden in (
@@ -91,13 +92,15 @@ class ReleaseCut080Tests(unittest.TestCase):
             "HOME_CENTER_CLUSTER_DEPLOY=PASS",
         ):
             self.assertIn(required, deployment)
-        self.assertIn('[ "$TARGET_VERSION" = 0.8.0 ]', bootstrap)
-        self.assertIn("ADMITTED_SOURCE_V070_VERSION=0.7.0", bootstrap)
-        self.assertIn(f"ADMITTED_SOURCE_V070_REVISION={SOURCE_REVISION}", bootstrap)
-        self.assertIn(f"ADMITTED_SOURCE_V070_RELEASE={SOURCE_RELEASE}", bootstrap)
-        self.assertIn('[ "$VERSION" = 0.8.0 ]', installer)
+        self.assertIn('[ "$TARGET_VERSION" = 0.9.0 ]', bootstrap)
+        self.assertIn("ADMITTED_SOURCE_V080_VERSION=0.8.0", bootstrap)
+        self.assertIn(f"ADMITTED_SOURCE_V080_REVISION={SOURCE_REVISION}", bootstrap)
+        self.assertIn(f"ADMITTED_SOURCE_V080_RELEASE={SOURCE_RELEASE}", bootstrap)
+        self.assertIn('[ "$VERSION" = 0.9.0 ]', installer)
+        self.assertIn("verify_release_candidate", acceptance)
+        self.assertIn(".login-layer[hidden]", web_css)
 
-    def test_release_policy_records_exact_070_artifact_digest(self) -> None:
+    def test_release_policy_records_exact_published_080_artifact_digest(self) -> None:
         renderer = (ROOT / "deploy/scripts/render-release-policy.py").read_text(encoding="utf-8")
         self.assertIn(f'SOURCE_ARTIFACT_SHA256 = "{SOURCE_ARTIFACT_SHA256}"', renderer)
 

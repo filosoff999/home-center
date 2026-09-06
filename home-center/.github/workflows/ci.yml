@@ -40,8 +40,8 @@ jobs:
           cache: ""
       - name: Compile runtime
         run: python -m compileall -q product/control-plane/src
-      - name: Run contracts, tests and security gates
-        run: make contracts test security
+      - name: Run contracts, tests, E2E and security gates
+        run: make contracts test e2e security
 
   artifact:
     name: Reproducible deployment artifact

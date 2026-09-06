@@ -1,8 +1,8 @@
 # Home Center — план реализации
 
-**Версия:** 2.3
+**Версия:** 2.4
 **Дата:** 2026-09-06
-**Статус:** `DEVELOPMENT_ACTIVE / P1 + P2.1 + P2.2 PRODUCTION ACCEPTED / P2.3 SERVER-SIDE ACCEPTED / P2.4 0.5.0 VERIFIER CANDIDATE`
+**Статус:** `0.5.0 PRODUCTION ACCEPTED / 0.8.0 RELEASED_PRODUCTION_PENDING / 0.9.0 DEVELOPMENT ACTIVE`
 **Execution epic:** `#1`.
 **Основание:** `TECHNICAL-SPECIFICATION.md`, `REQUIREMENTS.md`, `ARCHITECTURE.md`, production acceptance exact `0.4.3`.
 
@@ -26,7 +26,7 @@ P1, P2.1 и P2.2 не проектируются заново: они уже п�
 - no generic shell API;
 - automatic failover disabled without witness/fencing.
 
-Ближайшая цель — завершить **P2.4 signed stable release channel**, затем реализовать P2.5 persisted two-node update reconcile; остальные P2 workstreams и P3–P7 следуют без регрессии принятых gates.
+Текущий release-candidate слой 0.9 добавляет внешнюю границу, exact 0.8→0.9 policy, deterministic E2E и closed acceptance verifier. Следующий необратимо последовательный gate — exact-main 0.9 artifact, затем live `dc02 → dc01` acceptance; signed promotion и production activation выполняются только после evidence PASS.
 
 ## 2. Исполнительная стратегия
 

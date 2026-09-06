@@ -3,7 +3,7 @@
   "info": {
     "title": "Home Center Control Plane API",
     "version": "0.5.0",
-    "description": "P2.4 runtime with a fail-closed typed Action Registry, bounded Web TLS lifecycle and read-only signed release-channel verification."
+    "description": "Home Center 0.9 release-candidate API with local/optional AD authentication, fail-closed trusted-gateway external access, typed actions and bounded TLS/release verification."
   },
   "servers": [
     {
@@ -101,6 +101,47 @@
           "429": {
             "description": "Rate limited"
           }
+        }
+      }
+    },
+    "/external/healthz": {
+      "get": {
+        "operationId": "getExternalHealth",
+        "security": [],
+        "description": "Minimal readiness response available only through the exact configured HTTPS gateway boundary.",
+        "responses": {
+          "200": {
+            "description": "External gateway path is ready",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "../external-access/external-health.v1.schema.json"
+                }
+              }
+            }
+          },
+          "404": {"description": "External access is disabled or the gateway proof is invalid"},
+          "429": {"description": "Bounded external request rate exceeded"},
+          "503": {"description": "Generic unavailable state without internal readiness details"}
+        }
+      }
+    },
+    "/api/v1/external-access": {
+      "get": {
+        "operationId": "getExternalAccessStatus",
+        "description": "Returns non-secret trusted-gateway status; never mutates NAT, DDNS, firewall or router state.",
+        "responses": {
+          "200": {
+            "description": "External access policy status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "../external-access/external-access-status.v1.schema.json"
+                }
+              }
+            }
+          },
+          "401": {"description": "Authentication required"}
         }
       }
     },

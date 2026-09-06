@@ -61,8 +61,14 @@ def _validated_web_ca(config: object) -> bytes:
 class RuntimeRequestHandlerV2(RuntimeRequestHandler):
     def do_GET(self) -> None:  # noqa: N802
         path = urlsplit(self.path).path
+        correlation_id = self._correlation_id()
+        context = self._classify_request(correlation_id)
+        if context is None:
+            return
+        if self._blocked_for_external(path, context):
+            self._error(HTTPStatus.NOT_FOUND, "not_found", "Ресурс не найден", correlation_id)
+            return
         if path == "/api/v1/meta":
-            correlation_id = self._correlation_id()
             try:
                 release = current_release_identity()
             except ReleaseIdentityError:
@@ -105,7 +111,6 @@ class RuntimeRequestHandlerV2(RuntimeRequestHandler):
             self.wfile.write(data)
             return
         if path == "/api/v1/tls":
-            correlation_id = self._correlation_id()
             if not self._require_actor(correlation_id):
                 return
             try:

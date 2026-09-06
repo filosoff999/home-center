@@ -20,6 +20,7 @@ sys.path.insert(0, str(ROOT / "product/control-plane/src"))
 from home_center.ad_auth import AdAuthError  # noqa: E402
 from home_center.api_v2 import RuntimeRequestHandlerV2  # noqa: E402
 from home_center.config import Config, Peer  # noqa: E402
+from home_center.external_access import ExternalAccessPolicy, ExternalRequestRateLimiter  # noqa: E402
 from home_center.local_admin_auth import (  # noqa: E402
     CREDENTIAL_SCHEMA,
     KDF_DKLEN,
@@ -173,6 +174,14 @@ class ApiTests(unittest.TestCase):
                 cookie = response.headers["Set-Cookie"]
             self._session_cookie = cookie.split(";", 1)[0]
         return self._session_cookie
+
+    @staticmethod
+    def external_headers() -> dict[str, str]:
+        return {
+            "X-Forwarded-For": "203.0.113.18",
+            "X-Forwarded-Proto": "https",
+            "X-Forwarded-Host": "home.example.net",
+        }
 
     def test_public_health_and_security_headers(self) -> None:
         with self.request("/healthz") as response:
@@ -427,6 +436,104 @@ class ApiTests(unittest.TestCase):
         with self.assertRaises(urllib.error.HTTPError) as caught:
             self.request("/api/v1/nodes", authenticated=True, method="DELETE")
         self.assertEqual(caught.exception.code, 405)
+
+    def test_external_access_is_disabled_and_status_requires_authentication(self) -> None:
+        with self.assertRaises(urllib.error.HTTPError) as caught:
+            self.request("/external/healthz")
+        self.assertEqual(caught.exception.code, 404)
+        with self.assertRaises(urllib.error.HTTPError) as caught:
+            self.request("/healthz", extra_headers=self.external_headers())
+        self.assertEqual(caught.exception.code, 404)
+        with self.assertRaises(urllib.error.HTTPError) as caught:
+            self.request("/api/v1/external-access")
+        self.assertEqual(caught.exception.code, 401)
+        with self.request("/api/v1/external-access", authenticated=True) as response:
+            value = json.load(response)
+        self.assertFalse(value["configured_enabled"])
+        self.assertFalse(value["effective_enabled"])
+        self.assertEqual(value["gateway_configuration"], "operator-managed")
+
+    def test_enabled_external_boundary_uses_public_origin_and_hides_internal_endpoints(self) -> None:
+        self.runtime.external_access = ExternalAccessPolicy(True, "home.example.net", ("127.0.0.1",), True)
+        forwarded = self.external_headers()
+        for path in ("/healthz", "/readyz", "/api/v1/meta", "/api/v1/tls/ca.crt", "/internal/v1/node"):
+            with self.subTest(path=path), self.assertRaises(urllib.error.HTTPError) as caught:
+                self.request(path, extra_headers=forwarded)
+            self.assertEqual(caught.exception.code, 404)
+
+        with patch.object(self.runtime, "ready", return_value=(True, [])):
+            with self.request("/external/healthz", extra_headers=forwarded) as response:
+                self.assertEqual(json.load(response), {"schema": "home-center.external-health.v1", "status": "ok"})
+        with patch.object(self.runtime, "ready", return_value=(False, ["private-reason"])):
+            with self.assertRaises(urllib.error.HTTPError) as caught:
+                self.request("/external/healthz", extra_headers=forwarded)
+            self.assertEqual(caught.exception.code, 503)
+            self.assertEqual(
+                json.load(caught.exception),
+                {"schema": "home-center.external-health.v1", "status": "unavailable"},
+            )
+
+        browser_headers = {
+            **forwarded,
+            "Origin": "https://home.example.net",
+            "Sec-Fetch-Site": "same-origin",
+        }
+        with self.request(
+            "/api/v1/session",
+            method="POST",
+            body={"provider": "local", "username": USERNAME, "password": PASSWORD},
+            extra_headers=browser_headers,
+        ) as response:
+            cookie = response.headers["Set-Cookie"].split(";", 1)[0]
+        with self.request(
+            "/api/v1/external-access",
+            extra_headers={**forwarded, "Cookie": cookie},
+        ) as response:
+            self.assertTrue(json.load(response)["effective_enabled"])
+        login = next(event for event in self.runtime.store.audit_events(20) if event["action"] == "session.login")
+        self.assertEqual(login["details"]["access_origin"], "external")
+        self.assertEqual(login["details"]["remote_address"], "203.0.113.18")
+        self.assertEqual(login["details"]["proxy_address"], "127.0.0.1")
+
+    def test_external_forwarding_spoof_and_wrong_origin_fail_closed(self) -> None:
+        self.runtime.external_access = ExternalAccessPolicy(True, "home.example.net", ("127.0.0.2",), True)
+        with self.assertRaises(urllib.error.HTTPError) as caught:
+            self.request("/", extra_headers=self.external_headers())
+        self.assertEqual(caught.exception.code, 404)
+
+        self.runtime.external_access = ExternalAccessPolicy(True, "home.example.net", ("127.0.0.1",), True)
+        with self.assertRaises(urllib.error.HTTPError) as caught:
+            self.request(
+                "/api/v1/session",
+                method="POST",
+                body={"provider": "local", "username": USERNAME, "password": PASSWORD},
+                extra_headers={
+                    **self.external_headers(),
+                    "Origin": "https://attacker.invalid",
+                    "Sec-Fetch-Site": "same-origin",
+                },
+            )
+        self.assertEqual(caught.exception.code, 403)
+        self.assertEqual(caught.exception.headers.get("Connection"), "close")
+
+    def test_external_proxy_wide_rate_limit_is_not_bypassable_by_client_rotation(self) -> None:
+        self.runtime.external_access = ExternalAccessPolicy(True, "home.example.net", ("127.0.0.1",), True)
+        self.runtime.external_request_limiter = ExternalRequestRateLimiter(
+            client_requests=2,
+            proxy_requests=2,
+            window_seconds=60,
+        )
+        with patch.object(self.runtime, "ready", return_value=(True, [])):
+            with self.request("/external/healthz", extra_headers=self.external_headers()):
+                pass
+            rotated = {**self.external_headers(), "X-Forwarded-For": "198.51.100.7"}
+            with self.request("/external/healthz", extra_headers=rotated):
+                pass
+            rotated_again = {**self.external_headers(), "X-Forwarded-For": "192.0.2.9"}
+            with self.assertRaises(urllib.error.HTTPError) as caught:
+                self.request("/external/healthz", extra_headers=rotated_again)
+        self.assertEqual(caught.exception.code, 429)
+        self.assertEqual(caught.exception.headers["Retry-After"], "60")
 
 
 if __name__ == "__main__":

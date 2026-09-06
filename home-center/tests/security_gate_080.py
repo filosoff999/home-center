@@ -56,7 +56,7 @@ def main() -> None:
     require("tokenInput" not in index + browser, "legacy bootstrap-token browser input remains reachable")
     require("JSON.stringify({ token })" not in browser, "legacy bootstrap-token browser request remains reachable")
 
-    require('CONFIG_SCHEMA = "home-center.config.v3"' in config, "config v2 is not enforced")
+    require('CONFIG_SCHEMA = "home-center.config.v4"' in config, "0.9 config-v4 successor is not enforced")
     require("local_admin_credentials_file" in config + runtime, "local administrator credential path is not wired")
     require("LocalAdminCredentialStore" in runtime, "local credential verifier is not composed into runtime")
 
@@ -137,10 +137,11 @@ def main() -> None:
     require('parser.add_argument("--password"' not in provision_cli, "password command-line option is forbidden")
     require("os.environ" not in provision_cli, "password/environment credential input is forbidden")
     require("--password-stdin" not in provision_cli, "automation password stdin is forbidden")
-    require("provision-local-admin.py" in build, "provisioner is not staged for the future 0.8 artifact")
-    require('[ "$VERSION" = 0.8.0 ] || { echo RELEASE_VERSION_NOT_ADMITTED' in build, "0.8 artifact version is not admitted exactly")
+    require("provision-local-admin.py" in build, "0.8 provisioner is not preserved in the successor artifact")
+    require('# Published predecessor artifact gate: [ "$VERSION" = 0.8.0 ]' in build, "0.8 published predecessor marker is missing")
+    require('[ "$VERSION" = 0.9.0 ] || { echo RELEASE_VERSION_NOT_ADMITTED' in build, "0.9 successor artifact version is not admitted exactly")
     require("HOME_CENTER_080_ARTIFACT_NOT_YET_ADMITTED" not in build, "obsolete 0.8 artifact block remains")
-    require("HOME_CENTER_080_CONFIG_SCHEMA_NOT_ADMITTED" in build, "0.8 config-v3 release gate missing")
+    require("HOME_CENTER_090_CONFIG_SCHEMA_NOT_ADMITTED" in build, "0.9 config-v4 release gate missing")
     require("render-release-policy.py" in build, "0.8 release-policy renderer is not invoked")
     require("render-auth-deployment-v2.py" in build, "0.8 auth deployment renderer is not invoked")
     require("/var/lib/home-center/ad-auth" in read(ROOT / "deploy/scripts/render-auth-deployment-v2.py"), "AD cache directory provisioning missing")

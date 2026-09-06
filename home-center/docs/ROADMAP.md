@@ -1,9 +1,29 @@
 # Roadmap Home Center
 
-**Статус:** `DEVELOPMENT_ACTIVE / P1 + P2.1 + P2.2 PRODUCTION ACCEPTED / P2.3 SERVER-SIDE ACCEPTED / P2.4 ACTIVE`
+**Статус:** `0.5.0 PRODUCTION ACCEPTED / 0.8.0 RELEASED_PRODUCTION_PENDING / 0.9.0 DEVELOPMENT ACTIVE`
 **Execution epic:** `#1`.
 
 Roadmap определяет последовательность продуктовых gates. Home Center уже имеет accepted production P1, P2.1 и P2.2 на `dc01/dc02`; дальнейшая работа продолжает P2 и не должна регрессировать принятые safety/evidence свойства.
+
+## Release train 0.9.0
+
+Статус: **IMPLEMENTED IN DEVELOPMENT / LIVE ACCEPTANCE PENDING**.
+
+- [x] source/package/Web version 0.9.0;
+- [x] exact published 0.8.0 predecessor policy;
+- [x] disabled-by-default external publication boundary;
+- [x] strict trusted-proxy provenance, origin and rate-limit gates;
+- [x] desktop/mobile logical-path E2E in GitHub-hosted CI;
+- [x] build-twice artifact and two runtime node E2E;
+- [x] backup/restore verification in E2E;
+- [x] closed two-node rollout/rollback/parity acceptance contract and verifier;
+- [x] external access and exact upgrade runbooks;
+- [ ] exact merged-main 0.9 revision and artifact digest;
+- [ ] live gateway TLS + desktop/mobile browser evidence;
+- [ ] live `dc02 → dc01` rollout, reverse rollback/restore drill and cluster parity evidence;
+- [ ] signed stable promotion and production activation.
+
+Ни один synthetic/CI result не заменяет live HM.DM acceptance.
 
 ## P0 — Repository / Architecture Readiness
 

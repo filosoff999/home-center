@@ -34,6 +34,30 @@ class ContractTests(unittest.TestCase):
         value = collect("hm-dm-test", "test-node", "standby", "192.168.10.250")
         validate(schema, value)
 
+    def test_external_access_contracts_are_closed_and_non_secret(self) -> None:
+        status = self.load("external-access/external-access-status.v1.schema.json")
+        validate(
+            status,
+            {
+                "schema": "home-center.external-access-status.v1",
+                "configured_enabled": False,
+                "effective_enabled": False,
+                "mode": "trusted-reverse-proxy",
+                "public_hostname": None,
+                "trusted_proxy_count": 0,
+                "gateway_configuration": "operator-managed",
+                "health_path": "/external/healthz",
+                "blockers": ["disabled_by_configuration"],
+            },
+        )
+        with self.assertRaises(ValidationError):
+            validate(status, {"schema": "home-center.external-access-status.v1", "router_password": "secret"})
+
+        health = self.load("external-access/external-health.v1.schema.json")
+        validate(health, {"schema": "home-center.external-health.v1", "status": "ok"})
+        with self.assertRaises(ValidationError):
+            validate(health, {"schema": "home-center.external-health.v1", "status": "ok", "node_id": "dc01"})
+
     def test_hmdm_profile_matches_contract_and_preserves_domain(self) -> None:
         schema = self.load("deployment-profiles/deployment-profile.v1.schema.json")
         profile = json.loads((ROOT / "deploy/profiles/hm-dm-two-node.v1.json").read_text(encoding="utf-8"))

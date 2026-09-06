@@ -48,7 +48,7 @@ class BackupTests(unittest.TestCase):
         self.state_db = root / "state" / "state.sqlite3"
         self.backup_dir = root / "backups"
         config = {
-            "schema": "home-center.config.v3",
+            "schema": "home-center.config.v4",
             "cluster_id": "hm-dm-production",
             "node_id": "hm-dm-dc01",
             "node_name": "dc01",
@@ -67,6 +67,12 @@ class BackupTests(unittest.TestCase):
                 "allowed_admin_groups": ["domain admins@hm.dm"],
                 "timeout_seconds": 5,
                 "cache_root": str(root / "ad-auth"),
+            },
+            "external_access": {
+                "enabled": False,
+                "mode": "trusted-reverse-proxy",
+                "public_hostname": None,
+                "trusted_proxy_addresses": [],
             },
             "session_key_file": str(secrets / "session.key"),
             "audit_key_file": str(secrets / "audit.key"),

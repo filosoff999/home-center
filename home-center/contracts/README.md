@@ -88,4 +88,18 @@ Schema validation is necessary but not sufficient: canonical-byte equality, DSSE
 - `auth/ad-provider-config.v1.schema.json` — disabled-by-default Kerberos endpoints, bounded timeout and explicit AD administrator-group mapping; it contains no password or write authority;
 - `openapi/home-center-auth.v2.openapi.json` — 0.8 authentication-surface OpenAPI contract using only the signed session cookie after login.
 
-`openapi/home-center.v1.openapi.json` remains the frozen 0.7 control-plane contract while 0.8 is developed in parallel. It is not evidence that bootstrap Bearer authentication is accepted by the 0.8 runtime. The full 0.8 OpenAPI cut will supersede that release-line document after the 0.8 deployment/migration contract is admitted.
+`openapi/home-center.v1.openapi.json` retains its published v1 identity for compatibility. It is not evidence that bootstrap Bearer authentication is accepted by the 0.8/0.9 runtime.
+
+## Home Center 0.9 external-access contracts
+
+- `external-access/external-access-status.v1.schema.json` — authenticated, non-secret configured/effective policy status;
+- `external-access/external-health.v1.schema.json` — minimal public readiness result exposed only after exact trusted-gateway validation.
+
+These contracts grant no router, NAT, DDNS, firewall, arbitrary listener or ambient network mutation authority. Gateway configuration remains an explicit operator-owned step.
+
+## Home Center 0.9 release-candidate contracts
+
+- `releases/release-candidate-acceptance.v1.schema.json` — closed evidence for exact 0.8→0.9 identity, dc02-first rollout, reverse rollback, backup/restore verification, two-node parity, preserved PKI/Domain SID/DRS and zero forbidden mutations;
+- `releases/release-candidate-verification.v1.schema.json` — bounded non-secret verifier decision.
+
+The acceptance document records observations and is not release authority. A separately verified threshold-signed stable-channel record remains mandatory before deployment.
