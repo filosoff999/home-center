@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 from pathlib import Path
 from typing import Any
 
@@ -11,6 +12,7 @@ from . import __version__
 from .actions import ActionRegistry
 from .auth import LoginRateLimiter, SessionManager
 from .config import Config
+from .local_admin_auth import LocalAdminCredentialStore
 from .reconcile import Reconciler
 from .store import StateStore
 from .util import sha256_file, utc_now
@@ -20,11 +22,17 @@ LOG = logging.getLogger("home_center.runtime")
 
 
 class Runtime:
-    def __init__(self, config: Config) -> None:
+    def __init__(self, config: Config, *, local_admin_expected_uid: int = 0) -> None:
         self.config = config
         self.profile = self._load_profile(config.deployment_profile)
         self.store = StateStore(config.state_db, config.audit_key_file.read_bytes(), config.cluster_id)
-        self.sessions = SessionManager(config.admin_token_file, config.session_key_file)
+        self.local_admin = LocalAdminCredentialStore(
+            config.local_admin_credentials_file,
+            expected_uid=local_admin_expected_uid,
+            expected_gid=os.getegid(),
+            expected_mode=0o640,
+        )
+        self.sessions = SessionManager(config.session_key_file)
         self.login_limiter = LoginRateLimiter()
         self.actions = ActionRegistry(config.node_id, self.store)
         self.reconciler = Reconciler(config, self.store)

@@ -12,7 +12,7 @@ from typing import Any
 from .util import secure_file
 
 
-CONFIG_SCHEMA = "home-center.config.v1"
+CONFIG_SCHEMA = "home-center.config.v2"
 
 
 @dataclass(frozen=True, slots=True)
@@ -36,7 +36,7 @@ class Config:
     state_db: Path
     backup_dir: Path
     web_root: Path
-    admin_token_file: Path
+    local_admin_credentials_file: Path
     session_key_file: Path
     audit_key_file: Path
     tls_certificate: Path
@@ -110,7 +110,7 @@ def load_config(path: str | Path | None = None) -> Config:
         state_db=_path(raw, "state_db"),
         backup_dir=_path(raw, "backup_dir"),
         web_root=_path(raw, "web_root"),
-        admin_token_file=_path(raw, "admin_token_file"),
+        local_admin_credentials_file=_path(raw, "local_admin_credentials_file"),
         session_key_file=_path(raw, "session_key_file"),
         audit_key_file=_path(raw, "audit_key_file"),
         tls_certificate=_path(raw, "tls_certificate"),
@@ -132,7 +132,12 @@ def load_config(path: str | Path | None = None) -> Config:
         raise ValueError("peer identity must differ from local node identity")
     if cfg.web_ca.resolve() == cfg.cluster_ca.resolve():
         raise ValueError("web_ca must be independent from cluster_ca")
-    for secret in (cfg.admin_token_file, cfg.session_key_file, cfg.audit_key_file, cfg.tls_private_key):
+    for secret in (
+        cfg.local_admin_credentials_file,
+        cfg.session_key_file,
+        cfg.audit_key_file,
+        cfg.tls_private_key,
+    ):
         secure_file(secret, allow_group_read=True)
     for public_file in (cfg.tls_certificate, cfg.cluster_ca, cfg.web_ca, cfg.deployment_profile):
         if not public_file.is_file():

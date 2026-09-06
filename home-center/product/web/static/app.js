@@ -46,22 +46,45 @@ async function optionalApi(path) {
   }
 }
 
-function showLogin() { $("#loginLayer").hidden = false; $("#tokenInput").focus(); }
-function hideLogin() { $("#loginLayer").hidden = true; $("#loginError").textContent = ""; $("#loginForm").reset(); }
+function showLogin() {
+  $("#loginLayer").hidden = false;
+  $("#loginError").textContent = "";
+  window.setTimeout(() => $("#usernameInput").focus(), 0);
+}
+
+function hideLogin() {
+  $("#loginLayer").hidden = true;
+  $("#loginError").textContent = "";
+  $("#loginForm").reset();
+}
 
 async function login(event) {
   event.preventDefault();
   const button = event.currentTarget.querySelector("button");
-  const token = $("#tokenInput").value;
+  const username = $("#usernameInput").value;
+  const passwordInput = $("#passwordInput");
+  const password = passwordInput.value;
   button.disabled = true;
   $("#loginError").textContent = "";
   try {
-    await api("/api/v1/session", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token }) });
+    const response = await fetch("/api/v1/session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Accept": "application/json" },
+      body: JSON.stringify({ username, password }),
+      credentials: "same-origin",
+      cache: "no-store",
+    });
+    passwordInput.value = "";
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error?.message || data.error?.code || `HTTP ${response.status}`);
     hideLogin();
     await refresh();
   } catch (error) {
-    if (error.message !== "authentication_required") $("#loginError").textContent = error.message;
-  } finally { button.disabled = false; }
+    passwordInput.value = "";
+    $("#loginError").textContent = error.message || "Не удалось выполнить вход";
+  } finally {
+    button.disabled = false;
+  }
 }
 
 async function logout() {

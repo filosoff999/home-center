@@ -1,11 +1,13 @@
-"""Bootstrap-token authentication and short-lived signed browser sessions."""
+"""Short-lived signed browser sessions and fail-closed login rate limiting."""
 
 from __future__ import annotations
 
 import base64
+import binascii
 import hashlib
 import hmac
 import json
+import re
 import secrets
 import threading
 import time
@@ -17,6 +19,7 @@ from .util import canonical_json
 
 
 SESSION_COOKIE = "hc_session"
+LOCAL_ADMIN_ACTOR = re.compile(r"^local-admin:[a-z][a-z0-9._-]{2,63}$")
 
 
 def _b64(value: bytes) -> str:
@@ -28,29 +31,22 @@ def _unb64(value: str) -> bytes:
 
 
 class SessionManager:
-    def __init__(self, admin_token_file: Path, session_key_file: Path, lifetime_seconds: int = 8 * 3600) -> None:
-        self._admin_token = admin_token_file.read_text(encoding="utf-8").strip()
+    def __init__(self, session_key_file: Path, lifetime_seconds: int = 8 * 3600) -> None:
         self._session_key = session_key_file.read_bytes()
-        if len(self._admin_token) < 32 or len(self._session_key) < 32:
+        if len(self._session_key) < 32:
             raise ValueError("authentication secret is too short")
         self._lifetime = lifetime_seconds
 
-    def verify_admin_token(self, candidate: str) -> bool:
-        candidate_digest = hashlib.sha256(candidate.encode("utf-8")).digest()
-        expected_digest = hashlib.sha256(self._admin_token.encode("utf-8")).digest()
-        return hmac.compare_digest(candidate_digest, expected_digest)
-
-    def new_session(self) -> tuple[str, int]:
+    def new_session(self, actor: str) -> tuple[str, int]:
+        if LOCAL_ADMIN_ACTOR.fullmatch(actor) is None:
+            raise ValueError("unsupported session actor")
         expires = int(time.time()) + self._lifetime
-        payload = {"actor": "bootstrap-admin", "exp": expires, "nonce": secrets.token_hex(16), "v": 1}
+        payload = {"actor": actor, "exp": expires, "nonce": secrets.token_hex(16), "v": 2}
         encoded = _b64(canonical_json(payload).encode("utf-8"))
         signature = _b64(hmac.new(self._session_key, encoded.encode("ascii"), hashlib.sha256).digest())
         return f"{encoded}.{signature}", expires
 
-    def actor_from_headers(self, authorization: str | None, cookie_header: str | None) -> str | None:
-        if authorization and authorization.startswith("Bearer "):
-            if self.verify_admin_token(authorization.removeprefix("Bearer ").strip()):
-                return "bootstrap-admin"
+    def actor_from_headers(self, cookie_header: str | None) -> str | None:
         if not cookie_header:
             return None
         cookie = SimpleCookie()
@@ -61,12 +57,17 @@ class SessionManager:
             expected = _b64(hmac.new(self._session_key, encoded.encode("ascii"), hashlib.sha256).digest())
             if not hmac.compare_digest(supplied, expected):
                 return None
-            payload = json.loads(_unb64(encoded))
-            if payload.get("v") != 1 or int(payload.get("exp", 0)) < int(time.time()):
+            payload = json.loads(_unb64(encoded).decode("utf-8"))
+            if (
+                not isinstance(payload, dict)
+                or set(payload) != {"actor", "exp", "nonce", "v"}
+                or payload.get("v") != 2
+                or int(payload.get("exp", 0)) < int(time.time())
+            ):
                 return None
             actor = payload.get("actor")
-            return actor if actor == "bootstrap-admin" else None
-        except (KeyError, ValueError, TypeError, json.JSONDecodeError):
+            return actor if isinstance(actor, str) and LOCAL_ADMIN_ACTOR.fullmatch(actor) else None
+        except (KeyError, ValueError, TypeError, json.JSONDecodeError, binascii.Error, UnicodeDecodeError):
             return None
 
     @staticmethod
@@ -79,7 +80,7 @@ class SessionManager:
 
 
 class LoginRateLimiter:
-    """Small in-memory fail-closed limiter; production identity replaces it later."""
+    """Small in-memory fail-closed limiter for interactive authentication."""
 
     def __init__(self, attempts: int = 5, window_seconds: int = 60) -> None:
         self._attempts = attempts

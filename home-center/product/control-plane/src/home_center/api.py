@@ -6,6 +6,7 @@ import json
 import logging
 import mimetypes
 import re
+import time
 import uuid
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler
@@ -22,6 +23,7 @@ from .actions import (
     ActionTargetConflict,
 )
 from .auth import SessionManager
+from .local_admin_auth import LocalAdminAuthError
 from .runtime import Runtime
 from .util import utc_now
 
@@ -79,9 +81,7 @@ class RuntimeRequestHandler(BaseHTTPRequestHandler):
         )
 
     def _actor(self) -> str | None:
-        return self.runtime.sessions.actor_from_headers(
-            self.headers.get("Authorization"), self.headers.get("Cookie")
-        )
+        return self.runtime.sessions.actor_from_headers(self.headers.get("Cookie"))
 
     def _require_actor(self, correlation_id: str) -> str | None:
         actor = self._actor()
@@ -233,17 +233,34 @@ class RuntimeRequestHandler(BaseHTTPRequestHandler):
             return
         try:
             body = self._read_json()
-            token = body.get("token", "")
-            if not isinstance(token, str) or not self.runtime.sessions.verify_admin_token(token):
-                raise ValueError("invalid token")
+            if set(body) != {"username", "password"}:
+                raise ValueError("invalid login shape")
+            username = body.get("username")
+            password = body.get("password")
+            if not isinstance(username, str) or not isinstance(password, str):
+                raise ValueError("invalid login types")
         except (ValueError, TypeError, json.JSONDecodeError):
             self.runtime.store.audit(actor=f"network:{remote}", action="session.login", target=self.runtime.config.node_id, outcome="denied", correlation_id=correlation_id, details={"reason": "invalid_credentials"})
-            self._error(401, "invalid_credentials", "Неверный токен", correlation_id)
+            self._error(401, "invalid_credentials", "Неверные учётные данные", correlation_id)
             return
+
+        try:
+            canonical_username = self.runtime.local_admin.authenticate(username, password)
+        except LocalAdminAuthError:
+            LOG.error("local administrator authentication backend unavailable")
+            self.runtime.store.audit(actor=f"network:{remote}", action="session.login", target=self.runtime.config.node_id, outcome="denied", correlation_id=correlation_id, details={"reason": "authentication_unavailable"})
+            self._error(503, "authentication_unavailable", "Служба аутентификации недоступна", correlation_id)
+            return
+        if canonical_username is None:
+            self.runtime.store.audit(actor=f"network:{remote}", action="session.login", target=self.runtime.config.node_id, outcome="denied", correlation_id=correlation_id, details={"reason": "invalid_credentials"})
+            self._error(401, "invalid_credentials", "Неверные учётные данные", correlation_id)
+            return
+
         self.runtime.login_limiter.clear(remote)
-        session, expires = self.runtime.sessions.new_session()
-        self.runtime.store.audit(actor="bootstrap-admin", action="session.login", target=self.runtime.config.node_id, outcome="accepted", correlation_id=correlation_id, details={"remote_address": remote})
-        self._json(200, {"schema": "home-center.session.v1", "authenticated": True, "actor": "bootstrap-admin", "expires_at_epoch": expires}, cookie=SessionManager.cookie(session, expires - int(__import__("time").time())))
+        actor = f"local-admin:{canonical_username}"
+        session, expires = self.runtime.sessions.new_session(actor)
+        self.runtime.store.audit(actor=actor, action="session.login", target=self.runtime.config.node_id, outcome="accepted", correlation_id=correlation_id, details={"remote_address": remote})
+        self._json(200, {"schema": "home-center.session.v1", "authenticated": True, "actor": actor, "expires_at_epoch": expires}, cookie=SessionManager.cookie(session, expires - int(time.time())))
 
     def _static(self, name: str) -> None:
         if not STATIC_NAME.fullmatch(name):

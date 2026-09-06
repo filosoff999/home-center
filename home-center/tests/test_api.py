@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import base64
+import hashlib
 import json
 import os
 import subprocess
@@ -17,25 +19,103 @@ sys.path.insert(0, str(ROOT / "product/control-plane/src"))
 
 from home_center.api_v2 import RuntimeRequestHandlerV2  # noqa: E402
 from home_center.config import Config, Peer  # noqa: E402
+from home_center.local_admin_auth import (  # noqa: E402
+    CREDENTIAL_SCHEMA,
+    KDF_DKLEN,
+    KDF_MAXMEM,
+    KDF_N,
+    KDF_P,
+    KDF_R,
+    SALT_BYTES,
+)
 from home_center.runtime import Runtime  # noqa: E402
 from home_center.server import HomeCenterServer  # noqa: E402
+
+
+USERNAME = "admin"
+PASSWORD = "correct horse battery staple"
+
+
+def local_admin_document() -> dict[str, object]:
+    salt = b"s" * SALT_BYTES
+    verifier = hashlib.scrypt(
+        PASSWORD.encode("utf-8"),
+        salt=salt,
+        n=KDF_N,
+        r=KDF_R,
+        p=KDF_P,
+        maxmem=KDF_MAXMEM,
+        dklen=KDF_DKLEN,
+    )
+    return {
+        "schema": CREDENTIAL_SCHEMA,
+        "username": USERNAME,
+        "kdf": "scrypt",
+        "n": KDF_N,
+        "r": KDF_R,
+        "p": KDF_P,
+        "dklen": KDF_DKLEN,
+        "salt_b64": base64.b64encode(salt).decode("ascii"),
+        "verifier_b64": base64.b64encode(verifier).decode("ascii"),
+    }
 
 
 class ApiTests(unittest.TestCase):
     def setUp(self) -> None:
         self.tmp = tempfile.TemporaryDirectory()
         root = Path(self.tmp.name)
-        web = root / "web"; web.mkdir(); (web / "index.html").write_text("<!doctype html><title>test</title>", encoding="utf-8")
-        secrets = root / "secrets"; secrets.mkdir()
-        for name, value in (("admin.token", b"t" * 64), ("session.key", b"s" * 32), ("audit.key", b"a" * 32), ("node.key", b"not-used")):
-            path = secrets / name; path.write_bytes(value); os.chmod(path, 0o600)
+        web = root / "web"
+        web.mkdir()
+        (web / "index.html").write_text("<!doctype html><title>test</title>", encoding="utf-8")
+        secrets = root / "secrets"
+        secrets.mkdir()
+        for name, value in (("session.key", b"s" * 32), ("audit.key", b"a" * 32), ("node.key", b"not-used")):
+            path = secrets / name
+            path.write_bytes(value)
+            os.chmod(path, 0o600)
+        local_admin = secrets / "local-admin.json"
+        local_admin.write_text(json.dumps(local_admin_document(), sort_keys=True), encoding="utf-8")
+        os.chmod(local_admin, 0o640)
         (secrets / "node.crt").write_text("not-used", encoding="utf-8")
         (secrets / "ca.crt").write_text("peer-ca-must-not-be-public", encoding="utf-8")
-        web_ca = root / "web-ca.crt"; web_ca.write_text("not-used", encoding="utf-8")
-        profile = root / "profile.json"; profile.write_text((ROOT / "deploy/profiles/hm-dm-two-node.v1.json").read_text(encoding="utf-8"), encoding="utf-8")
-        cfg = Config(cluster_id="hm-dm-production", node_id="hm-dm-dc01", node_name="dc01", role="leader", management_address="127.0.0.1", web_port=8443, peer_port=9443, state_db=root / "state.sqlite3", backup_dir=root / "backups", web_root=web, admin_token_file=secrets / "admin.token", session_key_file=secrets / "session.key", audit_key_file=secrets / "audit.key", tls_certificate=secrets / "node.crt", tls_private_key=secrets / "node.key", cluster_ca=secrets / "ca.crt", web_ca=web_ca, deployment_profile=profile, peer=Peer(node_id="hm-dm-dc02", name="dc02", address="127.0.0.2", url="https://127.0.0.2:9443", certificate_name="home-center-dc02"), reconcile_interval_seconds=15, peer_timeout_seconds=1)
-        self.runtime = Runtime(cfg)
+        web_ca = root / "web-ca.crt"
+        web_ca.write_text("not-used", encoding="utf-8")
+        profile = root / "profile.json"
+        profile.write_text(
+            (ROOT / "deploy/profiles/hm-dm-two-node.v1.json").read_text(encoding="utf-8"), encoding="utf-8"
+        )
+        cfg = Config(
+            cluster_id="hm-dm-production",
+            node_id="hm-dm-dc01",
+            node_name="dc01",
+            role="leader",
+            management_address="127.0.0.1",
+            web_port=8443,
+            peer_port=9443,
+            state_db=root / "state.sqlite3",
+            backup_dir=root / "backups",
+            web_root=web,
+            local_admin_credentials_file=local_admin,
+            session_key_file=secrets / "session.key",
+            audit_key_file=secrets / "audit.key",
+            tls_certificate=secrets / "node.crt",
+            tls_private_key=secrets / "node.key",
+            cluster_ca=secrets / "ca.crt",
+            web_ca=web_ca,
+            deployment_profile=profile,
+            peer=Peer(
+                node_id="hm-dm-dc02",
+                name="dc02",
+                address="127.0.0.2",
+                url="https://127.0.0.2:9443",
+                certificate_name="home-center-dc02",
+            ),
+            reconcile_interval_seconds=15,
+            peer_timeout_seconds=1,
+        )
+        self.runtime = Runtime(cfg, local_admin_expected_uid=os.geteuid())
         self.action_calls = 0
+        self._session_cookie: str | None = None
 
         def action_runner(args, **kwargs):
             self.action_calls += 1
@@ -48,18 +128,48 @@ class ApiTests(unittest.TestCase):
 
         self.runtime.actions._runner = action_runner
         self.server = HomeCenterServer(("127.0.0.1", 0), RuntimeRequestHandlerV2, self.runtime)
-        self.thread = threading.Thread(target=self.server.serve_forever, daemon=True); self.thread.start()
+        self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
+        self.thread.start()
         self.base = f"http://127.0.0.1:{self.server.server_port}"
 
     def tearDown(self) -> None:
-        self.server.shutdown(); self.server.server_close(); self.runtime.store.close(); self.tmp.cleanup()
+        self.server.shutdown()
+        self.server.server_close()
+        self.runtime.store.close()
+        self.tmp.cleanup()
 
-    def request(self, path: str, *, token: bool = False, method: str = "GET", body: dict | None = None):
+    def request(
+        self,
+        path: str,
+        *,
+        authenticated: bool = False,
+        bearer: bool = False,
+        method: str = "GET",
+        body: dict | None = None,
+    ):
         headers = {"Accept": "application/json"}
         data = None
-        if token: headers["Authorization"] = "Bearer " + "t" * 64
-        if body is not None: headers["Content-Type"] = "application/json"; data = json.dumps(body).encode()
-        return urllib.request.urlopen(urllib.request.Request(self.base + path, headers=headers, method=method, data=data), timeout=3)
+        if authenticated:
+            headers["Cookie"] = self.session_cookie()
+        if bearer:
+            headers["Authorization"] = "Bearer " + "t" * 64
+        if body is not None:
+            headers["Content-Type"] = "application/json"
+            data = json.dumps(body).encode()
+        return urllib.request.urlopen(
+            urllib.request.Request(self.base + path, headers=headers, method=method, data=data), timeout=3
+        )
+
+    def session_cookie(self) -> str:
+        if self._session_cookie is None:
+            with self.request(
+                "/api/v1/session",
+                method="POST",
+                body={"username": USERNAME, "password": PASSWORD},
+            ) as response:
+                cookie = response.headers["Set-Cookie"]
+            self._session_cookie = cookie.split(";", 1)[0]
+        return self._session_cookie
 
     def test_public_health_and_security_headers(self) -> None:
         with self.request("/healthz") as response:
@@ -73,16 +183,37 @@ class ApiTests(unittest.TestCase):
             self.request("/api/v1/nodes")
         self.assertEqual(caught.exception.code, 401)
 
-    def test_bearer_token_allows_versioned_read(self) -> None:
-        with self.request("/api/v1/nodes", token=True) as response:
-            self.assertEqual(json.load(response)["schema"], "home-center.nodes.v1")
+    def test_bearer_bootstrap_token_cannot_bypass_local_login(self) -> None:
+        with self.assertRaises(urllib.error.HTTPError) as caught:
+            self.request("/api/v1/nodes", bearer=True)
+        self.assertEqual(caught.exception.code, 401)
 
-    def test_login_does_not_echo_token_and_sets_secure_cookie(self) -> None:
-        with self.request("/api/v1/session", method="POST", body={"token": "t" * 64}) as response:
+    def test_local_login_does_not_echo_password_and_sets_secure_cookie(self) -> None:
+        with self.request(
+            "/api/v1/session",
+            method="POST",
+            body={"username": "Admin", "password": PASSWORD},
+        ) as response:
             payload = response.read().decode()
-            self.assertNotIn("t" * 32, payload)
+            self.assertNotIn(PASSWORD, payload)
+            self.assertIn('"actor":"local-admin:admin"', payload)
             cookie = response.headers["Set-Cookie"]
-            self.assertIn("Secure", cookie); self.assertIn("HttpOnly", cookie); self.assertIn("SameSite=Strict", cookie)
+            self.assertIn("Secure", cookie)
+            self.assertIn("HttpOnly", cookie)
+            self.assertIn("SameSite=Strict", cookie)
+
+    def test_invalid_login_is_generic_and_legacy_token_shape_is_rejected(self) -> None:
+        for body in (
+            {"username": USERNAME, "password": "wrong-password-value"},
+            {"token": "t" * 64},
+        ):
+            with self.assertRaises(urllib.error.HTTPError) as caught:
+                self.request("/api/v1/session", method="POST", body=body)
+            self.assertEqual(caught.exception.code, 401)
+            payload = caught.exception.read().decode("utf-8")
+            self.assertIn("invalid_credentials", payload)
+            self.assertNotIn("wrong-password-value", payload)
+            self.assertNotIn("t" * 32, payload)
 
     def test_tls_trust_anchor_is_public_but_private_key_is_not_exposed(self) -> None:
         with patch("home_center.api_v2._validated_web_ca", return_value=b"not-used"):
@@ -93,7 +224,7 @@ class ApiTests(unittest.TestCase):
                 self.assertEqual(response.headers["Content-Type"], "application/x-pem-file")
                 self.assertIn("attachment", response.headers["Content-Disposition"])
         with self.assertRaises(urllib.error.HTTPError) as caught:
-            self.request("/api/v1/tls", token=False)
+            self.request("/api/v1/tls", authenticated=False)
         self.assertEqual(caught.exception.code, 401)
 
     def test_tls_trust_anchor_download_follows_separate_web_pki(self) -> None:
@@ -118,7 +249,7 @@ class ApiTests(unittest.TestCase):
             "renewal": {"due": False, "threshold_days": 30},
         }
         with patch("home_center.api_v2.tls_status", return_value=value):
-            with self.request("/api/v1/tls", token=True) as response:
+            with self.request("/api/v1/tls", authenticated=True) as response:
                 result = json.load(response)
         self.assertEqual(result, value)
         serialized = json.dumps(result)
@@ -130,7 +261,7 @@ class ApiTests(unittest.TestCase):
             self.request("/api/v1/actions")
         self.assertEqual(caught.exception.code, 401)
 
-        with self.request("/api/v1/actions", token=True) as response:
+        with self.request("/api/v1/actions", authenticated=True) as response:
             self.assertEqual(json.load(response)["schema"], "home-center.action-registry.v1")
 
         body = {
@@ -142,7 +273,7 @@ class ApiTests(unittest.TestCase):
         }
         with self.request(
             "/api/v1/actions/service.state.read.v1",
-            token=True,
+            authenticated=True,
             method="POST",
             body=body,
         ) as response:
@@ -152,7 +283,7 @@ class ApiTests(unittest.TestCase):
 
         with self.request(
             "/api/v1/actions/service.state.read.v1",
-            token=True,
+            authenticated=True,
             method="POST",
             body=body,
         ) as response:
@@ -161,7 +292,7 @@ class ApiTests(unittest.TestCase):
         self.assertEqual(second["job"]["job_id"], first["job"]["job_id"])
         self.assertEqual(self.action_calls, 1)
 
-        with self.request("/api/v1/jobs", token=True) as response:
+        with self.request("/api/v1/jobs", authenticated=True) as response:
             jobs = json.load(response)["items"]
         self.assertEqual(jobs[0]["job_id"], first["job"]["job_id"])
 
@@ -176,7 +307,7 @@ class ApiTests(unittest.TestCase):
         with self.assertRaises(urllib.error.HTTPError) as caught:
             self.request(
                 "/api/v1/actions/service.state.read.v1",
-                token=True,
+                authenticated=True,
                 method="POST",
                 body=body,
             )
@@ -187,7 +318,7 @@ class ApiTests(unittest.TestCase):
         with self.assertRaises(urllib.error.HTTPError) as caught:
             self.request(
                 "/api/v1/actions/unknown.action.v1",
-                token=True,
+                authenticated=True,
                 method="POST",
                 body=body,
             )
@@ -196,7 +327,7 @@ class ApiTests(unittest.TestCase):
 
     def test_unimplemented_mutation_is_denied(self) -> None:
         with self.assertRaises(urllib.error.HTTPError) as caught:
-            self.request("/api/v1/nodes", token=True, method="DELETE")
+            self.request("/api/v1/nodes", authenticated=True, method="DELETE")
         self.assertEqual(caught.exception.code, 405)
 
 

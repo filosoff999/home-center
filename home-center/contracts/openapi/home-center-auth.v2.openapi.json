@@ -1,0 +1,81 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Home Center 0.8 Authentication API",
+    "version": "0.8.0-draft",
+    "description": "Authentication-surface contract for the Home Center 0.8 development line. The frozen 0.7 control-plane OpenAPI contract remains in home-center.v1.openapi.json until the full 0.8 API contract cut."
+  },
+  "paths": {
+    "/api/v1/session": {
+      "get": {
+        "operationId": "getSessionV2",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current authenticated local administrator session"
+          },
+          "401": {
+            "description": "Authentication required"
+          }
+        }
+      },
+      "post": {
+        "operationId": "createLocalAdministratorSession",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "../auth/login-request.v1.schema.json"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Short-lived Secure, HttpOnly, SameSite=Strict session created"
+          },
+          "401": {
+            "description": "Invalid credentials"
+          },
+          "429": {
+            "description": "Authentication rate limit exceeded"
+          },
+          "503": {
+            "description": "Local authentication backend unavailable"
+          }
+        }
+      }
+    },
+    "/api/v1/session/logout": {
+      "post": {
+        "operationId": "deleteLocalAdministratorSession",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Browser session cookie expired"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "sessionCookie": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "hc_session",
+        "description": "Short-lived signed Home Center browser session. Bootstrap Bearer tokens are not an authentication mechanism in the 0.8 runtime."
+      }
+    }
+  }
+}

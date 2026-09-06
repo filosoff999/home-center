@@ -7,6 +7,7 @@
 ```text
 contracts/
 ├── openapi/                  # Control Plane API
+├── auth/                     # authentication credentials and login envelopes
 ├── agent/                    # Control Plane ↔ Node Agent protocol
 ├── capabilities/             # node capability schemas
 ├── actions/                  # typed action registry/request/result
@@ -78,3 +79,11 @@ P2.1 admits only `service.state.read.v1` for Home Center-owned allowlisted units
 - `releases/release-verification-result.v1.schema.json` — non-secret verifier decision.
 
 Schema validation is necessary but not sufficient: canonical-byte equality, DSSE PAE, cryptographic signatures, state folding, freshness, checkpoint monotonicity and artifact contents are enforced by `home_center.release_channel`. GDrive and issue metadata are evidence references, never release authority.
+
+## Home Center 0.8 authentication contracts
+
+- `auth/local-admin-credential.v1.schema.json` — persisted local administrator verifier envelope; it contains no plaintext or reversible password material and fixes the admitted scrypt parameters;
+- `auth/login-request.v1.schema.json` — closed interactive login envelope containing only username and write-only password;
+- `openapi/home-center-auth.v2.openapi.json` — 0.8 authentication-surface OpenAPI contract using only the signed session cookie after login.
+
+`openapi/home-center.v1.openapi.json` remains the frozen 0.7 control-plane contract while 0.8 is developed in parallel. It is not evidence that bootstrap Bearer authentication is accepted by the 0.8 runtime. The full 0.8 OpenAPI cut will supersede that release-line document after the 0.8 deployment/migration contract is admitted.

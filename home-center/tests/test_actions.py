@@ -24,6 +24,9 @@ from home_center.store import StateStore  # noqa: E402
 from schema_validator import validate  # noqa: E402
 
 
+ACTOR = "local-admin:admin"
+
+
 class ActionRegistryTests(unittest.TestCase):
     def setUp(self) -> None:
         self.tmp = tempfile.TemporaryDirectory()
@@ -84,7 +87,7 @@ class ActionRegistryTests(unittest.TestCase):
 
     def test_action_persists_terminal_job_and_evidence(self) -> None:
         job, replay = self.registry.run(
-            actor="bootstrap-admin",
+            actor=ACTOR,
             action_id="service.state.read.v1",
             request=self.request(),
             correlation_id="test-action-1",
@@ -108,13 +111,13 @@ class ActionRegistryTests(unittest.TestCase):
 
     def test_same_request_is_replayed_without_second_execution(self) -> None:
         first, first_replay = self.registry.run(
-            actor="bootstrap-admin",
+            actor=ACTOR,
             action_id="service.state.read.v1",
             request=self.request(),
             correlation_id="test-action-2a",
         )
         second, second_replay = self.registry.run(
-            actor="bootstrap-admin",
+            actor=ACTOR,
             action_id="service.state.read.v1",
             request=self.request(),
             correlation_id="test-action-2b",
@@ -126,14 +129,14 @@ class ActionRegistryTests(unittest.TestCase):
 
     def test_idempotency_conflict_is_rejected(self) -> None:
         self.registry.run(
-            actor="bootstrap-admin",
+            actor=ACTOR,
             action_id="service.state.read.v1",
             request=self.request(),
             correlation_id="test-action-3a",
         )
         with self.assertRaises(ActionIdempotencyConflict):
             self.registry.run(
-                actor="bootstrap-admin",
+                actor=ACTOR,
                 action_id="service.state.read.v1",
                 request=self.request(reason="different intent"),
                 correlation_id="test-action-3b",
@@ -145,7 +148,7 @@ class ActionRegistryTests(unittest.TestCase):
         request["input"]["service"] = "home-center.service;reboot"
         with self.assertRaises(ActionRequestError):
             self.registry.run(
-                actor="bootstrap-admin",
+                actor=ACTOR,
                 action_id="service.state.read.v1",
                 request=request,
                 correlation_id="test-action-4",
@@ -154,18 +157,19 @@ class ActionRegistryTests(unittest.TestCase):
         self.assertEqual(self.store.jobs(), [])
 
     def test_permission_and_remote_target_are_fail_closed(self) -> None:
-        with self.assertRaises(ActionPermissionDenied):
-            self.registry.run(
-                actor="observer",
-                action_id="service.state.read.v1",
-                request=self.request(),
-                correlation_id="test-action-5a",
-            )
+        for denied_actor in ("observer", "bootstrap-admin", "local-admin:!"):
+            with self.assertRaises(ActionPermissionDenied):
+                self.registry.run(
+                    actor=denied_actor,
+                    action_id="service.state.read.v1",
+                    request=self.request(),
+                    correlation_id="test-action-5a",
+                )
         request = self.request()
         request["target_node_id"] = "hm-dm-dc02"
         with self.assertRaises(ActionTargetConflict):
             self.registry.run(
-                actor="bootstrap-admin",
+                actor=ACTOR,
                 action_id="service.state.read.v1",
                 request=request,
                 correlation_id="test-action-5b",
@@ -178,7 +182,7 @@ class ActionRegistryTests(unittest.TestCase):
 
         registry = ActionRegistry("hm-dm-dc01", self.store, runner=timeout)
         job, replay = registry.run(
-            actor="bootstrap-admin",
+            actor=ACTOR,
             action_id="service.state.read.v1",
             request=self.request(key="request-timeout"),
             correlation_id="test-action-6",
