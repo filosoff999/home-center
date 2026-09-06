@@ -1,13 +1,13 @@
 # Roadmap Home Center
 
-**Статус:** `0.5.0 PRODUCTION ACCEPTED / 0.8.0 RELEASED_PRODUCTION_PENDING / 0.9.0 DEVELOPMENT ACTIVE`
+**Статус:** `0.5.0 PRODUCTION ACCEPTED / 0.9.0 RELEASED_PRODUCTION_ACCEPTANCE_PENDING`
 **Execution epic:** `#1`.
 
 Roadmap определяет последовательность продуктовых gates. Home Center уже имеет accepted production P1, P2.1 и P2.2 на `dc01/dc02`; дальнейшая работа продолжает P2 и не должна регрессировать принятые safety/evidence свойства.
 
 ## Release train 0.9.0
 
-Статус: **IMPLEMENTED IN DEVELOPMENT / LIVE ACCEPTANCE PENDING**.
+Статус: **CODE RELEASED / LIVE ACCEPTANCE PENDING**.
 
 - [x] source/package/Web version 0.9.0;
 - [x] exact published 0.8.0 predecessor policy;
@@ -18,7 +18,7 @@ Roadmap определяет последовательность продукт
 - [x] backup/restore verification in E2E;
 - [x] closed two-node rollout/rollback/parity acceptance contract and verifier;
 - [x] external access and exact upgrade runbooks;
-- [ ] exact merged-main 0.9 revision and artifact digest;
+- [x] exact merged-main 0.9 revision and artifact digest;
 - [ ] live gateway TLS + desktop/mobile browser evidence;
 - [ ] live `dc02 → dc01` rollout, reverse rollback/restore drill and cluster parity evidence;
 - [ ] signed stable promotion and production activation.

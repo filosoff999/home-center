@@ -2,7 +2,7 @@
 
 **Версия документа:** 2.4
 **Дата:** 2026-09-06
-**Статус продукта:** `0.5.0 PRODUCTION ACCEPTED / 0.8.0 RELEASED_PRODUCTION_PENDING / 0.9.0 DEVELOPMENT ACTIVE`
+**Статус продукта:** `0.5.0 PRODUCTION ACCEPTED / 0.9.0 RELEASED_PRODUCTION_ACCEPTANCE_PENDING`
 **Execution epic:** `#1` — независимая разработка и двухузловой HM.DM deployment.
 **Область действия:** весь отдельный repository `ControlCenterSoft/home-center`.
 

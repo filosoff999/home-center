@@ -2,7 +2,7 @@
 
 **Версия:** 2.4
 **Дата:** 2026-09-06
-**Статус:** `0.5.0 PRODUCTION ACCEPTED / 0.8.0 RELEASED_PRODUCTION_PENDING / 0.9.0 DEVELOPMENT ACTIVE`
+**Статус:** `0.5.0 PRODUCTION ACCEPTED / 0.9.0 RELEASED_PRODUCTION_ACCEPTANCE_PENDING`
 **Execution epic:** `#1`.
 **Основание:** `TECHNICAL-SPECIFICATION.md`, `REQUIREMENTS.md`, `ARCHITECTURE.md`, production acceptance exact `0.4.3`.
 
@@ -26,7 +26,7 @@ P1, P2.1 и P2.2 не проектируются заново: они уже п�
 - no generic shell API;
 - automatic failover disabled without witness/fencing.
 
-Текущий release-candidate слой 0.9 добавляет внешнюю границу, exact 0.8→0.9 policy, deterministic E2E и closed acceptance verifier. Следующий необратимо последовательный gate — exact-main 0.9 artifact, затем live `dc02 → dc01` acceptance; signed promotion и production activation выполняются только после evidence PASS.
+Опубликованный слой 0.9 добавляет внешнюю границу, exact 0.8→0.9 policy, deterministic E2E и closed acceptance verifier. Exact-main artifact опубликован; следующий необратимо последовательный gate — live `dc02 → dc01` acceptance. Signed promotion и production activation выполняются только после evidence PASS.
 
 ## 2. Исполнительная стратегия
 

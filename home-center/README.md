@@ -1,6 +1,6 @@
 # Home Center
 
-> **Статус: 0.5.0 PRODUCTION ACCEPTED · 0.8.0 RELEASED / PRODUCTION ROLLOUT PENDING · 0.9.0 DEVELOPMENT ACTIVE**
+> **Статус: 0.5.0 PRODUCTION ACCEPTED · 0.9.0 RELEASED / PRODUCTION ACCEPTANCE PENDING**
 
 Home Center — самостоятельный local-first продукт для управления домашней и малой серверной инфраструктурой через единый Web UI и API.
 
@@ -77,9 +77,11 @@ Published [Home Center v0.8.0](https://github.com/ControlCenterSoft/home-center/
 
 Release PR, exact-main CI `34064080930` и pinned publication run `34064461198` прошли deterministic Python 3.12/3.14 и reproducible build-twice. В 0.8 не активируются production deployment, AD/GPO mutation, automatic update или automatic failover. Публикация релиза не означает его deployment на dc01/dc02; live HM.DM rollout и optional AD validation отслеживаются в issue #44.
 
-### 0.9.0 development line
+### 0.9.0 released
 
-`develop/0.9.0` добавляет:
+Published [Home Center v0.9.0](https://github.com/ControlCenterSoft/home-center/releases/tag/v0.9.0): revision `29b2f61071067028c14febbbaf0103c5600380e9`, artifact SHA-256 `66531867f806c6665f41d2bb82dccfb5670403acd0c9988271714da09172f668`.
+
+0.9.0 добавляет:
 
 - отключённую по умолчанию external publication boundary через exact trusted reverse proxy;
 - fail-closed forwarding/Origin/HTTPS/public-host validation, client+proxy rate limits и скрытие внутренних endpoints;
@@ -88,7 +90,7 @@ Release PR, exact-main CI `34064080930` и pinned publication run `34064461198` 
 - deterministic build-twice/two-node/runtime/external-login/backup E2E;
 - closed acceptance evidence для `dc02 → dc01`, reverse rollback `dc01 → dc02`, backup/restore, exact parity, PKI/Domain SID/DRS и zero forbidden mutations.
 
-Gateway, DNS, router/NAT и certificates остаются operator-owned. Acceptance evidence не заменяет threshold-signed stable release channel.
+Exact-main Python 3.12/3.14, отдельный E2E, build-twice и pinned publisher прошли. Gateway, DNS, router/NAT и certificates остаются operator-owned. Acceptance evidence не заменяет threshold-signed stable release channel. Публикация кода не означает production activation.
 
 ## Проверяемые записи
 
@@ -102,6 +104,7 @@ Gateway, DNS, router/NAT и certificates остаются operator-owned. Accept
 - [0.8.0 release evidence](ops/0.8.0-RELEASE-EVIDENCE-2026-09-06.md);
 - [upgrade plan exact 0.8.0 → 0.9.0](docs/UPGRADE-TO-0.9.0.md);
 - [external access 0.9 runbook](docs/EXTERNAL-ACCESS-0.9.0.md);
+- [0.9.0 release evidence](ops/0.9.0-RELEASE-EVIDENCE-2026-09-06.md);
 - [ADR-0007: signed stable release channel](docs/adr/0007-signed-stable-release-channel.md);
 - [ADR-0010: optional bounded AD authentication](docs/adr/0010-optional-ad-authentication.md);
 - [ADR-0011: external publication boundary](docs/adr/0011-external-publication-boundary.md);

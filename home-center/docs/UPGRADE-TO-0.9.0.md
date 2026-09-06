@@ -2,7 +2,7 @@
 
 ## Status
 
-This is the exact upgrade and acceptance contract, not production authorization. The target revision and artifact digest remain unresolved until the 0.9 release PR passes exact-main CI and reproducible build-twice verification.
+Home Center 0.9.0 is released, but this exact upgrade and acceptance contract is not production authorization. Production requires the live evidence listed below.
 
 Rollout order is **dc02 → canary/soak → dc01 → cluster acceptance**. Reverse rollback order is **dc01 → dc02**. Automatic update and automatic failover remain disabled.
 
@@ -23,8 +23,8 @@ Only an immutable artifact built from the exact merged 0.9 main revision is elig
 
 ```text
 TARGET_VERSION=0.9.0
-TARGET_REVISION=<40-hex merged-main revision>
-TARGET_SHA256=<64-hex artifact SHA-256>
+TARGET_REVISION=29b2f61071067028c14febbbaf0103c5600380e9
+TARGET_SHA256=66531867f806c6665f41d2bb82dccfb5670403acd0c9988271714da09172f668
 TARGET_ARTIFACT=home-center-0.9.0-linux-amd64.tar.gz
 ```
 

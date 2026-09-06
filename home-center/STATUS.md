@@ -2,7 +2,7 @@
 
 **Дата:** 06.09.2026  
 **Repository:** `ControlCenterSoft/home-center`  
-**Статус:** `0.5.0 PRODUCTION_ACCEPTED / 0.8.0 RELEASED_PRODUCTION_PENDING / 0.9.0 DEVELOPMENT_ACTIVE`
+**Статус:** `0.5.0 PRODUCTION_ACCEPTED / 0.9.0 RELEASED_PRODUCTION_ACCEPTANCE_PENDING`
 
 ## Принятые границы
 
@@ -109,9 +109,18 @@ Release includes:
 - deployment 0.8 на dc01/dc02;
 - automatic update/failover.
 
-## `0.9.0` development
+## `0.9.0` released, production acceptance pending
 
-Integrated development scope:
+Published release identity:
+
+- release/tag: `v0.9.0`;
+- revision: `29b2f61071067028c14febbbaf0103c5600380e9`;
+- artifact SHA-256: `66531867f806c6665f41d2bb82dccfb5670403acd0c9988271714da09172f668`;
+- artifact bytes: `145465`;
+- exact-main CI `34066060309`: Python 3.12/3.14, E2E and build-twice PASS;
+- pinned publisher `34066258914`: exact source/digest and asset publication PASS.
+
+Released scope:
 
 - source/package/Web identity `0.9.0`;
 - exact predecessor `0.8.0 / bbb2b1e952b2072c8ce30ad6b3220c7c14280949 / 25fb72fdffab972703d9be2b7e457b1f4ed053bc1c013a6237558fd693e73ca8`;
@@ -122,14 +131,14 @@ Integrated development scope:
 - deterministic build-twice + two runtime nodes + external login + backup/restore verification E2E;
 - inherited HC-WEB-001 release guard from published 0.8.0.
 
-Production-only evidence remains pending by definition: exact merged-main 0.9 revision/artifact, real gateway TLS, desktop/mobile browser acceptance, dc02/dc01 rollout, rollback drill and live two-node parity. No production server was changed.
+Production-only evidence remains pending by definition: real gateway TLS, desktop/mobile browser acceptance, dc02/dc01 rollout, rollback drill and live two-node parity. No production server was changed.
 
 ## Upgrade
 
 - `0.5.0 → 0.6.0`: [`docs/UPGRADE-TO-0.6.0.md`](docs/UPGRADE-TO-0.6.0.md)
 - `0.6.0 → 0.7.0`: [`docs/UPGRADE-TO-0.7.0.md`](docs/UPGRADE-TO-0.7.0.md)
 - `0.7.0 → 0.8.0`: [`docs/UPGRADE-TO-0.8.0.md`](docs/UPGRADE-TO-0.8.0.md) — exact release published
-- `0.8.0 → 0.9.0`: [`docs/UPGRADE-TO-0.9.0.md`](docs/UPGRADE-TO-0.9.0.md) — exact predecessor; target identity pending release cut
+- `0.8.0 → 0.9.0`: [`docs/UPGRADE-TO-0.9.0.md`](docs/UPGRADE-TO-0.9.0.md) — exact release published; production acceptance pending
 
 Прямой переход `0.7.x` или старше → `0.9.0` запрещён release policy.
 

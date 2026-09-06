@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted for Home Center 0.9.0 development.
+Accepted for Home Center 0.9.0 release.
 
 ## Context
 
