@@ -98,8 +98,8 @@ def main() -> None:
         "stdout=subprocess.DEVNULL",
         "stderr=subprocess.DEVNULL",
         "timeout=self.config.timeout_seconds",
-        '"dns_lookup_kdc = false',
-        '"dns_lookup_realm = false',
+        '" dns_lookup_kdc = false',
+        '" dns_lookup_realm = false',
         "shutil.rmtree",
     ):
         require(marker in ad, f"AD authentication hardening marker missing: {marker}")
