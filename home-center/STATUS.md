@@ -2,7 +2,7 @@
 
 **Дата:** 06.09.2026  
 **Repository:** `ControlCenterSoft/home-center`  
-**Статус:** `0.5.0 PRODUCTION_ACCEPTED / 0.7.0 EXACT_MAIN_CANDIDATE / 0.8.0 RELEASE_CANDIDATE / MANAGED_CLIENT_TRUST_PENDING`
+**Статус:** `0.5.0 PRODUCTION_ACCEPTED / 0.8.0 RELEASED / 0.8.0 PRODUCTION_ROLLOUT_PENDING / MANAGED_CLIENT_TRUST_PENDING`
 
 ## Принятые границы
 
@@ -72,7 +72,7 @@ Managed-client Web CA enrollment/browser acceptance остаётся отдел�
 
 Release PR tests/security и reproducible artifact проходят; после финального docs head требуется ещё один exact-head CI PASS, merge и exact-main artifact evidence.
 
-## `0.8.0` release candidate
+## `0.8.0` released
 
 Интегрированный code baseline `e9bb45415b105ea510d0774380b98108fa5f0fc1`:
 
@@ -89,21 +89,28 @@ Release PR tests/security и reproducible artifact проходят; после 
 - fail-closed exact HTTPS Origin/Host и Fetch Metadata gate для browser POST до credential/action processing;
 - authenticated audited logout и COOP/CORP response hardening.
 
-GitHub Actions run `34063493261` на exact baseline выше: Python 3.12 PASS, Python 3.14 PASS; deterministic tests и security/contracts gates прошли. Reproducible artifact job намеренно не выполняется на `develop/**`; tarball construction и содержимое staged deployment проверяются release-cut тестом.
+Exact release evidence:
+
+- release: `v0.8.0`;
+- URL: https://github.com/ControlCenterSoft/home-center/releases/tag/v0.8.0;
+- revision/tag target: `bbb2b1e952b2072c8ce30ad6b3220c7c14280949`;
+- artifact: `home-center-0.8.0-linux-amd64.tar.gz`;
+- artifact SHA-256: `25fb72fdffab972703d9be2b7e457b1f4ed053bc1c013a6237558fd693e73ca8`;
+- exact-main CI `34064080930`: Python 3.12 PASS, Python 3.14 PASS, build-twice PASS;
+- pinned publisher `34064461198`: exact source/digest PASS, tag and both assets published;
+- issue #29: completed.
 
 Не выполнены и не заявлены как выполненные:
 
-- production activation AD provider;
-- live HM.DM Kerberos/NSS acceptance;
-- exact release-branch build-twice artifact;
-- deployment 0.8 на dc01/dc02;
+- production rollout на dc01/dc02 — tracked in #44;
+- optional live HM.DM AD activation/acceptance — tracked in #44;
 - automatic update/failover.
 
 ## Upgrade
 
 - `0.5.0 → 0.6.0`: [`docs/UPGRADE-TO-0.6.0.md`](docs/UPGRADE-TO-0.6.0.md)
 - `0.6.0 → 0.7.0`: [`docs/UPGRADE-TO-0.7.0.md`](docs/UPGRADE-TO-0.7.0.md)
-- `0.7.0 → 0.8.0`: [`docs/UPGRADE-TO-0.8.0.md`](docs/UPGRADE-TO-0.8.0.md) — plan; target exact-main identity pending
+- `0.7.0 → 0.8.0`: [`docs/UPGRADE-TO-0.8.0.md`](docs/UPGRADE-TO-0.8.0.md) — exact release published
 
 Прямой переход `0.5.x/0.4.x → 0.7.0` запрещён release policy.
 
