@@ -27,7 +27,6 @@ class BackupTests(unittest.TestCase):
 
         self.audit_key = b"a" * 32
         for name, value in (
-            ("admin.token", b"t" * 64),
             ("session.key", b"s" * 32),
             ("audit.key", self.audit_key),
             ("node.key", b"test-private-key"),
@@ -35,6 +34,9 @@ class BackupTests(unittest.TestCase):
             path = secrets / name
             path.write_bytes(value)
             os.chmod(path, 0o600)
+        local_admin = secrets / "local-admin.json"
+        local_admin.write_text("{}", encoding="utf-8")
+        os.chmod(local_admin, 0o640)
         for name in ("node.crt", "ca.crt", "web-ca.crt"):
             (secrets / name).write_text("test-public-certificate", encoding="utf-8")
 
@@ -46,7 +48,7 @@ class BackupTests(unittest.TestCase):
         self.state_db = root / "state" / "state.sqlite3"
         self.backup_dir = root / "backups"
         config = {
-            "schema": "home-center.config.v1",
+            "schema": "home-center.config.v3",
             "cluster_id": "hm-dm-production",
             "node_id": "hm-dm-dc01",
             "node_name": "dc01",
@@ -57,7 +59,15 @@ class BackupTests(unittest.TestCase):
             "state_db": str(self.state_db),
             "backup_dir": str(self.backup_dir),
             "web_root": str(web),
-            "admin_token_file": str(secrets / "admin.token"),
+            "local_admin_credentials_file": str(local_admin),
+            "ad_auth": {
+                "enabled": False,
+                "realm": "HM.DM",
+                "kdc_hosts": ["dc01.hm.dm", "dc02.hm.dm"],
+                "allowed_admin_groups": ["domain admins@hm.dm"],
+                "timeout_seconds": 5,
+                "cache_root": str(root / "ad-auth"),
+            },
             "session_key_file": str(secrets / "session.key"),
             "audit_key_file": str(secrets / "audit.key"),
             "tls_certificate": str(secrets / "node.crt"),

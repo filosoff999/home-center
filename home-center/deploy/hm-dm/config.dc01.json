@@ -1,5 +1,5 @@
 {
-  "schema": "home-center.config.v1",
+  "schema": "home-center.config.v3",
   "cluster_id": "hm-dm-production",
   "node_id": "hm-dm-dc01",
   "node_name": "dc01",
@@ -10,7 +10,20 @@
   "state_db": "/var/lib/home-center/state.sqlite3",
   "backup_dir": "/var/backups/home-center",
   "web_root": "/opt/home-center/current/web",
-  "admin_token_file": "/etc/home-center/secrets/admin.token",
+  "local_admin_credentials_file": "/etc/home-center/secrets/local-admin.json",
+  "ad_auth": {
+    "enabled": false,
+    "realm": "HM.DM",
+    "kdc_hosts": [
+      "dc01.hm.dm",
+      "dc02.hm.dm"
+    ],
+    "allowed_admin_groups": [
+      "domain admins@hm.dm"
+    ],
+    "timeout_seconds": 5,
+    "cache_root": "/var/lib/home-center/ad-auth"
+  },
   "session_key_file": "/etc/home-center/secrets/session.key",
   "audit_key_file": "/etc/home-center/secrets/audit.key",
   "tls_certificate": "/etc/home-center/pki/node.crt",

@@ -25,6 +25,7 @@
 | Неавторизованный API read/mutation | deny-by-default auth; mutation отсутствует | unauthenticated 401; DELETE 405 |
 | Кража bootstrap token из cookie/log | token меняется на signed session; body/headers не логируются | token echo test |
 | Brute force | constant-time compare + per-IP limiter | limiter test |
+| Login/action/logout CSRF | JSON-only API, SameSite=Strict cookie, exact HTTPS Origin/Host and Fetch Metadata checks | cross-site POST rejected before credentials or mutation |
 | Подмена peer | independent peer-CA validation, TLS 1.3, client cert, CN и node schema identity | mismatched identity rejected |
 | Browser handshake failure / downgrade | exact P-256/SHA-256 Web CA+leaf; Web TLS ≥1.2; real restricted-sigalgs TLS 1.2/1.3 gates | Ed25519/P-384/RSA Web candidate rejected; Android/Chrome-compatible handshake required |
 | Смешение Web и peer identities | separate paths, trust anchors, EKU and activation flows | clientAuth Web leaf rejected; peer fingerprints must remain unchanged |
@@ -46,7 +47,7 @@
 
 ## Residual risks / next gates
 
-- bootstrap token must be rotated into full Identity/RBAC before privileged actions;
+- local administrator and optional mapped AD identities are implemented; complete role/scoped RBAC beyond the admitted administrator permission remains open;
 - public Web CA trust must be distributed through a separate reviewed HM.DM policy; P2.3 never mutates AD/GPO implicitly;
 - `0.4.0` digest remains quarantined because it uses a browser-incompatible Ed25519 Web chain;
 - `0.4.1` remains quarantined because it rejects an empty regular flock file;

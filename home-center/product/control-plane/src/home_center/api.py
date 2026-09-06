@@ -6,6 +6,7 @@ import json
 import logging
 import mimetypes
 import re
+import time
 import uuid
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler
@@ -21,7 +22,9 @@ from .actions import (
     ActionRequestError,
     ActionTargetConflict,
 )
+from .ad_auth import AdAuthError
 from .auth import SessionManager
+from .local_admin_auth import LocalAdminAuthError
 from .runtime import Runtime
 from .util import utc_now
 
@@ -58,6 +61,8 @@ class RuntimeRequestHandler(BaseHTTPRequestHandler):
         self.send_header("X-Frame-Options", "DENY")
         self.send_header("Referrer-Policy", "no-referrer")
         self.send_header("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=(), usb=()")
+        self.send_header("Cross-Origin-Opener-Policy", "same-origin")
+        self.send_header("Cross-Origin-Resource-Policy", "same-origin")
 
     def _json(self, status: int, value: Any, *, cookie: str | None = None) -> None:
         body = json.dumps(value, ensure_ascii=False, separators=(",", ":"), sort_keys=True).encode("utf-8")
@@ -79,9 +84,7 @@ class RuntimeRequestHandler(BaseHTTPRequestHandler):
         )
 
     def _actor(self) -> str | None:
-        return self.runtime.sessions.actor_from_headers(
-            self.headers.get("Authorization"), self.headers.get("Cookie")
-        )
+        return self.runtime.sessions.actor_from_headers(self.headers.get("Cookie"))
 
     def _require_actor(self, correlation_id: str) -> str | None:
         actor = self._actor()
@@ -99,6 +102,18 @@ class RuntimeRequestHandler(BaseHTTPRequestHandler):
         if path == "/readyz":
             ready, reasons = self.runtime.ready()
             self._json(200 if ready else 503, {"schema": "home-center.readiness.v1", "status": "ready" if ready else "not_ready", "reasons": reasons, "version": __version__, "node_id": self.runtime.config.node_id, "observed_at": utc_now()})
+            return
+        if path == "/api/v1/auth/providers":
+            self._json(
+                HTTPStatus.OK,
+                {
+                    "schema": "home-center.auth-providers.v1",
+                    "providers": [
+                        {"id": "local", "enabled": True},
+                        {"id": "ad", "enabled": self.runtime.config.ad_auth.enabled},
+                    ],
+                },
+            )
             return
         if path == "/api/v1/meta":
             self._json(200, {"schema": "home-center.meta.v1", "product": "Home Center", "version": __version__, "node_name": self.runtime.config.node_name, "role": self.runtime.config.role})
@@ -138,13 +153,64 @@ class RuntimeRequestHandler(BaseHTTPRequestHandler):
         else:
             self._error(404, "not_found", "Ресурс не найден", correlation_id)
 
+    def _same_origin_post_allowed(self) -> bool:
+        fetch_site = self.headers.get("Sec-Fetch-Site")
+        if fetch_site is not None and fetch_site not in {"same-origin", "none"}:
+            return False
+        origin = self.headers.get("Origin")
+        if origin is None:
+            return True
+        host = self.headers.get("Host")
+        if not host:
+            return False
+        try:
+            parsed = urlsplit(origin)
+            return (
+                parsed.scheme == "https"
+                and parsed.netloc.casefold() == host.casefold()
+                and parsed.username is None
+                and parsed.password is None
+                and parsed.path == ""
+                and parsed.query == ""
+                and parsed.fragment == ""
+            )
+        except ValueError:
+            return False
+
     def do_POST(self) -> None:  # noqa: N802
         correlation_id = self._correlation_id()
         path = urlsplit(self.path).path
+        if not self._same_origin_post_allowed():
+            self.runtime.store.audit(
+                actor=f"network:{self.client_address[0]}",
+                action="request.origin",
+                target=self.runtime.config.node_id,
+                outcome="denied",
+                correlation_id=correlation_id,
+                details={"reason": "cross_origin_request"},
+            )
+            self._error(
+                HTTPStatus.FORBIDDEN,
+                "cross_origin_request_rejected",
+                "Запрос из другого источника запрещён",
+                correlation_id,
+            )
+            return
         if path == "/api/v1/session":
             self._login(correlation_id)
             return
         if path == "/api/v1/session/logout":
+            actor = self._require_actor(correlation_id)
+            if not actor:
+                return
+            self.runtime.store.audit(
+                actor=actor,
+                action="session.logout",
+                target=self.runtime.config.node_id,
+                outcome="accepted",
+                correlation_id=correlation_id,
+                details={},
+            )
             self._json(200, {"schema": "home-center.session.v1", "authenticated": False}, cookie=SessionManager.expired_cookie())
             return
         actor = self._require_actor(correlation_id)
@@ -233,17 +299,40 @@ class RuntimeRequestHandler(BaseHTTPRequestHandler):
             return
         try:
             body = self._read_json()
-            token = body.get("token", "")
-            if not isinstance(token, str) or not self.runtime.sessions.verify_admin_token(token):
-                raise ValueError("invalid token")
+            if set(body) != {"provider", "username", "password"}:
+                raise ValueError("invalid login shape")
+            provider = body.get("provider")
+            username = body.get("username")
+            password = body.get("password")
+            if provider not in {"local", "ad"} or not isinstance(username, str) or not isinstance(password, str):
+                raise ValueError("invalid login types")
         except (ValueError, TypeError, json.JSONDecodeError):
             self.runtime.store.audit(actor=f"network:{remote}", action="session.login", target=self.runtime.config.node_id, outcome="denied", correlation_id=correlation_id, details={"reason": "invalid_credentials"})
-            self._error(401, "invalid_credentials", "Неверный токен", correlation_id)
+            self._error(401, "invalid_credentials", "Неверные учётные данные", correlation_id)
             return
+
+        try:
+            if provider == "local":
+                canonical_username = self.runtime.local_admin.authenticate(username, password)
+                actor_prefix = "local-admin"
+            else:
+                canonical_username = self.runtime.ad_auth.authenticate(username, password)
+                actor_prefix = "ad-admin"
+        except (LocalAdminAuthError, AdAuthError):
+            LOG.error("authentication backend unavailable")
+            self.runtime.store.audit(actor=f"network:{remote}", action="session.login", target=self.runtime.config.node_id, outcome="denied", correlation_id=correlation_id, details={"reason": "authentication_unavailable"})
+            self._error(503, "authentication_unavailable", "Служба аутентификации недоступна", correlation_id)
+            return
+        if canonical_username is None:
+            self.runtime.store.audit(actor=f"network:{remote}", action="session.login", target=self.runtime.config.node_id, outcome="denied", correlation_id=correlation_id, details={"reason": "invalid_credentials"})
+            self._error(401, "invalid_credentials", "Неверные учётные данные", correlation_id)
+            return
+
         self.runtime.login_limiter.clear(remote)
-        session, expires = self.runtime.sessions.new_session()
-        self.runtime.store.audit(actor="bootstrap-admin", action="session.login", target=self.runtime.config.node_id, outcome="accepted", correlation_id=correlation_id, details={"remote_address": remote})
-        self._json(200, {"schema": "home-center.session.v1", "authenticated": True, "actor": "bootstrap-admin", "expires_at_epoch": expires}, cookie=SessionManager.cookie(session, expires - int(__import__("time").time())))
+        actor = f"{actor_prefix}:{canonical_username}"
+        session, expires = self.runtime.sessions.new_session(actor)
+        self.runtime.store.audit(actor=actor, action="session.login", target=self.runtime.config.node_id, outcome="accepted", correlation_id=correlation_id, details={"remote_address": remote})
+        self._json(200, {"schema": "home-center.session.v1", "authenticated": True, "actor": actor, "expires_at_epoch": expires}, cookie=SessionManager.cookie(session, expires - int(time.time())))
 
     def _static(self, name: str) -> None:
         if not STATIC_NAME.fullmatch(name):

@@ -5,14 +5,16 @@ from __future__ import annotations
 import ipaddress
 import json
 import os
-from dataclasses import dataclass
+import re
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from .ad_auth import AdAuthConfig
 from .util import secure_file
 
 
-CONFIG_SCHEMA = "home-center.config.v1"
+CONFIG_SCHEMA = "home-center.config.v3"
 
 
 @dataclass(frozen=True, slots=True)
@@ -36,7 +38,7 @@ class Config:
     state_db: Path
     backup_dir: Path
     web_root: Path
-    admin_token_file: Path
+    local_admin_credentials_file: Path
     session_key_file: Path
     audit_key_file: Path
     tls_certificate: Path
@@ -47,6 +49,7 @@ class Config:
     peer: Peer
     reconcile_interval_seconds: int
     peer_timeout_seconds: int
+    ad_auth: AdAuthConfig = field(default_factory=AdAuthConfig.disabled)
 
     @property
     def web_bind(self) -> tuple[str, int]:
@@ -70,6 +73,61 @@ def _path(raw: dict[str, Any], name: str) -> Path:
         raise ValueError(f"config path must be absolute: {name}")
     return value
 
+
+
+def _ad_auth(raw: dict[str, Any]) -> AdAuthConfig:
+    value = _required(raw, "ad_auth", dict)
+    required = {"enabled", "realm", "kdc_hosts", "allowed_admin_groups", "timeout_seconds", "cache_root"}
+    if set(value) != required:
+        raise ValueError("ad_auth config shape rejected")
+    enabled = value.get("enabled")
+    if not isinstance(enabled, bool):
+        raise ValueError("ad_auth enabled must be boolean")
+    realm = _required(value, "realm", str).upper()
+    if re.fullmatch(r"[A-Z0-9][A-Z0-9.-]{2,254}", realm) is None:
+        raise ValueError("ad_auth realm rejected")
+    kdc_hosts = value.get("kdc_hosts")
+    if (
+        not isinstance(kdc_hosts, list)
+        or not 1 <= len(kdc_hosts) <= 4
+        or any(not isinstance(item, str) for item in kdc_hosts)
+    ):
+        raise ValueError("ad_auth kdc_hosts rejected")
+    normalized_hosts = tuple(item.lower() for item in kdc_hosts)
+    realm_suffix = "." + realm.lower()
+    if any(
+        re.fullmatch(r"[a-z0-9](?:[a-z0-9.-]{0,251}[a-z0-9])?", item) is None
+        or not item.endswith(realm_suffix)
+        for item in normalized_hosts
+    ):
+        raise ValueError("ad_auth kdc_hosts rejected")
+    groups = value.get("allowed_admin_groups")
+    if (
+        not isinstance(groups, list)
+        or not 1 <= len(groups) <= 16
+        or any(
+            not isinstance(item, str)
+            or item != item.strip()
+            or not 1 <= len(item) <= 128
+            or any(ord(character) < 32 for character in item)
+            for item in groups
+        )
+    ):
+        raise ValueError("ad_auth allowed_admin_groups rejected")
+    timeout = value.get("timeout_seconds")
+    if isinstance(timeout, bool) or not isinstance(timeout, int) or not 1 <= timeout <= 10:
+        raise ValueError("ad_auth timeout rejected")
+    cache_root = Path(_required(value, "cache_root", str))
+    if not cache_root.is_absolute():
+        raise ValueError("ad_auth cache_root must be absolute")
+    return AdAuthConfig(
+        enabled=enabled,
+        realm=realm,
+        kdc_hosts=normalized_hosts,
+        allowed_admin_groups=tuple(groups),
+        timeout_seconds=timeout,
+        cache_root=cache_root,
+    )
 
 def load_config(path: str | Path | None = None) -> Config:
     config_path = Path(path or os.environ.get("HOME_CENTER_CONFIG", "/etc/home-center/config.json"))
@@ -110,7 +168,7 @@ def load_config(path: str | Path | None = None) -> Config:
         state_db=_path(raw, "state_db"),
         backup_dir=_path(raw, "backup_dir"),
         web_root=_path(raw, "web_root"),
-        admin_token_file=_path(raw, "admin_token_file"),
+        local_admin_credentials_file=_path(raw, "local_admin_credentials_file"),
         session_key_file=_path(raw, "session_key_file"),
         audit_key_file=_path(raw, "audit_key_file"),
         tls_certificate=_path(raw, "tls_certificate"),
@@ -127,12 +185,18 @@ def load_config(path: str | Path | None = None) -> Config:
         ),
         reconcile_interval_seconds=max(5, min(int(raw.get("reconcile_interval_seconds", 15)), 300)),
         peer_timeout_seconds=max(1, min(int(raw.get("peer_timeout_seconds", 3)), 15)),
+        ad_auth=_ad_auth(raw),
     )
     if cfg.peer.node_id == cfg.node_id or cfg.peer.name == cfg.node_name:
         raise ValueError("peer identity must differ from local node identity")
     if cfg.web_ca.resolve() == cfg.cluster_ca.resolve():
         raise ValueError("web_ca must be independent from cluster_ca")
-    for secret in (cfg.admin_token_file, cfg.session_key_file, cfg.audit_key_file, cfg.tls_private_key):
+    for secret in (
+        cfg.local_admin_credentials_file,
+        cfg.session_key_file,
+        cfg.audit_key_file,
+        cfg.tls_private_key,
+    ):
         secure_file(secret, allow_group_read=True)
     for public_file in (cfg.tls_certificate, cfg.cluster_ca, cfg.web_ca, cfg.deployment_profile):
         if not public_file.is_file():
