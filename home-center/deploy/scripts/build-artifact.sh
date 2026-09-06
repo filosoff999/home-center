@@ -27,6 +27,24 @@ cp -a "$ROOT/product/control-plane/src/home_center/." "$STAGE/home_center/"
 find "$STAGE/home_center" -type f \( -name '*.pyc' -o -name '*.pyo' \) -delete
 find "$STAGE/home_center" -type d -name __pycache__ -empty -delete
 cp -a "$ROOT/product/web/static/." "$STAGE/web/"
+cat >"$STAGE/web/release.js" <<EOF
+"use strict";
+
+window.HOME_CENTER_RELEASE = Object.freeze({
+  version: "$VERSION",
+  revision: "$REVISION",
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+  const brand = document.querySelector(".brand > div:last-child");
+  if (!brand) return;
+  const current = document.querySelector("#homeCenterVersion");
+  const label = current || document.createElement("small");
+  label.id = "homeCenterVersion";
+  label.textContent = "v" + window.HOME_CENTER_RELEASE.version + " · " + window.HOME_CENTER_RELEASE.revision.slice(0, 12);
+  if (!current) brand.append(label);
+});
+EOF
 cp -a "$ROOT/contracts/." "$STAGE/contracts/"
 cp "$ROOT/deploy/profiles/hm-dm-two-node.v1.json" "$STAGE/deployment-profile.json"
 cp "$ROOT/deploy/runtime/run.py" \

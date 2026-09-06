@@ -9,6 +9,7 @@ from pathlib import Path
 from urllib.parse import urlsplit
 
 from .api import RuntimeRequestHandler
+from .release_identity import ReleaseIdentityError, current_release_identity
 from .tls_status import _certificate_profile, _chain_valid, status as tls_status
 
 
@@ -60,6 +61,32 @@ def _validated_web_ca(config: object) -> bytes:
 class RuntimeRequestHandlerV2(RuntimeRequestHandler):
     def do_GET(self) -> None:  # noqa: N802
         path = urlsplit(self.path).path
+        if path == "/api/v1/meta":
+            correlation_id = self._correlation_id()
+            try:
+                release = current_release_identity()
+            except ReleaseIdentityError:
+                self._error(
+                    HTTPStatus.SERVICE_UNAVAILABLE,
+                    "release_identity_unavailable",
+                    "Идентичность установленного релиза не подтверждена",
+                    correlation_id,
+                )
+                return
+            self._json(
+                HTTPStatus.OK,
+                {
+                    "schema": "home-center.meta.v2",
+                    "product": "Home Center",
+                    "version": release["version"],
+                    "revision": release["revision"],
+                    "build": release["build"],
+                    "release_source": release["source"],
+                    "node_name": self.runtime.config.node_name,
+                    "role": self.runtime.config.role,
+                },
+            )
+            return
         if path == "/api/v1/tls/ca.crt":
             try:
                 data = _validated_web_ca(self.runtime.config)
