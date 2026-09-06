@@ -7,7 +7,7 @@ OUT=${1:-"$ROOT/dist"}
 SOURCE_VERSION=$(awk -F'"' '/^__version__ = / {print $2}' "$ROOT/product/control-plane/src/home_center/__init__.py")
 VERSION=${HOME_CENTER_VERSION:-$SOURCE_VERSION}
 [ "$VERSION" = "$SOURCE_VERSION" ] || { echo VERSION_OVERRIDE_MISMATCH >&2; exit 66; }
-[ "$VERSION" = 0.4.1 ] || { echo RELEASE_VERSION_NOT_ADMITTED >&2; exit 66; }
+[ "$VERSION" = 0.4.2 ] || { echo RELEASE_VERSION_NOT_ADMITTED >&2; exit 66; }
 REVISION=${HOME_CENTER_REVISION:-$(git -C "$ROOT" rev-parse HEAD 2>/dev/null || printf 'working-tree')}
 [[ "$REVISION" =~ ^[0-9a-f]{40}$ ]] || { echo REVISION_NOT_IMMUTABLE >&2; exit 66; }
 STAGE=$(mktemp -d)

@@ -18,7 +18,9 @@ fi
 if [ ! -e "$LOCK_FILE" ] && [ ! -L "$LOCK_FILE" ]; then
   install -m 0600 -o root -g root /dev/null "$LOCK_FILE"
 fi
-[ ! -L "$LOCK_FILE" ] && [ "$(stat -c '%F:%u:%g:%a' "$LOCK_FILE" 2>/dev/null)" = 'regular file:0:0:600' ] || { echo HOME_CENTER_LOCK_FILE_REJECTED >&2; exit 66; }
+[ ! -L "$LOCK_FILE" ] && [ -f "$LOCK_FILE" ] \
+  && [ "$(stat -c '%u:%g:%a' "$LOCK_FILE" 2>/dev/null)" = '0:0:600' ] \
+  || { echo HOME_CENTER_LOCK_FILE_REJECTED >&2; exit 66; }
 exec 9<>"$LOCK_FILE"
 flock -w 360 9 || { echo HOME_CENTER_NODE_MUTATION_TIMEOUT >&2; exit 75; }
 

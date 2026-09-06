@@ -34,7 +34,7 @@ STAMP=$TRANSACTION_ID
 VERSION=$(tar -xOf "$ARTIFACT" ./VERSION | tr -d '\r\n')
 REVISION=$(tar -xOf "$ARTIFACT" ./REVISION | tr -d '\r\n')
 [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo INVALID_VERSION >&2; exit 66; }
-[ "$VERSION" = 0.4.1 ] || { echo RELEASE_VERSION_NOT_ADMITTED >&2; exit 66; }
+[ "$VERSION" = 0.4.2 ] || { echo RELEASE_VERSION_NOT_ADMITTED >&2; exit 66; }
 [[ "$REVISION" =~ ^[0-9a-f]{40}$ ]] || { echo INVALID_REVISION >&2; exit 66; }
 
 LOCK_DIR=/run/home-center-locks
@@ -46,7 +46,9 @@ fi
 if [ ! -e "$LOCK_FILE" ] && [ ! -L "$LOCK_FILE" ]; then
   install -m 0600 -o root -g root /dev/null "$LOCK_FILE"
 fi
-[ ! -L "$LOCK_FILE" ] && [ "$(stat -c '%F:%u:%g:%a' "$LOCK_FILE" 2>/dev/null)" = 'regular file:0:0:600' ] || { echo HOME_CENTER_LOCK_FILE_REJECTED >&2; exit 66; }
+[ ! -L "$LOCK_FILE" ] && [ -f "$LOCK_FILE" ] \
+  && [ "$(stat -c '%u:%g:%a' "$LOCK_FILE" 2>/dev/null)" = '0:0:600' ] \
+  || { echo HOME_CENTER_LOCK_FILE_REJECTED >&2; exit 66; }
 exec 9<>"$LOCK_FILE"
 flock -n 9 || { echo HOME_CENTER_NODE_MUTATION_ALREADY_RUNNING >&2; exit 75; }
 

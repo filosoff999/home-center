@@ -2,7 +2,7 @@
 
 **Дата:** 06.09.2026  
 **Repository:** `ControlCenterSoft/home-center`  
-**Статус:** `PRODUCTION 0.3.0 / P2.2 ACCEPTED / P2.3 0.4.1 RELEASE_CANDIDATE`
+**Статус:** `PRODUCTION 0.3.0 / P2.2 ACCEPTED / P2.3 0.4.2 RELEASE_CANDIDATE`
 
 ## Принятые границы
 
@@ -36,8 +36,9 @@
 
 ## Активный P2.3 release candidate
 
-- target version: `0.4.1`;
+- target version: `0.4.2`;
 - `0.4.0`: **QUARANTINED / DO_NOT_DEPLOY** — Web leaf и общий CA оставались Ed25519 и воспроизводили Android/Chrome TLS alert 40;
+- `0.4.1`: **QUARANTINED / DO_NOT_DEPLOY** — empty regular flock-файл ошибочно отклонялся из-за строкового сравнения GNU `stat %F`;
 - Web PKI: отдельный Web CA и leaf, ECDSA P-256, ECDSA-with-SHA-256;
 - peer PKI: существующие Ed25519 `ca.crt`, `node.crt`, `node.key`, TLS 1.3 mTLS — без изменения;
 - rollout: только immutable artifact, `dc02 → dc01`, с readiness, restricted-sigalgs, peer-mTLS, DRS и rollback gates;

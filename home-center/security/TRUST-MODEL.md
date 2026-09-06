@@ -23,4 +23,4 @@ Secrets are generated on `dc01`, delivered to `dc02` only through the existing a
 
 Web leaf keys exist only in root-controlled candidate storage and a node-local fingerprint-addressed Web release. Every staged candidate/release is bound to a durable random operation marker and exact file digests; cleanup is compare-and-delete, never path-only. The helper may write only `/etc/home-center/pki/web`; peer CA, Web CA and peer node private keys are explicitly inaccessible. Public fingerprints and certificate metadata are evidence-safe; private key material is never evidence.
 
-`0.4.0` is not trusted for deployment: it coupled Web TLS to Ed25519 and is quarantined. `0.4.1` becomes trusted only after exact-head CI, immutable digest verification, staged `dc02 → dc01` rollout, browser handshake/trust, peer-mTLS and DRS acceptance.
+`0.4.0` is not trusted for deployment because it coupled Web TLS to Ed25519. `0.4.1` is also quarantined because its shell lock admission rejected an empty regular flock file. `0.4.2` becomes trusted only after exact-head CI, immutable digest verification, staged `dc02 → dc01` rollout, browser handshake/trust, peer-mTLS and DRS acceptance.

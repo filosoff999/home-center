@@ -1,8 +1,8 @@
-# Home Center: upgrade 0.3.0 → 0.4.1
+# Home Center: upgrade 0.3.0 → 0.4.2
 
 > **RELEASE CANDIDATE — этот документ не является production authorization.**
 
-Production остаётся на `0.3.0` (`6b0c0db144bfd2a7b7a7db1a868d649f20825721`) до полного прохождения описанных ниже gates. Версия `0.4.0` имеет статус `QUARANTINED / DO_NOT_DEPLOY`: она сохраняет Ed25519 Web chain и воспроизводит TLS alert 40 для наблюдавшегося Android/Chrome ClientHello.
+Production остаётся на `0.3.0` (`6b0c0db144bfd2a7b7a7db1a868d649f20825721`) до полного прохождения описанных ниже gates. Версия `0.4.0` имеет статус `QUARANTINED / DO_NOT_DEPLOY`: она сохраняет Ed25519 Web chain и воспроизводит TLS alert 40 для наблюдавшегося Android/Chrome ClientHello. Версия `0.4.1` также `QUARANTINED / DO_NOT_DEPLOY`: её shell admission ошибочно сравнивает GNU `stat %F` пустого regular flock-файла со строкой `regular file`, хотя GNU возвращает `regular empty file`.
 
 ## Инварианты
 
@@ -54,7 +54,7 @@ Routine rotation не создаёт новый trust root молча. Отсу�
 
 ## 4. Immutable software rollout
 
-1. Развернуть exact `0.4.1` artifact на `dc02`.
+1. Развернуть exact `0.4.2` artifact на `dc02`.
 2. Проверить exact version/revision/artifact SHA, readiness, helper probe, timers, backup и legacy Web fallback.
 3. Проверить peer mTLS `dc01 → dc02`, DRS и неизменность peer public identities.
 4. Выдержать 30-секундный canary soak и повторить readiness, service/timer и peer-mTLS gates. Terminal regression вызывает rollback `dc02` к `0.3.0` и quarantine нового digest.
@@ -87,7 +87,7 @@ Activation заранее классифицирует предыдущую це
 
 ## 6. Acceptance matrix
 
-- `dc01` и `dc02`: exact `0.4.1` source revision и artifact SHA;
+- `dc01` и `dc02`: exact `0.4.2` source revision и artifact SHA;
 - Web cert/CA: `profile=ecdsa-p256-sha256`, `profile_valid=true`, `san_policy_valid=true`, valid chain/hostname/horizon;
 - Android/Chrome: handshake завершается, TLS alert 40 / `ERR_SSL_VERSION_OR_CIPHER_MISMATCH` отсутствует;
 - managed Windows/browser: Web CA явно установлен административным процессом, hostname/chain trusted без warning;
@@ -99,7 +99,7 @@ Activation заранее классифицирует предыдущую це
 - failed-rotation synthetic test доказывает rollback; backup/restore verification остаётся PASS;
 - automatic failover/VIP activation остаются отключены.
 
-Только после всех доказательств отдельный acceptance commit переводит `0.4.1` из release candidate в production accepted и обновляет release ledger/GDrive CURRENT.
+Только после всех доказательств отдельный acceptance commit переводит `0.4.2` из release candidate в production accepted и обновляет release ledger/GDrive CURRENT.
 
 ## 7. Failure, retry и quarantine
 

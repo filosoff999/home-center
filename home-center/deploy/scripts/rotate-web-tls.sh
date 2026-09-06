@@ -14,7 +14,9 @@ fi
 if [ ! -e "$LOCK_FILE" ] && [ ! -L "$LOCK_FILE" ]; then
   install -m 0600 -o root -g root /dev/null "$LOCK_FILE"
 fi
-[ ! -L "$LOCK_FILE" ] && [ "$(stat -c '%F:%u:%g:%a' "$LOCK_FILE" 2>/dev/null)" = 'regular file:0:0:600' ] || { echo HOME_CENTER_LOCK_FILE_REJECTED >&2; exit 66; }
+[ ! -L "$LOCK_FILE" ] && [ -f "$LOCK_FILE" ] \
+  && [ "$(stat -c '%u:%g:%a' "$LOCK_FILE" 2>/dev/null)" = '0:0:600' ] \
+  || { echo HOME_CENTER_LOCK_FILE_REJECTED >&2; exit 66; }
 exec 9<>"$LOCK_FILE"
 flock -n 9 || { echo HOME_CENTER_CLUSTER_ROLLOUT_ALREADY_RUNNING >&2; exit 75; }
 
@@ -406,7 +408,8 @@ lock_dir=/run/home-center-locks
 lock_file=$lock_dir/node-mutation.lock
 [ ! -L "$lock_dir" ] && [ "$(stat -c '%F:%u:%g:%a' "$lock_dir")" = directory:0:0:700 ] \
   || { echo DC02_WEB_ROLLBACK_LOCK_DIRECTORY_REJECTED >&2; exit 66; }
-[ ! -L "$lock_file" ] && [ "$(stat -c '%F:%u:%g:%a' "$lock_file")" = 'regular file:0:0:600' ] \
+[ ! -L "$lock_file" ] && [ -f "$lock_file" ] \
+  && [ "$(stat -c '%u:%g:%a' "$lock_file")" = '0:0:600' ] \
   || { echo DC02_WEB_ROLLBACK_LOCK_FILE_REJECTED >&2; exit 66; }
 exec 7<>"$lock_file"
 flock -w 360 7
@@ -888,10 +891,11 @@ MAINTENANCE_STOPPED=1
 systemctl stop home-center-tls-maintenance.timer home-center-tls-maintenance.service
 "${SSH[@]}" sudo -n systemctl stop home-center-tls-maintenance.timer home-center-tls-maintenance.service
 [ ! -L "$LOCK_DIR/node-mutation.lock" ] \
-  && [ "$(stat -c '%F:%u:%g:%a' "$LOCK_DIR/node-mutation.lock")" = 'regular file:0:0:600' ] \
+  && [ -f "$LOCK_DIR/node-mutation.lock" ] \
+  && [ "$(stat -c '%u:%g:%a' "$LOCK_DIR/node-mutation.lock")" = '0:0:600' ] \
   || { echo DC01_NODE_MUTATION_LOCK_REJECTED >&2; false; }
 flock -w 360 "$LOCK_DIR/node-mutation.lock" true
-"${SSH[@]}" "set -Eeuo pipefail; sudo -n test ! -L '$LOCK_DIR/node-mutation.lock'; test \"\$(sudo -n stat -c '%F:%u:%g:%a' '$LOCK_DIR/node-mutation.lock')\" = 'regular file:0:0:600'; sudo -n flock -w 360 '$LOCK_DIR/node-mutation.lock' true"
+"${SSH[@]}" "set -Eeuo pipefail; sudo -n test ! -L '$LOCK_DIR/node-mutation.lock'; sudo -n test -f '$LOCK_DIR/node-mutation.lock'; test \"\$(sudo -n stat -c '%u:%g:%a' '$LOCK_DIR/node-mutation.lock')\" = '0:0:600'; sudo -n flock -w 360 '$LOCK_DIR/node-mutation.lock' true"
 
 # Canary is mandatory. dc01 is never touched unless dc02 activation and exact presented-cert postflight pass.
 activate_remote "$TMP/dc02" "$DC02_EXPECTED"

@@ -226,9 +226,9 @@ else:
 version_source = (ROOT / "product/control-plane/src/home_center/__init__.py").read_text(encoding="utf-8")
 project = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
 builder = (ROOT / "deploy/scripts/build-artifact.sh").read_text(encoding="utf-8")
-if '__version__ = "0.4.1"' not in version_source or 'version = "0.4.1"' not in project:
+if '__version__ = "0.4.2"' not in version_source or 'version = "0.4.2"' not in project:
     errors.append("runtime/package version mismatch")
-if "HOME_CENTER_VERSION:-$SOURCE_VERSION" not in builder or '[ "$VERSION" = 0.4.1 ]' not in builder:
+if "HOME_CENTER_VERSION:-$SOURCE_VERSION" not in builder or '[ "$VERSION" = 0.4.2 ]' not in builder:
     errors.append("artifact version mismatch")
 if 'git -C "$ROOT" rev-parse HEAD' not in builder or 'git -C "$ROOT/../.."' in builder:
     errors.append("artifact revision must resolve from the independent repository root")
@@ -520,6 +520,26 @@ for required in (
         errors.append(f"strict X.509 bootstrap profile missing: {required}")
 if 'sudo -n find /var/backups/home-center' not in bootstrap:
     errors.append("remote backup evidence must use bounded privilege for the root-inaccessible directory")
+
+lock_scripts = {
+    "bootstrap": bootstrap,
+    "installer": installer,
+    "rollback": rollback,
+    "rotation": rotate,
+}
+for name, script in lock_scripts.items():
+    for required in ('[ -f "$LOCK_FILE" ]', "stat -c '%u:%g:%a' \"$LOCK_FILE\""):
+        if required not in script:
+            errors.append(f"{name} empty regular lock admission missing: {required}")
+    if "stat -c '%F:%u:%g:%a' \"$LOCK_FILE\"" in script:
+        errors.append(f"{name} lock admission must not compare GNU stat type labels")
+for required in (
+    '[ -f "$lock_file" ]',
+    '[ -f "$LOCK_DIR/node-mutation.lock" ]',
+    "sudo -n test -f '$LOCK_DIR/node-mutation.lock'",
+):
+    if required not in rotate:
+        errors.append(f"rotation empty regular node lock admission missing: {required}")
 
 if errors:
     print("HOME_CENTER_SECURITY_GATE=FAIL")

@@ -1,6 +1,6 @@
 # Threat model Home Center P2.3
 
-Статус: P2.2 accepted baseline; P2.3 `0.4.1` release candidate, 06.09.2026. Requirements: HC-SEC-001..004, HC-HA-004, HC-TEST-002..003.
+Статус: P2.2 accepted baseline; P2.3 `0.4.2` release candidate, 06.09.2026. Requirements: HC-SEC-001..004, HC-HA-004, HC-TEST-002..003.
 
 ## Активы
 

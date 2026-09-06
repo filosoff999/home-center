@@ -64,7 +64,7 @@ INSTALLER=$PINNED_INSTALLER
 ROLLBACK=$PINNED_ROLLBACK
 TARGET_VERSION=$(tar -xOf "$ARTIFACT" ./VERSION | tr -d '\r\n')
 TARGET_REVISION=$(tar -xOf "$ARTIFACT" ./REVISION | tr -d '\r\n')
-[ "$TARGET_VERSION" = 0.4.1 ] || { echo RELEASE_VERSION_NOT_ADMITTED >&2; exit 66; }
+[ "$TARGET_VERSION" = 0.4.2 ] || { echo RELEASE_VERSION_NOT_ADMITTED >&2; exit 66; }
 [[ "$TARGET_REVISION" =~ ^[0-9a-f]{40}$ ]] || { echo RELEASE_REVISION_NOT_ADMITTED >&2; exit 66; }
 ADMITTED_SOURCE_VERSION=0.3.0
 ADMITTED_SOURCE_REVISION=6b0c0db144bfd2a7b7a7db1a868d649f20825721
@@ -78,7 +78,9 @@ fi
 if [ ! -e "$LOCK_FILE" ] && [ ! -L "$LOCK_FILE" ]; then
   install -m 0600 -o root -g root /dev/null "$LOCK_FILE"
 fi
-[ ! -L "$LOCK_FILE" ] && [ "$(stat -c '%F:%u:%g:%a' "$LOCK_FILE" 2>/dev/null)" = 'regular file:0:0:600' ] || { echo HOME_CENTER_LOCK_FILE_REJECTED >&2; exit 66; }
+[ ! -L "$LOCK_FILE" ] && [ -f "$LOCK_FILE" ] \
+  && [ "$(stat -c '%u:%g:%a' "$LOCK_FILE" 2>/dev/null)" = '0:0:600' ] \
+  || { echo HOME_CENTER_LOCK_FILE_REJECTED >&2; exit 66; }
 exec 8<>"$LOCK_FILE"
 flock -n 8 || { echo HOME_CENTER_CLUSTER_ROLLOUT_ALREADY_RUNNING >&2; exit 75; }
 TRANSACTION_ID=$(date -u +%Y%m%dT%H%M%SZ)-$(openssl rand -hex 6)

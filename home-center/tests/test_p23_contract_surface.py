@@ -17,17 +17,17 @@ class P23ContractSurfaceTests(unittest.TestCase):
         runtime = (ROOT / "product/control-plane/src/home_center/__init__.py").read_text(encoding="utf-8")
         project = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
         builder = (ROOT / "deploy/scripts/build-artifact.sh").read_text(encoding="utf-8")
-        self.assertIn('__version__ = "0.4.1"', runtime)
-        self.assertIn('version = "0.4.1"', project)
+        self.assertIn('__version__ = "0.4.2"', runtime)
+        self.assertIn('version = "0.4.2"', project)
         self.assertIn("HOME_CENTER_VERSION:-$SOURCE_VERSION", builder)
         self.assertIn('[ "$VERSION" = "$SOURCE_VERSION" ]', builder)
-        self.assertIn('[ "$VERSION" = 0.4.1 ]', builder)
+        self.assertIn('[ "$VERSION" = 0.4.2 ]', builder)
         self.assertIn('[[ "$REVISION" =~ ^[0-9a-f]{40}$ ]]', builder)
 
     def test_deploy_scripts_reject_unadmitted_release_versions(self) -> None:
         for name in ("install-node.sh", "bootstrap-hm-dm.sh"):
             script = (ROOT / "deploy/scripts" / name).read_text(encoding="utf-8")
-            self.assertIn('[ "$VERSION" = 0.4.1 ]' if name == "install-node.sh" else '[ "$TARGET_VERSION" = 0.4.1 ]', script)
+            self.assertIn('[ "$VERSION" = 0.4.2 ]' if name == "install-node.sh" else '[ "$TARGET_VERSION" = 0.4.2 ]', script)
             self.assertIn("RELEASE_VERSION_NOT_ADMITTED", script)
         with tempfile.TemporaryDirectory() as tmp:
             result = subprocess.run(
@@ -72,7 +72,7 @@ class P23ContractSurfaceTests(unittest.TestCase):
     def test_openapi_publishes_tls_status_and_public_trust_anchor(self) -> None:
         value = json.loads((ROOT / "contracts/openapi/home-center.v1.openapi.json").read_text(encoding="utf-8"))
         self.assertEqual(value["openapi"], "3.1.0")
-        self.assertEqual(value["info"]["version"], "0.4.1")
+        self.assertEqual(value["info"]["version"], "0.4.2")
         self.assertEqual(value["servers"], [{"url": "https://dc01.hm.dm:8443", "description": "Current canonical Home Center production endpoint"}])
         paths = value["paths"]
         self.assertIn("/api/v1/tls", paths)
@@ -132,6 +132,40 @@ class P23ContractSurfaceTests(unittest.TestCase):
             self.assertIn(required, rotate)
         for script in (installer, rollback):
             self.assertIn("sync -f /opt/home-center", script)
+
+    def test_empty_regular_flock_files_are_admitted_without_stat_type_labels(self) -> None:
+        scripts = {
+            name: (ROOT / "deploy/scripts" / name).read_text(encoding="utf-8")
+            for name in ("bootstrap-hm-dm.sh", "install-node.sh", "rollback-node.sh", "rotate-web-tls.sh")
+        }
+        for name, script in scripts.items():
+            with self.subTest(script=name):
+                self.assertIn('[ -f "$LOCK_FILE" ]', script)
+                self.assertIn("stat -c '%u:%g:%a' \"$LOCK_FILE\"", script)
+                self.assertNotIn("stat -c '%F:%u:%g:%a' \"$LOCK_FILE\"", script)
+        rotate = scripts["rotate-web-tls.sh"]
+        self.assertIn('[ -f "$lock_file" ]', rotate)
+        self.assertIn('[ -f "$LOCK_DIR/node-mutation.lock" ]', rotate)
+        self.assertIn("sudo -n test -f '$LOCK_DIR/node-mutation.lock'", rotate)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            lock = Path(tmp) / "empty.lock"
+            lock.touch(mode=0o600)
+            lock.chmod(0o600)
+            result = subprocess.run(
+                [
+                    "bash",
+                    "-c",
+                    '[ ! -L "$1" ] && [ -f "$1" ] && '
+                    '[ "$(stat -c \'%u:%g:%a\' "$1")" = "$(id -u):$(id -g):600" ]',
+                    "bash",
+                    str(lock),
+                ],
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+        self.assertEqual(result.returncode, 0, result.stderr)
 
 
 if __name__ == "__main__":
