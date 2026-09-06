@@ -31,7 +31,8 @@ Architecture Decision Record обязателен для решений, кот�
 6. [ADR-0006 — Web TLS certificate lifecycle and trust model](0006-web-tls-certificate-lifecycle.md);
 7. [ADR-0007 — signed stable release channel](0007-signed-stable-release-channel.md);
 8. [ADR-0008 — local administrator authentication for Home Center 0.8](0008-local-administrator-authentication.md);
-9. [ADR-0009 — authentication-free deployment probes for Home Center 0.8](0009-auth-free-deployment-v2.md).
+9. [ADR-0009 — authentication-free deployment probes for Home Center 0.8](0009-auth-free-deployment-v2.md);
+10. [ADR-0010 — optional bounded Active Directory authentication](0010-optional-ad-authentication.md).
 
 ## Следующие решения
 
@@ -40,6 +41,5 @@ Architecture Decision Record обязателен для решений, кот�
 - module isolation/privilege model;
 - cluster membership/quorum and witness/fencing model;
 - protected production signing-key provisioning and P2.5 persisted update reconcile;
-- optional Active Directory authentication provider semantics for Home Center 0.8.
 
 README не принимает будущие решения автоматически; он задаёт процесс их фиксации.
