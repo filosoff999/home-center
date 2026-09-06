@@ -2,7 +2,7 @@
 
 ## Status
 
-This is a release plan, not production authorization. The exact 0.8 merged-main revision and artifact SHA-256 are intentionally unresolved until the release PR passes build-twice verification.
+Home Center 0.8.0 is released, but this document is not production authorization. Production requires the separate exact-artifact acceptance tracked in issue #44.
 
 Rollout order remains **dc02 → canary/soak → dc01 → cluster acceptance**. Automatic update and automatic failover remain disabled.
 
@@ -36,8 +36,8 @@ Only an immutable artifact from the exact merged 0.8 main revision is eligible:
 
 ```text
 TARGET_VERSION=0.8.0
-TARGET_REVISION=<40-hex merged-main revision>
-TARGET_SHA256=<64-hex artifact SHA-256>
+TARGET_REVISION=bbb2b1e952b2072c8ce30ad6b3220c7c14280949
+TARGET_SHA256=25fb72fdffab972703d9be2b7e457b1f4ed053bc1c013a6237558fd693e73ca8
 TARGET_ARTIFACT=home-center-0.8.0-linux-amd64.tar.gz
 ```
 

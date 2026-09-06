@@ -1,6 +1,6 @@
 # Home Center
 
-> **Статус: 0.5.0 PRODUCTION ACCEPTED · 0.7.0 EXACT-MAIN CANDIDATE · 0.8.0 RELEASE CANDIDATE · MANAGED-CLIENT TRUST PENDING**
+> **Статус: 0.5.0 PRODUCTION ACCEPTED · 0.8.0 RELEASED · 0.8.0 PRODUCTION ROLLOUT PENDING · MANAGED-CLIENT TRUST PENDING**
 
 Home Center — самостоятельный local-first продукт для управления домашней и малой серверной инфраструктурой через единый Web UI и API.
 
@@ -60,9 +60,11 @@ Exact merged-main candidate:
 
 `PRODUCTION_RELEASE_MANAGER_ENABLED = False`; production private signing key, automatic poller/timer и automatic installation не активированы.
 
-### 0.8.0 release candidate
+### 0.8.0 released
 
-`release/0.8.0` включает интегрированный код из `develop/0.8.0`:
+Опубликован [Home Center v0.8.0](https://github.com/ControlCenterSoft/home-center/releases/tag/v0.8.0): revision `bbb2b1e952b2072c8ce30ad6b3220c7c14280949`, artifact SHA-256 `25fb72fdffab972703d9be2b7e457b1f4ed053bc1c013a6237558fd693e73ca8`.
+
+Релиз включает интегрированный код из `develop/0.8.0`:
 
 - локального администратора Home Center вместо bootstrap-token в интерактивном Web login;
 - root-only атомарное создание scrypt verifier без plaintext/reversible password storage;
@@ -73,7 +75,7 @@ Exact merged-main candidate:
 - публичный secret-free provider catalog: Web UI показывает AD-вход только при явном включении provider;
 - локальный вход остаётся доступным независимо от состояния AD.
 
-В 0.8 не активируются automatic update, automatic failover или неявные AD/GPO/DNS/DHCP mutations. Release PR в `main` обязан пройти deterministic matrix и reproducible build-twice; production rollout и optional live AD activation выполняются отдельными явными gates после exact-main artifact.
+Release PR, exact-main CI и pinned publication workflow прошли deterministic Python 3.12/3.14 и reproducible build-twice. В 0.8 не активируются automatic update, automatic failover или неявные AD/GPO/DNS/DHCP mutations. Production rollout и optional live AD activation выполняются отдельно по [issue #44](https://github.com/ControlCenterSoft/home-center/issues/44).
 
 ## Проверяемые записи
 
@@ -83,7 +85,8 @@ Exact merged-main candidate:
 - [upgrade exact 0.4.3 → 0.5.0](docs/UPGRADE-TO-0.5.0.md);
 - [upgrade exact 0.5.0 → 0.6.0](docs/UPGRADE-TO-0.6.0.md);
 - [upgrade exact 0.6.0 → 0.7.0](docs/UPGRADE-TO-0.7.0.md);
-- [upgrade plan exact 0.7.0 → 0.8.0](docs/UPGRADE-TO-0.8.0.md);
+- [upgrade exact 0.7.0 → 0.8.0](docs/UPGRADE-TO-0.8.0.md);
+- [0.8.0 release evidence](ops/0.8.0-RELEASE-EVIDENCE-2026-09-06.md);
 - [ADR-0007: signed stable release channel](docs/adr/0007-signed-stable-release-channel.md);
 - [ADR-0010: optional bounded AD authentication](docs/adr/0010-optional-ad-authentication.md).
 
