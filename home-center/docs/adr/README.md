@@ -40,6 +40,10 @@ Architecture Decision Record обязателен для решений, кот�
 15. [ADR-0017 — Expiring module permission acknowledgement boundary](0017-module-permission-acknowledgement-boundary.md);
 16. [ADR-0018 — Read-only module install lifecycle planning boundary](0018-read-only-module-install-lifecycle-planning.md).
 
+## Proposed decisions
+
+1. [ADR-0019 — Trusted module artifact publication binding](0019-trusted-module-artifact-publication-binding.md).
+
 ## Следующие решения
 
 - node trust/enrollment protocol beyond the accepted two-node bootstrap;

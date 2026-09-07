@@ -299,6 +299,12 @@ def plan_module_install_lifecycle(
         for item in admission_request["candidates"]
     }
     publications = _publications(publication_records or [])
+    planned_publication_keys = {
+        (module.module_id, module.version, module.artifact_sha256)
+        for module in admission.install_order
+    }
+    if not set(publications).issubset(planned_publication_keys):
+        raise ModuleLifecycleError("lifecycle_artifact_publication_scope_rejected")
     install_steps: list[dict[str, Any]] = []
     recovery_steps: list[dict[str, Any]] = []
     for index, module in enumerate(admission.install_order, start=1):

@@ -185,6 +185,14 @@ class ModuleLifecycleTests(unittest.TestCase):
             "lifecycle_artifact_publication_binding_rejected",
         )
 
+        extra = candidate("org.test.not-requested")
+        with self.assertRaises(ModuleLifecycleError) as unexpected:
+            self.plan(admission, publication_records=[publication_record(extra)])
+        self.assertEqual(
+            unexpected.exception.code,
+            "lifecycle_artifact_publication_scope_rejected",
+        )
+
     def test_install_is_dependency_first_and_recovery_is_exact_reverse(self) -> None:
         plan = self.plan(self.dependency_plan())
         self.assertEqual(

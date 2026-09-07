@@ -314,6 +314,7 @@ def main() -> int:
         "acknowledgement_request_hash",
         "lifecycle_admission_binding_rejected",
         "lifecycle_artifact_publication_binding_rejected",
+        "lifecycle_artifact_publication_scope_rejected",
         "REMAINING_BLOCKERS",
         "plan_module_install_lifecycle",
     ):
