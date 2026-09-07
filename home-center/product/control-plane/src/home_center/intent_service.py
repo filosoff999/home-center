@@ -54,6 +54,8 @@ class IntentPlanningService:
     def plan(self, *, actor: str, request: IntentRequest) -> IntentPlan:
         if not self.actor_is_administrator(actor):
             raise IntentAuthorizationError("administrator actor required")
+        if request.actor != actor:
+            raise IntentAuthorizationError("request actor does not match authenticated actor")
         permission = PERMISSION_BY_KIND.get(request.kind)
         if permission is None:
             raise IntentAuthorizationError("intent permission unavailable")
