@@ -74,7 +74,7 @@ def main() -> None:
     require("ExternalAccessPolicy" in runtime, "external policy is not composed into runtime")
     require("ExternalRequestRateLimiter" in runtime, "external rate limiter is not composed into runtime")
     for marker in (
-        'TARGET_VERSION = "0.9.2"',
+        'TARGET_VERSION = "0.10.0"',
         "from .upgrade_policy import is_upgrade_allowed",
         'EXPECTED_NODES = ("dc02", "dc01")',
         'ROLLBACK_ORDER = ("dc01", "dc02")',
@@ -99,3 +99,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+

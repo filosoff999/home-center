@@ -14,23 +14,23 @@ sys.path.insert(0, str(ROOT / "product/control-plane/src"))
 
 from home_center import __version__  # noqa: E402
 
-TARGET = "0.9.2"
+TARGET = "0.10.0"
 TEST_REVISION = "8" * 40
 
 
-class ReleaseCut092Tests(unittest.TestCase):
+class ReleaseCut0100Tests(unittest.TestCase):
     def test_runtime_package_and_web_source_versions_are_exact(self) -> None:
         with (ROOT / "pyproject.toml").open("rb") as handle:
             project = tomllib.load(handle)
         release_js = (ROOT / "product/web/static/release.js").read_text(encoding="utf-8")
         self.assertEqual(__version__, TARGET)
         self.assertEqual(project["project"]["version"], TARGET)
-        self.assertIn('version: "0.9.2"', release_js)
+        self.assertIn('version: "0.10.0"', release_js)
 
     def test_builder_orders_release_auth_and_upgrade_renderers(self) -> None:
         builder = (ROOT / "deploy/scripts/build-artifact.sh").read_text(encoding="utf-8")
-        self.assertIn('[ "$VERSION" = 0.9.2 ] || { echo RELEASE_VERSION_NOT_ADMITTED', builder)
-        self.assertIn("HOME_CENTER_092_CONFIG_SCHEMA_NOT_ADMITTED", builder)
+        self.assertIn('[ "$VERSION" = 0.10.0 ] || { echo RELEASE_VERSION_NOT_ADMITTED', builder)
+        self.assertIn("HOME_CENTER_0100_CONFIG_SCHEMA_NOT_ADMITTED", builder)
         release_index = builder.index('render-release-policy.py"')
         auth_index = builder.index('render-auth-deployment-v2.py"')
         upgrade_index = builder.index('render-upgrade-policy-v2.py"')
@@ -58,9 +58,9 @@ class ReleaseCut092Tests(unittest.TestCase):
                 timeout=45,
             )
             self.assertEqual(result.returncode, 0, result.stderr)
-            archive = out / "home-center-0.9.2-linux-amd64.tar.gz"
+            archive = out / "home-center-0.10.0-linux-amd64.tar.gz"
             with tarfile.open(archive, "r:gz") as package:
-                self.assertEqual(package.extractfile("./VERSION").read(), b"0.9.2\n")
+                self.assertEqual(package.extractfile("./VERSION").read(), b"0.10.0\n")
                 self.assertEqual(package.extractfile("./REVISION").read(), (TEST_REVISION + "\n").encode())
                 bootstrap = package.extractfile("./deploy/bootstrap-hm-dm.sh").read().decode()
                 installer = package.extractfile("./deploy/install-node.sh").read().decode()
@@ -102,3 +102,4 @@ class ReleaseCut092Tests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
