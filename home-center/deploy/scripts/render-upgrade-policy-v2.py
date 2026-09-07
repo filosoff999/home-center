@@ -6,10 +6,10 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-TARGET_VERSION = "0.9.2"
-IMMEDIATE_SOURCE_VERSION = "0.9.1"
-IMMEDIATE_SOURCE_REVISION = "b6d486a8808b47f67e0072349172d44ee0169bef"
-IMMEDIATE_SOURCE_RELEASE = "/opt/home-center/releases/0.9.1-b6d486a8808b-bb8e99328c31"
+TARGET_VERSION = "0.10.0"
+IMMEDIATE_SOURCE_VERSION = "0.9.2"
+IMMEDIATE_SOURCE_REVISION = "689d90995a4f365e2f19640486b136b525f29c6d"
+IMMEDIATE_SOURCE_RELEASE = "/opt/home-center/releases/0.9.2-689d90995a4f-90d5cb0b657a"
 LOCAL_ADMIN = "/etc/home-center/secrets/local-admin.json"
 LEGACY = "/etc/home-center/secrets/admin.token"
 
@@ -169,14 +169,14 @@ def render(bootstrap_path: Path, installer_path: Path) -> None:
     installer = installer_path.read_text(encoding="utf-8")
 
     exact = (
-        f"ADMITTED_SOURCE_V091_VERSION={IMMEDIATE_SOURCE_VERSION}\n"
-        f"ADMITTED_SOURCE_V091_REVISION={IMMEDIATE_SOURCE_REVISION}\n"
-        f"ADMITTED_SOURCE_V091_RELEASE={IMMEDIATE_SOURCE_RELEASE}\n\n"
+        f"ADMITTED_SOURCE_V092_VERSION={IMMEDIATE_SOURCE_VERSION}\n"
+        f"ADMITTED_SOURCE_V092_REVISION={IMMEDIATE_SOURCE_REVISION}\n"
+        f"ADMITTED_SOURCE_V092_RELEASE={IMMEDIATE_SOURCE_RELEASE}\n\n"
         "source_identity_admitted() {\n"
         "  local version=$1 revision=$2 release=$3\n"
-        '  [ "$version" = "$ADMITTED_SOURCE_V091_VERSION" ] \\\n'
-        '    && [ "$revision" = "$ADMITTED_SOURCE_V091_REVISION" ] \\\n'
-        '    && [ "$release" = "$ADMITTED_SOURCE_V091_RELEASE" ]\n'
+        '  [ "$version" = "$ADMITTED_SOURCE_V092_VERSION" ] \\\n'
+        '    && [ "$revision" = "$ADMITTED_SOURCE_V092_REVISION" ] \\\n'
+        '    && [ "$release" = "$ADMITTED_SOURCE_V092_RELEASE" ]\n'
         "}"
     )
     bootstrap = replace_once(bootstrap, exact, SEMVER_FUNCTION, "source_admission")
@@ -250,3 +250,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+

@@ -39,8 +39,8 @@ def pki(seed: str) -> dict[str, str]:
 
 
 def evidence() -> dict:
-    candidate = identity("0.9.2", CANDIDATE_REVISION, CANDIDATE_ARTIFACT)
-    predecessor = identity("0.7.0", PREDECESSOR_REVISION, PREDECESSOR_ARTIFACT)
+    candidate = identity("0.10.0", CANDIDATE_REVISION, CANDIDATE_ARTIFACT)
+    predecessor = identity("0.9.2", PREDECESSOR_REVISION, PREDECESSOR_ARTIFACT)
     rollout = []
     for sequence, node, seed in ((1, "dc02", "1"), (2, "dc01", "4")):
         web = pki(seed)
@@ -66,7 +66,7 @@ def evidence() -> dict:
         )
     return {
         "schema": "home-center.release-candidate-acceptance.v1",
-        "acceptance_id": "hm-dm-0.9.0-rc1",
+        "acceptance_id": "hm-dm-0.10.0-dev1",
         "candidate": candidate,
         "predecessor": predecessor,
         "rollout": rollout,
@@ -119,7 +119,7 @@ def verify(value: dict):
         value,
         expected_candidate_revision=CANDIDATE_REVISION,
         expected_candidate_artifact_sha256=CANDIDATE_ARTIFACT,
-        expected_predecessor_version="0.7.0",
+        expected_predecessor_version="0.9.2",
         expected_predecessor_revision=PREDECESSOR_REVISION,
         expected_predecessor_artifact_sha256=PREDECESSOR_ARTIFACT,
     )
@@ -216,7 +216,7 @@ class ReleaseCandidateAcceptanceTests(unittest.TestCase):
                 "--candidate-artifact-sha256",
                 CANDIDATE_ARTIFACT,
                 "--predecessor-version",
-                "0.7.0",
+                "0.9.2",
                 "--predecessor-revision",
                 PREDECESSOR_REVISION,
                 "--predecessor-artifact-sha256",
@@ -250,3 +250,4 @@ class ReleaseCandidateAcceptanceTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+

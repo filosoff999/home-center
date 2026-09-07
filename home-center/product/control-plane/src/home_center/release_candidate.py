@@ -1,4 +1,4 @@
-"""Fail-closed verification of Home Center 0.9.2 release-candidate evidence.
+"""Fail-closed verification of Home Center 0.10.0 release-candidate evidence.
 
 The evidence document records observations; it is deliberately not release
 authority.  A separately signed stable-channel record is still required before
@@ -18,7 +18,7 @@ from .util import canonical_json, sha256_bytes
 
 ACCEPTANCE_SCHEMA = "home-center.release-candidate-acceptance.v1"
 VERIFICATION_SCHEMA = "home-center.release-candidate-verification.v1"
-TARGET_VERSION = "0.9.2"
+TARGET_VERSION = "0.10.0"
 EXPECTED_NODES = ("dc02", "dc01")
 ROLLBACK_ORDER = ("dc01", "dc02")
 EXPECTED_DOMAIN = "hm.dm"

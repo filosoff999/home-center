@@ -60,6 +60,14 @@ jobs:
         run: |
           VERSION=$(awk -F'"' '/^__version__ = / {print $2}' product/control-plane/src/home_center/__init__.py)
           [[ "$VERSION" =~ ^[0-9]+[.][0-9]+[.][0-9]+$ ]]
+          RELEASE_REF="${GITHUB_BASE_REF:-$GITHUB_REF_NAME}"
+          if [[ "$RELEASE_REF" == release/* ]]; then
+            EXPECTED_VERSION="${RELEASE_REF#release/}"
+            [ "$VERSION" = "$EXPECTED_VERSION" ] || {
+              echo "RELEASE_BRANCH_VERSION_MISMATCH expected=$EXPECTED_VERSION actual=$VERSION" >&2
+              exit 66
+            }
+          fi
           echo "value=$VERSION" >>"$GITHUB_OUTPUT"
       - name: Build artifact twice and compare bytes
         env:
@@ -88,3 +96,4 @@ jobs:
             dist/home-center-${{ steps.version.outputs.value }}-linux-amd64.tar.gz.sha256
           if-no-files-found: error
           retention-days: 14
+
