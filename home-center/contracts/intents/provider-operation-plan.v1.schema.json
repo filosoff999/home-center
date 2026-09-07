@@ -1,0 +1,25 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"https://home-center.local/contracts/intents/provider-operation-plan.v1.schema.json",
+  "type":"object","additionalProperties":false,
+  "required":["schema","provider_id","provider_kind","operation","capability","intent_id","target_id","reservation_id","request_binding_sha256","resource_snapshot_sha256","node_ids","state","blockers","execution_ticket_created","provider_execution_enabled","production_mutation_enabled"],
+  "properties":{
+    "schema":{"const":"home-center.provider-operation-plan.v1"},
+    "provider_id":{"type":"string","pattern":"^[a-z][a-z0-9_.:-]{1,127}$"},
+    "provider_kind":{"enum":["proxmox","filesystem"]},
+    "operation":{"enum":["storage.share.create.v1","virtualization.vm.create.v1","virtualization.lxc.create.v1"]},
+    "capability":{"type":"string","pattern":"^[a-z][a-z0-9.-]{1,126}\\.v[1-9][0-9]*$"},
+    "intent_id":{"type":"string","format":"uuid"},
+    "target_id":{"type":"string","minLength":2,"maxLength":128},
+    "reservation_id":{"$ref":"#/$defs/digest"},
+    "request_binding_sha256":{"$ref":"#/$defs/digest"},
+    "resource_snapshot_sha256":{"$ref":"#/$defs/digest"},
+    "node_ids":{"type":"array","minItems":1,"maxItems":2,"uniqueItems":true,"items":{"type":"string","minLength":3,"maxLength":64}},
+    "state":{"enum":["planned","blocked"]},
+    "blockers":{"type":"array","maxItems":4,"uniqueItems":true,"items":{"enum":["provider_kind_mismatch","provider_not_healthy","provider_capability_unsupported","provider_node_scope_mismatch"]}},
+    "execution_ticket_created":{"const":false},
+    "provider_execution_enabled":{"const":false},
+    "production_mutation_enabled":{"const":false}
+  },
+  "$defs":{"digest":{"type":"string","pattern":"^sha256:[0-9a-f]{64}$"}}
+}
