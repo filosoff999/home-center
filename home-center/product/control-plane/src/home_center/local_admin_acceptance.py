@@ -19,6 +19,7 @@ TRANSACTION_ID = re.compile(r"^la-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{16}$")
 NODE_ID = re.compile(r"^[a-z0-9][a-z0-9-]{2,63}$")
 DIGEST = re.compile(r"^sha256:[0-9a-f]{64}$")
 FORBIDDEN_KEY_PARTS = ("password", "secret", "salt", "verifier", "token", "private_key")
+SAFE_PROOF_KEYS = frozenset({"secret_scan"})
 
 
 class LocalAdminAcceptanceError(ValueError):
@@ -81,7 +82,7 @@ def _reject_secret_fields(value: Any) -> None:
     if isinstance(value, Mapping):
         for key, nested in value.items():
             normalized = str(key).casefold()
-            if any(part in normalized for part in FORBIDDEN_KEY_PARTS):
+            if normalized not in SAFE_PROOF_KEYS and any(part in normalized for part in FORBIDDEN_KEY_PARTS):
                 raise LocalAdminAcceptanceError("acceptance_secret_field_rejected")
             _reject_secret_fields(nested)
     elif isinstance(value, list):
@@ -114,12 +115,15 @@ def _validate_success(value: object) -> tuple[str, str]:
             raise LocalAdminAcceptanceError("acceptance_node_identity_rejected")
         if node["role"] not in {"standby", "leader"}:
             raise LocalAdminAcceptanceError("acceptance_node_role_rejected")
+        sequence = node["commit_sequence"]
+        if not isinstance(sequence, int) or isinstance(sequence, bool) or sequence not in {1, 2}:
+            raise LocalAdminAcceptanceError("acceptance_commit_sequence_rejected")
         if node["new_credential_canary"] != "passed":
             raise LocalAdminAcceptanceError("acceptance_new_credential_canary_rejected")
         if not isinstance(node["credential_record_sha256"], str) or DIGEST.fullmatch(node["credential_record_sha256"]) is None:
             raise LocalAdminAcceptanceError("acceptance_credential_record_digest_rejected")
         normalized.append(node)
-    normalized.sort(key=lambda item: item["commit_sequence"] if isinstance(item["commit_sequence"], int) else 999)
+    normalized.sort(key=lambda item: int(item["commit_sequence"]))
     if [item["commit_sequence"] for item in normalized] != [1, 2]:
         raise LocalAdminAcceptanceError("acceptance_commit_sequence_rejected")
     if [item["role"] for item in normalized] != ["standby", "leader"]:
