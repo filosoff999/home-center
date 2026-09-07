@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "product/control-plane/src"))
 sys.path.insert(0, str(ROOT / "tests"))
 
-from home_center.core.intent_engine import IntentKind, IntentRequest  # noqa: E402
+from home_center.core.intent_engine import IntentEngineError, IntentKind, IntentRequest  # noqa: E402
 from home_center.provider_framework import (  # noqa: E402
     ProviderAdapterDescriptor,
     ProviderFrameworkError,
@@ -198,22 +198,8 @@ class ProviderFramework0130Tests(unittest.TestCase):
             )
 
         unknown = virtualization_request("container")
-        unknown_plan = placed(unknown, facts)
-        unknown_reservation = ReservationLedger().reserve(
-            request=unknown,
-            plan=unknown_plan,
-            resource_snapshot=facts,
-            now_epoch=4_100,
-        )
-        with self.assertRaisesRegex(ProviderFrameworkError, "provider_runtime_rejected"):
-            prepare_provider_operation(
-                request=unknown,
-                plan=unknown_plan,
-                reservation=unknown_reservation,
-                resource_snapshot=facts,
-                provider=provider,
-                now_epoch=4_101,
-            )
+        with self.assertRaisesRegex(IntentEngineError, "invalid_virtualization_runtime"):
+            placed(unknown, facts)
 
     def test_result_has_no_generic_execution_material(self) -> None:
         facts = snapshot([node("hm-dm-dc01", "dc01", free_gib=500)])
