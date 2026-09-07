@@ -1,6 +1,6 @@
 # ADR-0018 — Read-only module install lifecycle planning boundary
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-09-07
 - **Related requirements:** HC-MOD-002, HC-MOD-003, HC-CORE-002, HC-TEST-002
 - **Tracking:** #96

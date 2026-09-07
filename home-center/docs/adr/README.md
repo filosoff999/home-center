@@ -37,11 +37,8 @@ Architecture Decision Record обязателен для решений, кот�
 12. [ADR-0014 — ModuleManifest v2 and artifact trust boundary](0014-module-manifest-v2-trust-boundary.md);
 13. [ADR-0015 — Deterministic module admission planner boundary](0015-module-admission-planner-boundary.md);
 14. [ADR-0016 — Read-only module permission review](0016-read-only-module-permission-review.md);
-15. [ADR-0017 — Expiring module permission acknowledgement boundary](0017-module-permission-acknowledgement-boundary.md).
-
-## Proposed decisions
-
-1. [ADR-0018 — Read-only module install lifecycle planning boundary](0018-read-only-module-install-lifecycle-planning.md).
+15. [ADR-0017 — Expiring module permission acknowledgement boundary](0017-module-permission-acknowledgement-boundary.md);
+16. [ADR-0018 — Read-only module install lifecycle planning boundary](0018-read-only-module-install-lifecycle-planning.md).
 
 ## Следующие решения
 
@@ -61,4 +58,4 @@ ADR-0016 is accepted for the 0.11 development line only. It adds an authenticate
 
 ADR-0017 is accepted for the 0.11 development line only. It persists expiring review evidence with a non-consumable handoff reference and adds no authorization, grant, lifecycle or production authority.
 
-ADR-0018 is proposed for the 0.11 development line only. It adds a deterministic blocked install plan with preflight and reverse recovery, without acknowledgement consumption, authorization, persistence, execution or production authority.
+ADR-0018 is accepted for the 0.11 development line only. It adds a deterministic blocked install plan with preflight and reverse recovery, without acknowledgement consumption, authorization, persistence, execution or production authority.
