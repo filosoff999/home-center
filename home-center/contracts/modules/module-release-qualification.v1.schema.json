@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://home-center.local/contracts/modules/module-release-qualification.v1.schema.json",
+  "title": "Home Center module release qualification v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "release_version", "observed_at_epoch", "workstreams", "safety"],
+  "properties": {
+    "schema": {"const": "home-center.module-release-qualification.v1"},
+    "release_version": {"const": "0.11.0"},
+    "observed_at_epoch": {"type": "integer", "minimum": 1},
+    "workstreams": {
+      "type": "array", "minItems": 7, "maxItems": 7,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["id", "evidence_sha256"],
+        "properties": {
+          "id": {"type": "string", "minLength": 3, "maxLength": 64},
+          "evidence_sha256": {"$ref": "#/$defs/digest"}
+        }
+      }
+    },
+    "safety": {
+      "type": "object", "additionalProperties": false,
+      "required": ["artifact_binding", "authorization_binding", "acknowledgement_consumed", "remaining_blockers", "lifecycle_persistence_enabled", "lifecycle_execution_enabled", "production_activation_enabled", "secret_scan"],
+      "properties": {
+        "artifact_binding": {"const": "exact"},
+        "authorization_binding": {"const": "exact"},
+        "acknowledgement_consumed": {"const": false},
+        "remaining_blockers": {
+          "type": "array", "minItems": 2, "maxItems": 2,
+          "prefixItems": [{"const": "lifecycle_executor_unavailable"}, {"const": "placement_unresolved"}],
+          "items": false
+        },
+        "lifecycle_persistence_enabled": {"const": false},
+        "lifecycle_execution_enabled": {"const": false},
+        "production_activation_enabled": {"const": false},
+        "secret_scan": {"const": "passed"}
+      }
+    }
+  },
+  "$defs": {"digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}}
+}
