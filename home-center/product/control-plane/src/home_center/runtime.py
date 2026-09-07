@@ -14,8 +14,17 @@ from .ad_auth import AdAuthenticator
 from .auth import LoginRateLimiter, SessionManager
 from .config import Config
 from .external_access import ExternalAccessPolicy, ExternalRequestRateLimiter
-from .helper_client import HelperClientError, rotate_local_admin_password
+from .helper_client import (
+    HelperClientError,
+    rotate_local_admin_password,
+    validate_local_admin_password_change,
+)
 from .local_admin_auth import LocalAdminCredentialStore
+from .local_admin_cluster import (
+    LocalAdminClusterCoordinator,
+    LocalAdminPeerClient,
+    LocalAdminTransactionParticipant,
+)
 from .reconcile import Reconciler
 from .store import StateStore
 from .util import sha256_file, utc_now
@@ -48,6 +57,22 @@ class Runtime:
         self.external_request_limiter = ExternalRequestRateLimiter()
         self.actions = ActionRegistry(config.node_id, self.store)
         self.reconciler = Reconciler(config, self.store)
+        self.local_admin_transaction_participant = LocalAdminTransactionParticipant(
+            cluster_id=config.cluster_id,
+            node_id=config.node_id,
+            store=self.store,
+            validator=validate_local_admin_password_change,
+            rotator=rotate_local_admin_password,
+            authenticator=self.authenticate_local_admin,
+        )
+        self.local_admin_peer_client = LocalAdminPeerClient(config)
+        self.local_admin_cluster_coordinator = LocalAdminClusterCoordinator(
+            config=config,
+            store=self.store,
+            participant=self.local_admin_transaction_participant,
+            peer_client=self.local_admin_peer_client,
+        )
+        self.local_admin_cluster_password_rotator = self.local_admin_cluster_coordinator.change
 
     def change_local_admin_password(self, current_password: str, new_password: str) -> None:
         """Rotate through the root helper, then reload only validated local state."""
@@ -82,6 +107,22 @@ class Runtime:
         )
         self.local_admin = current
         return current.authenticate(username, password)
+
+    def change_cluster_local_admin_password(self, current_password: str, new_password: str) -> dict[str, Any]:
+        """Run the standby-first two-node transaction and reload local state."""
+
+        result = self.local_admin_cluster_password_rotator(
+            self.local_admin.username,
+            current_password,
+            new_password,
+        )
+        self.local_admin = LocalAdminCredentialStore(
+            self.config.local_admin_credentials_file,
+            expected_uid=self.local_admin.expected_uid,
+            expected_gid=self.local_admin.expected_gid,
+            expected_mode=self.local_admin.expected_mode,
+        )
+        return result
 
     def start(self) -> None:
         self.store.audit(

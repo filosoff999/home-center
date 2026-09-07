@@ -85,6 +85,18 @@ class LocalAdminRotationTests(unittest.TestCase):
                 self.rotator.rotate("admin", current, new)
             self.assertTrue(self.store().verify("admin", CURRENT_PASSWORD))
 
+    def test_cluster_prepare_validates_without_writing_credential(self) -> None:
+        before = self.path.read_bytes()
+        self.rotator.validate("admin", CURRENT_PASSWORD, NEW_PASSWORD)
+        self.assertEqual(self.path.read_bytes(), before)
+        self.assertFalse((self.root / NEXT_NAME).exists())
+        self.assertFalse((self.root / ROLLBACK_NAME).exists())
+
+    def test_cluster_prepare_rejects_unchanged_password(self) -> None:
+        with self.assertRaisesRegex(LocalAdminRotationError, "password_unchanged"):
+            self.rotator.validate("admin", CURRENT_PASSWORD, CURRENT_PASSWORD)
+        self.assertTrue(self.store().verify("admin", CURRENT_PASSWORD))
+
     def test_replace_failure_rolls_back_and_removes_transaction_files(self) -> None:
         with patch("home_center.local_admin_rotation.os.replace", side_effect=OSError("fixture")):
             with self.assertRaisesRegex(LocalAdminRotationError, "credential_rotation_failed"):

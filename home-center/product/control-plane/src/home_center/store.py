@@ -86,6 +86,24 @@ MIGRATIONS: tuple[tuple[int, str], ...] = (
         );
         """,
     ),
+    (
+        3,
+        """
+        CREATE TABLE IF NOT EXISTS local_admin_transactions (
+            transaction_id TEXT PRIMARY KEY,
+            intent_token TEXT NOT NULL,
+            coordinator_node_id TEXT NOT NULL,
+            phase TEXT NOT NULL,
+            outcome TEXT NOT NULL,
+            reason TEXT,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        );
+        CREATE UNIQUE INDEX IF NOT EXISTS one_active_local_admin_transaction
+        ON local_admin_transactions((1))
+        WHERE phase NOT IN ('completed', 'rolled_back', 'failed');
+        """,
+    ),
 )
 
 
@@ -107,6 +125,7 @@ class StateStore:
         self._connection.execute("PRAGMA synchronous=FULL")
         self._connection.execute("PRAGMA foreign_keys=ON")
         self._migrate()
+        self._recover_interrupted_local_admin_transactions()
         os.chmod(path, 0o640)
         self.set_meta("cluster_id", cluster_id)
         self.verify_audit_chain()
@@ -144,6 +163,156 @@ class StateStore:
         with self._lock:
             row = self._connection.execute("SELECT value_json FROM cluster_meta WHERE key=?", (key,)).fetchone()
         return json.loads(row[0]) if row else default
+
+    @staticmethod
+    def _decode_local_admin_transaction(row: sqlite3.Row) -> dict[str, Any]:
+        return {
+            "schema": "home-center.local-admin-transaction-state.v1",
+            "transaction_id": row["transaction_id"],
+            "intent_token": row["intent_token"],
+            "coordinator_node_id": row["coordinator_node_id"],
+            "phase": row["phase"],
+            "outcome": row["outcome"],
+            "reason": row["reason"],
+            "created_at": row["created_at"],
+            "updated_at": row["updated_at"],
+        }
+
+    def _recover_interrupted_local_admin_transactions(self) -> None:
+        """Fail closed after restart because password material is memory-only."""
+
+        interrupted: list[sqlite3.Row]
+        with self._lock, self._connection:
+            interrupted = self._connection.execute(
+                """SELECT * FROM local_admin_transactions
+                WHERE phase NOT IN ('completed', 'rolled_back', 'failed', 'recovery_required')"""
+            ).fetchall()
+            self._connection.execute(
+                """UPDATE local_admin_transactions
+                SET phase='recovery_required', outcome='unknown', reason='process_restart', updated_at=?
+                WHERE phase NOT IN ('completed', 'rolled_back', 'failed', 'recovery_required')""",
+                (utc_now(),),
+            )
+        for row in interrupted:
+            self.audit(
+                actor=f"system:local-admin-transaction:{row['coordinator_node_id']}",
+                action="local-admin.password.transaction",
+                target=self.cluster_id,
+                outcome="unknown",
+                correlation_id=row["transaction_id"],
+                details={
+                    "transaction_id": row["transaction_id"],
+                    "phase": "recovery_required",
+                    "reason": "process_restart",
+                    "policy": "local-admin-password-v1",
+                },
+            )
+
+    def local_admin_transaction(self, transaction_id: str) -> dict[str, Any] | None:
+        with self._lock:
+            row = self._connection.execute(
+                "SELECT * FROM local_admin_transactions WHERE transaction_id=?",
+                (transaction_id,),
+            ).fetchone()
+        return self._decode_local_admin_transaction(row) if row else None
+
+    def begin_local_admin_transaction(
+        self,
+        *,
+        transaction_id: str,
+        intent_token: str,
+        coordinator_node_id: str,
+        phase: str,
+    ) -> tuple[dict[str, Any], bool]:
+        """Create one active transaction or replay its non-secret identity."""
+
+        now = utc_now()
+        with self._lock:
+            self._connection.execute("BEGIN IMMEDIATE")
+            try:
+                row = self._connection.execute(
+                    "SELECT * FROM local_admin_transactions WHERE transaction_id=?",
+                    (transaction_id,),
+                ).fetchone()
+                if row is not None:
+                    if (
+                        row["intent_token"] != intent_token
+                        or row["coordinator_node_id"] != coordinator_node_id
+                    ):
+                        raise IdempotencyConflict("local_admin_transaction_identity_conflict")
+                    self._connection.commit()
+                    return self._decode_local_admin_transaction(row), False
+                active = self._connection.execute(
+                    """SELECT transaction_id FROM local_admin_transactions
+                    WHERE phase NOT IN ('completed', 'rolled_back', 'failed') LIMIT 1"""
+                ).fetchone()
+                if active is not None:
+                    raise IdempotencyConflict("local_admin_transaction_active")
+                self._connection.execute(
+                    """INSERT INTO local_admin_transactions(
+                    transaction_id,intent_token,coordinator_node_id,phase,outcome,reason,created_at,updated_at
+                    ) VALUES(?,?,?,?,?,?,?,?)""",
+                    (
+                        transaction_id,
+                        intent_token,
+                        coordinator_node_id,
+                        phase,
+                        "pending",
+                        None,
+                        now,
+                        now,
+                    ),
+                )
+                row = self._connection.execute(
+                    "SELECT * FROM local_admin_transactions WHERE transaction_id=?",
+                    (transaction_id,),
+                ).fetchone()
+                self._connection.commit()
+            except Exception:
+                self._connection.rollback()
+                raise
+        if row is None:
+            raise RuntimeError("local administrator transaction persistence failed")
+        return self._decode_local_admin_transaction(row), True
+
+    def transition_local_admin_transaction(
+        self,
+        transaction_id: str,
+        *,
+        intent_token: str,
+        expected_phases: tuple[str, ...],
+        new_phase: str,
+        outcome: str,
+        reason: str | None,
+    ) -> dict[str, Any]:
+        """Atomically advance one transaction with an exact identity binding."""
+
+        with self._lock, self._connection:
+            row = self._connection.execute(
+                "SELECT * FROM local_admin_transactions WHERE transaction_id=?",
+                (transaction_id,),
+            ).fetchone()
+            if row is None:
+                raise KeyError(transaction_id)
+            if row["intent_token"] != intent_token:
+                raise IdempotencyConflict("local_admin_transaction_identity_conflict")
+            if row["phase"] == new_phase:
+                return self._decode_local_admin_transaction(row)
+            if row["phase"] not in expected_phases:
+                raise RuntimeError("local_admin_transaction_phase_conflict")
+            self._connection.execute(
+                """UPDATE local_admin_transactions
+                SET phase=?, outcome=?, reason=?, updated_at=?
+                WHERE transaction_id=? AND intent_token=?""",
+                (new_phase, outcome, reason, utc_now(), transaction_id, intent_token),
+            )
+            row = self._connection.execute(
+                "SELECT * FROM local_admin_transactions WHERE transaction_id=?",
+                (transaction_id,),
+            ).fetchone()
+        if row is None:
+            raise RuntimeError("local administrator transaction transition failed")
+        return self._decode_local_admin_transaction(row)
 
     def upsert_node(self, capability: dict[str, Any], status: str) -> None:
         node = capability["node"]

@@ -16,7 +16,7 @@ import threading
 from pathlib import Path
 from typing import Callable
 
-from .local_admin_auth import LocalAdminAuthError, LocalAdminCredentialStore
+from .local_admin_auth import LocalAdminAuthError, LocalAdminCredentialStore, validate_new_password
 from .local_admin_provision import LocalAdminProvisionError, credential_document
 
 
@@ -335,6 +335,33 @@ class LocalAdminCredentialRotator:
             current_password=current_password,
             commit_hook=None,
         )
+
+    def validate(self, username: str, current_password: str, new_password: str) -> None:
+        """Prepare a later cluster commit without persisting derived material."""
+
+        with self._thread_lock:
+            directory_fd = self._open_directory()
+            lock_fd: int | None = None
+            try:
+                lock_fd = self._open_lock(directory_fd)
+                self._recover_locked(directory_fd)
+                current_store = self._store()
+                if current_store.authenticate(username, current_password) is None:
+                    raise LocalAdminRotationError("current_password_invalid")
+                try:
+                    validate_new_password(new_password)
+                except LocalAdminAuthError as exc:
+                    raise LocalAdminRotationError(exc.code) from exc
+                if current_password == new_password:
+                    raise LocalAdminRotationError("password_unchanged")
+            except LocalAdminRotationError:
+                raise
+            except (LocalAdminAuthError, OSError) as exc:
+                raise LocalAdminRotationError("credential_validation_failed") from exc
+            finally:
+                if lock_fd is not None:
+                    os.close(lock_fd)
+                os.close(directory_fd)
 
     def reset(
         self,

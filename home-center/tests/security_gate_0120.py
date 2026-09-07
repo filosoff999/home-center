@@ -37,12 +37,16 @@ def main() -> int:
     client_path = package / "helper_client.py"
     api_path = package / "api.py"
     recovery_path = package / "local_admin_recovery.py"
+    cluster_path = package / "local_admin_cluster.py"
+    store_path = package / "store.py"
     recovery_cli_path = ROOT / "deploy/runtime/recover-local-admin.py"
     rotation = rotation_path.read_text(encoding="utf-8")
     helper = helper_path.read_text(encoding="utf-8")
     client = client_path.read_text(encoding="utf-8")
     api = api_path.read_text(encoding="utf-8")
     recovery = recovery_path.read_text(encoding="utf-8")
+    cluster = cluster_path.read_text(encoding="utf-8")
+    store = store_path.read_text(encoding="utf-8")
     recovery_cli = recovery_cli_path.read_text(encoding="utf-8")
 
     imports = {
@@ -77,8 +81,60 @@ def main() -> int:
 
     require('actor != f"local-admin:{self.runtime.local_admin.username}"' in api, "local-admin actor gate missing")
     require('/api/v1/auth/local-admin/password/change' in api, "password API missing")
-    require('details={"policy": "local-admin-password-v1"' in api, "secret-free success audit missing")
+    require('"policy": "local-admin-password-v1"' in api, "secret-free success audit policy missing")
+    require('"transaction_id": result["transaction_id"]' in api, "cluster success audit identity missing")
+    require('"nodes": result["nodes"]' in api, "cluster success audit node evidence missing")
     require("authenticate_local_admin" in api, "local login does not reload an offline recovery credential")
+
+    for marker in (
+        'PEER_PATH = "/internal/v1/local-admin-transaction"',
+        "ssl.TLSVersion.TLSv1_3",
+        "context.load_cert_chain",
+        'self.config.cluster_ca',
+        'result["node_id"] != self.config.peer.node_id',
+        "CANARY_ATTEMPTS = 3",
+        'self._expect(self._remote(prepare), "prepared")',
+        'self._expect(self._remote(commit), "committed")',
+        'self._expect(self._local(commit), "committed")',
+        'raise LocalAdminClusterError("cluster_rotation_recovery_required")',
+        '"commit_order": [self.config.peer.node_id, self.config.node_id]',
+    ):
+        require(marker in cluster, f"two-node transaction guard missing: {marker}")
+    require(
+        cluster.index('self._expect(self._remote(commit), "committed")')
+        < cluster.index('self._expect(self._local(commit), "committed")'),
+        "leader commits before standby",
+    )
+    cluster_imports = {
+        alias.name.split(".", 1)[0]
+        for node in ast.walk(ast.parse(cluster))
+        if isinstance(node, ast.Import)
+        for alias in node.names
+    }
+    require("subprocess" not in cluster_imports, "cluster transaction has process execution surface")
+    require("logging" not in cluster_imports and "print(" not in cluster, "cluster transaction has output/log surface")
+    for forbidden in ("os.environ", "shell=True", '"path":', '"command":', '"executable":'):
+        require(forbidden not in cluster, f"cluster transaction forbidden surface present: {forbidden}")
+    ledger_start = store.index("CREATE TABLE IF NOT EXISTS local_admin_transactions")
+    ledger_sql = store[ledger_start:store.index('""",', ledger_start)]
+    for forbidden in ("current_password", "new_password", "salt_b64", "verifier_b64", "request_hash"):
+        require(forbidden not in ledger_sql, f"cluster ledger can persist secret-derived material: {forbidden}")
+    for marker in (
+        "local_admin_transactions",
+        "one_active_local_admin_transaction",
+        "recovery_required",
+        "process_restart",
+        "begin_local_admin_transaction",
+        "transition_local_admin_transaction",
+    ):
+        require(marker in store, f"cluster ledger guard missing: {marker}")
+    peer_handler = api[api.index("class PeerRequestHandler"):]
+    require(
+        peer_handler.index("if not self._peer_identity_matches()")
+        < peer_handler.index('urlsplit(self.path).path != "/internal/v1/local-admin-transaction"')
+        < peer_handler.index("decode_cluster_command(data)"),
+        "peer identity/path gates do not precede secret parsing",
+    )
 
     recovery_cli_imports = {
         alias.name.split(".", 1)[0]
@@ -141,6 +197,9 @@ def main() -> int:
         "contracts/helper/helper-secret-result.v1.schema.json",
         "contracts/openapi/home-center-auth.v3.openapi.json",
         "contracts/auth/local-admin-recovery-evidence.v1.schema.json",
+        "contracts/auth/local-admin-password-change-result.v2.schema.json",
+        "contracts/cluster/local-admin-transaction-command.v1.schema.json",
+        "contracts/cluster/local-admin-transaction-result.v1.schema.json",
     )
     require(all((ROOT / path).is_file() for path in required_contracts), "0.12 credential contract missing")
 
@@ -153,6 +212,8 @@ def main() -> int:
     require('[ "$VERSION" = 0.12.0 ] || { echo RELEASE_VERSION_NOT_ADMITTED' in builder, "artifact gate is not 0.12.0")
     require('"$ROOT/deploy/runtime/recover-local-admin.py"' in builder, "recovery CLI is absent from artifact")
     require("RECOVERY_EVIDENCE_DIRECTORY=/var/lib/home-center-recovery" in installer, "recovery evidence directory is not provisioned")
+    require("local-admin.password.validate.v1" in helper, "cluster prepare is not a dedicated helper validation action")
+    require("local-admin.password.validate.v1" in client, "cluster prepare helper client action missing")
 
     print("SECURITY_GATE_0120=PASS")
     return 0

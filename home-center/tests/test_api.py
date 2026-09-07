@@ -30,6 +30,7 @@ from home_center.local_admin_auth import (  # noqa: E402
     KDF_R,
     SALT_BYTES,
 )
+from home_center.local_admin_cluster import LocalAdminClusterError  # noqa: E402
 from home_center.local_admin_rotation import LocalAdminCredentialRotator, LocalAdminRotationError  # noqa: E402
 from home_center.runtime import Runtime  # noqa: E402
 from home_center.server import HomeCenterServer  # noqa: E402
@@ -136,6 +137,21 @@ class ApiTests(unittest.TestCase):
             return {"status": "succeeded", "reason": None}
 
         self.runtime.local_admin_password_rotator = rotate_fixture
+
+        def cluster_rotate_fixture(username: str, current_password: str, new_password: str) -> dict[str, object]:
+            outcome = rotate_fixture(username, current_password, new_password)
+            if outcome["status"] != "succeeded":
+                raise LocalAdminClusterError(str(outcome["reason"]))
+            return {
+                "schema": "home-center.local-admin-password-change-result.v2",
+                "status": "changed",
+                "transaction_id": "la-20260907T120000Z-0123456789abcdef",
+                "nodes": ["hm-dm-dc02", "hm-dm-dc01"],
+                "commit_order": ["hm-dm-dc02", "hm-dm-dc01"],
+                "canary_attempts": 3,
+            }
+
+        self.runtime.local_admin_cluster_password_rotator = cluster_rotate_fixture
         self.action_calls = 0
         self._session_cookie: str | None = None
 
@@ -311,6 +327,8 @@ class ApiTests(unittest.TestCase):
         ) as response:
             value = json.load(response)
         self.assertEqual(value["status"], "changed")
+        self.assertEqual(value["schema"], "home-center.local-admin-password-change-result.v2")
+        self.assertEqual(value["commit_order"], ["hm-dm-dc02", "hm-dm-dc01"])
         after = json.loads(self.runtime.config.local_admin_credentials_file.read_text(encoding="utf-8"))
         self.assertNotEqual(before["salt_b64"], after["salt_b64"])
         self.assertNotEqual(before["verifier_b64"], after["verifier_b64"])
@@ -375,8 +393,8 @@ class ApiTests(unittest.TestCase):
         with self.assertRaises(urllib.error.HTTPError) as caught:
             self.request("/api/v1/auth/local-admin/password/change", method="POST", body=body)
         self.assertEqual(caught.exception.code, 401)
-        original_rotator = self.runtime.local_admin_password_rotator
-        self.runtime.local_admin_password_rotator = Mock(wraps=original_rotator)
+        original_rotator = self.runtime.local_admin_cluster_password_rotator
+        self.runtime.local_admin_cluster_password_rotator = Mock(wraps=original_rotator)
         with self.assertRaises(urllib.error.HTTPError) as caught:
             self.request(
                 "/api/v1/auth/local-admin/password/change",
@@ -386,7 +404,7 @@ class ApiTests(unittest.TestCase):
                 extra_headers={"Origin": "https://attacker.invalid", "Sec-Fetch-Site": "cross-site"},
             )
         self.assertEqual(caught.exception.code, 403)
-        self.runtime.local_admin_password_rotator.assert_not_called()
+        self.runtime.local_admin_cluster_password_rotator.assert_not_called()
 
     def test_local_login_reloads_an_offline_recovery_credential(self) -> None:
         recovered_password = "offline recovery password 51"

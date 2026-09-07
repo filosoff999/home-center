@@ -174,7 +174,7 @@ async function changeLocalAdminPassword(event) {
     try { await api("/api/v1/session/logout", { method: "POST" }); } catch (_) { /* lock locally */ }
     showLogin();
     $("#loginError").classList.add("success");
-    $("#loginError").textContent = "Пароль изменён. Войдите с новым паролем.";
+    $("#loginError").textContent = "Пароль изменён на обоих узлах. Войдите с новым паролем.";
   } catch (error) {
     message.classList.add("error");
     message.textContent = error.message;

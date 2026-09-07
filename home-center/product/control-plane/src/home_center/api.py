@@ -26,8 +26,12 @@ from .actions import (
 from .ad_auth import AdAuthError
 from .auth import SessionManager
 from .external_access import ExternalAccessRejected, ExternalRequestContext
-from .helper_client import HelperClientError
 from .local_admin_auth import LocalAdminAuthError
+from .local_admin_cluster import (
+    MAX_PEER_BODY_BYTES,
+    LocalAdminClusterError,
+    decode_cluster_command,
+)
 from .runtime import Runtime
 from .util import utc_now
 
@@ -424,19 +428,26 @@ class RuntimeRequestHandler(BaseHTTPRequestHandler):
             )
             return
         try:
-            self.runtime.change_local_admin_password(current_password, new_password)
-        except HelperClientError as exc:
-            reason = str(exc)
+            result = self.runtime.change_cluster_local_admin_password(current_password, new_password)
+        except LocalAdminClusterError as exc:
+            reason = exc.code
             policy_errors = {
                 "password_too_short": "Пароль должен содержать не менее 8 символов",
                 "password_letter_required": "Пароль должен содержать хотя бы одну букву",
                 "password_digit_required": "Пароль должен содержать хотя бы одну цифру",
                 "password_rejected": "Пароль не соответствует политике безопасности",
+                "password_unchanged": "Новый пароль должен отличаться от текущего",
             }
             if reason == "current_password_invalid":
                 status, code, message = HTTPStatus.FORBIDDEN, reason, "Текущий пароль указан неверно"
             elif reason in policy_errors:
                 status, code, message = HTTPStatus.BAD_REQUEST, reason, policy_errors[reason]
+            elif reason in {"cluster_leader_required", "cluster_transaction_active", "cluster_transaction_conflict"}:
+                status, code, message = HTTPStatus.CONFLICT, reason, "Транзакция должна выполняться на активном узле"
+            elif reason == "cluster_rotation_rolled_back":
+                status, code, message = HTTPStatus.SERVICE_UNAVAILABLE, reason, "Смена пароля отменена на обоих узлах"
+            elif reason == "cluster_rotation_recovery_required":
+                status, code, message = HTTPStatus.SERVICE_UNAVAILABLE, reason, "Требуется защищённое восстановление транзакции"
             else:
                 status = HTTPStatus.SERVICE_UNAVAILABLE
                 code, message = "credential_rotation_unavailable", "Смена пароля временно недоступна"
@@ -469,19 +480,17 @@ class RuntimeRequestHandler(BaseHTTPRequestHandler):
         self.runtime.store.audit(
             actor=actor,
             action="local-admin.password.change",
-            target=self.runtime.config.node_id,
+            target=self.runtime.config.cluster_id,
             outcome="accepted",
             correlation_id=correlation_id,
-            details={"policy": "local-admin-password-v1", **self._origin_details(context)},
-        )
-        self._json(
-            HTTPStatus.OK,
-            {
-                "schema": "home-center.local-admin-password-change-result.v1",
-                "status": "changed",
-                "node_id": self.runtime.config.node_id,
+            details={
+                "policy": "local-admin-password-v1",
+                "transaction_id": result["transaction_id"],
+                "nodes": result["nodes"],
+                **self._origin_details(context),
             },
         )
+        self._json(HTTPStatus.OK, result)
 
     def do_PUT(self) -> None:  # noqa: N802
         self._reject_mutation()
@@ -621,6 +630,63 @@ class PeerRequestHandler(BaseHTTPRequestHandler):
         value = {"schema": "home-center.peer-node.v1", "cluster_id": self.runtime.config.cluster_id, "capability": self.runtime.reconciler.local_capability()}
         body = json.dumps(value, ensure_ascii=False, separators=(",", ":"), sort_keys=True).encode("utf-8")
         self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(body)))
+        self.send_header("Cache-Control", "no-store")
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.end_headers()
+        self.wfile.write(body)
+
+    def do_POST(self) -> None:  # noqa: N802
+        if not self._peer_identity_matches():
+            self.send_error(403)
+            return
+        if urlsplit(self.path).path != "/internal/v1/local-admin-transaction":
+            self.send_error(404)
+            return
+        try:
+            if self.headers.get_content_type() != "application/json":
+                raise LocalAdminClusterError("invalid_cluster_command")
+            raw_length = self.headers.get("Content-Length")
+            if raw_length is None:
+                raise LocalAdminClusterError("invalid_cluster_command")
+            length = int(raw_length)
+            if not 1 <= length <= MAX_PEER_BODY_BYTES:
+                raise LocalAdminClusterError("invalid_cluster_command")
+            previous_timeout = self.connection.gettimeout()  # type: ignore[attr-defined]
+            self.connection.settimeout(REQUEST_BODY_TIMEOUT_SECONDS)  # type: ignore[attr-defined]
+            try:
+                data = self.rfile.read(length)
+            finally:
+                self.connection.settimeout(previous_timeout)  # type: ignore[attr-defined]
+            if len(data) != length:
+                raise LocalAdminClusterError("invalid_cluster_command")
+            command = decode_cluster_command(data)
+            value = self.runtime.local_admin_transaction_participant.handle(
+                command,
+                coordinator_node_id=self.runtime.config.peer.node_id,
+            )
+        except (LocalAdminClusterError, OSError, TimeoutError, ValueError):
+            self.close_connection = True
+            body = json.dumps(
+                {
+                    "schema": "home-center.error.v1",
+                    "error": {"code": "invalid_cluster_command", "message": "Invalid peer command"},
+                },
+                separators=(",", ":"),
+                sort_keys=True,
+            ).encode("utf-8")
+            self.send_response(HTTPStatus.BAD_REQUEST)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(body)))
+            self.send_header("Cache-Control", "no-store")
+            self.send_header("X-Content-Type-Options", "nosniff")
+            self.send_header("Connection", "close")
+            self.end_headers()
+            self.wfile.write(body)
+            return
+        body = json.dumps(value, ensure_ascii=False, separators=(",", ":"), sort_keys=True).encode("utf-8")
+        self.send_response(HTTPStatus.OK)
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(body)))
         self.send_header("Cache-Control", "no-store")

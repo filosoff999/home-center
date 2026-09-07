@@ -46,6 +46,9 @@ class HCWeb001RegressionTests(unittest.TestCase):
             self.assertIn(marker, index)
         self.assertIn('/api/v1/auth/local-admin/password/change', javascript)
         self.assertIn('schema: "home-center.local-admin-password-change.v1"', javascript)
+        self.assertIn("Изменить на двух узлах", index)
+        self.assertIn("Резервный узел → проверка → активный узел", index)
+        self.assertIn("Пароль изменён на обоих узлах", javascript)
         self.assertIn('currentInput.value = "";', javascript)
         self.assertIn('newInput.value = "";', javascript)
         self.assertIn('confirmInput.value = "";', javascript)
@@ -56,4 +59,3 @@ class HCWeb001RegressionTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

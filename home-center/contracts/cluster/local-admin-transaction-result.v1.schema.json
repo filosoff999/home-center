@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://home-center.local/contracts/cluster/local-admin-transaction-result.v1.schema.json",
+  "title": "Home Center two-node local administrator transaction result v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "transaction_id", "node_id", "status", "phase", "reason", "observed_at"],
+  "properties": {
+    "schema": {"const": "home-center.local-admin-cluster-result.v1"},
+    "transaction_id": {"type": "string", "pattern": "^la-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{16}$"},
+    "node_id": {"type": "string", "minLength": 3, "maxLength": 64, "pattern": "^[a-z0-9][a-z0-9-]+$"},
+    "status": {"enum": ["succeeded", "rejected", "failed", "unknown"]},
+    "phase": {"enum": ["absent", "coordinating", "preparing", "prepared", "commit_started", "committed", "verified", "rollback_started", "rolled_back", "completed", "failed", "recovery_required"]},
+    "reason": {
+      "type": ["string", "null"],
+      "enum": [null, "current_password_invalid", "password_too_short", "password_letter_required", "password_digit_required", "password_rejected", "password_unchanged", "cluster_identity_mismatch", "cluster_rotation_recovery_required", "cluster_rotation_rolled_back", "cluster_transaction_active", "cluster_transaction_conflict", "credential_operation_failed", "credential_validation_failed", "invalid_cluster_command", "local_canary_failed", "peer_response_reconciled", "process_restart", "transaction_finalized", "transaction_not_found", "transaction_phase_conflict"]
+    },
+    "observed_at": {"type": "string", "format": "date-time"}
+  }
+}

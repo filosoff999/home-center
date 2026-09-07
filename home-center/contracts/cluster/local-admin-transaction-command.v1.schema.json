@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://home-center.local/contracts/cluster/local-admin-transaction-command.v1.schema.json",
+  "title": "Home Center two-node local administrator transaction command v1",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema": {},
+    "cluster_id": {},
+    "transaction_id": {},
+    "intent_token": {},
+    "action": {},
+    "username": {},
+    "current_password": {},
+    "new_password": {},
+    "password": {}
+  },
+  "oneOf": [
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema", "cluster_id", "transaction_id", "intent_token", "action", "username", "current_password", "new_password"],
+      "properties": {
+        "schema": {"const": "home-center.local-admin-cluster-command.v1"},
+        "cluster_id": {"type": "string", "minLength": 3, "maxLength": 64},
+        "transaction_id": {"type": "string", "pattern": "^la-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{16}$"},
+        "intent_token": {"type": "string", "pattern": "^[0-9a-f]{32}$"},
+        "action": {"enum": ["prepare", "commit", "rollback"]},
+        "username": {"const": "admin"},
+        "current_password": {"type": "string", "minLength": 1, "maxLength": 256},
+        "new_password": {"type": "string", "minLength": 1, "maxLength": 256}
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema", "cluster_id", "transaction_id", "intent_token", "action", "username", "password"],
+      "properties": {
+        "schema": {"const": "home-center.local-admin-cluster-command.v1"},
+        "cluster_id": {"type": "string", "minLength": 3, "maxLength": 64},
+        "transaction_id": {"type": "string", "pattern": "^la-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{16}$"},
+        "intent_token": {"type": "string", "pattern": "^[0-9a-f]{32}$"},
+        "action": {"const": "canary"},
+        "username": {"const": "admin"},
+        "password": {"type": "string", "minLength": 1, "maxLength": 256}
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema", "cluster_id", "transaction_id", "intent_token", "action"],
+      "properties": {
+        "schema": {"const": "home-center.local-admin-cluster-command.v1"},
+        "cluster_id": {"type": "string", "minLength": 3, "maxLength": 64},
+        "transaction_id": {"type": "string", "pattern": "^la-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{16}$"},
+        "intent_token": {"type": "string", "pattern": "^[0-9a-f]{32}$"},
+        "action": {"enum": ["status", "finalize"]}
+      }
+    }
+  ]
+}

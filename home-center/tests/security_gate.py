@@ -196,6 +196,7 @@ for required in (
     'argv=("/opt/home-center/current/home_center/tls_reconcile.py",)',
     'timeout_seconds=60',
     'base.SECRET_ACTIONS["local-admin.password.rotate.v1"] = "local-admin.password.rotate"',
+    'base.SECRET_ACTIONS["local-admin.password.validate.v1"] = "local-admin.password.validate"',
     "*base.SECRET_ACTIONS.values()",
 ):
     if required not in helper_v2:
@@ -215,6 +216,7 @@ if helper_policy != {
             "tls.web.rotate",
             "tls.web.reconcile",
             "local-admin.password.rotate",
+            "local-admin.password.validate",
         ]
     },
     "enabled_actions": [
@@ -222,9 +224,10 @@ if helper_policy != {
         "tls.web.activate.v1",
         "tls.web.reconcile.v1",
         "local-admin.password.rotate.v1",
+        "local-admin.password.validate.v1",
     ],
 }:
-    errors.append("helper policy must expose only probe, bounded Web TLS actions and local password rotation")
+    errors.append("helper policy must expose only probe, bounded Web TLS actions and local password validation/rotation")
 
 registry = json.loads((ROOT / "product/control-plane/src/home_center/action_registry.v1.json").read_text(encoding="utf-8"))
 registered = {item.get("id"): item for item in registry.get("actions", [])}
