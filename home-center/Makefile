@@ -14,6 +14,7 @@ security:
 	$(PYTHON) tests/security_gate_092.py
 	PYTHONPATH=product/control-plane/src $(PYTHON) tests/security_gate_0100.py
 	PYTHONPATH=product/control-plane/src $(PYTHON) tests/security_gate_0110.py
+	PYTHONPATH=product/control-plane/src $(PYTHON) tests/security_gate_0110_authorization.py
 
 contracts:
 	$(PYTHON) -m json.tool deploy/profiles/hm-dm-two-node.v1.json >/dev/null
