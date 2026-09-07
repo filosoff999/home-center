@@ -148,9 +148,9 @@ def main() -> int:
     project = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
     builder = (ROOT / "deploy/scripts/build-artifact.sh").read_text(encoding="utf-8")
     installer = (ROOT / "deploy/scripts/install-node.sh").read_text(encoding="utf-8")
-    require('__version__ = "0.12.0"' in version, "runtime version is not 0.12.0")
-    require('version = "0.12.0"' in project, "package version is not 0.12.0")
-    require('[ "$VERSION" = 0.12.0 ] || { echo RELEASE_VERSION_NOT_ADMITTED' in builder, "artifact gate is not 0.12.0")
+    require('__version__ = "0.13.0"' in version, "runtime version is not 0.13.0")
+    require('version = "0.13.0"' in project, "package version is not 0.13.0")
+    require('[ "$VERSION" = 0.13.0 ] || { echo RELEASE_VERSION_NOT_ADMITTED' in builder, "artifact gate is not 0.13.0")
     require('"$ROOT/deploy/runtime/recover-local-admin.py"' in builder, "recovery CLI is absent from artifact")
     require("RECOVERY_EVIDENCE_DIRECTORY=/var/lib/home-center-recovery" in installer, "recovery evidence directory is not provisioned")
 
