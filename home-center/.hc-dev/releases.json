@@ -65,7 +65,7 @@
       "state": "active",
       "workstreams": [
         {"id": "release-bootstrap", "title": "Release Bootstrap", "weight": 1, "evidence": [{"kind": "pr", "number": 152, "state": "merged"}]},
-        {"id": "infrastructure-inventory", "title": "Infrastructure Inventory", "weight": 1, "evidence": []},
+        {"id": "infrastructure-inventory", "title": "Infrastructure Inventory", "weight": 1, "evidence": [{"kind": "pr", "number": 163, "state": "merged"}]},
         {"id": "node-discovery", "title": "Node Discovery", "weight": 1, "evidence": []},
         {"id": "deployment-profiles", "title": "Deployment Profiles", "weight": 1, "evidence": []},
         {"id": "ansible-integration", "title": "Ansible Integration", "weight": 1, "evidence": []},
@@ -76,10 +76,10 @@
     {
       "version": "0.16.0",
       "branch": "release/0.16.0",
-      "state": "planned",
+      "state": "active",
       "workstreams": [
-        {"id": "release-bootstrap", "title": "Release Bootstrap", "weight": 1, "evidence": []},
-        {"id": "proxmox-integration", "title": "Proxmox Integration", "weight": 1, "evidence": []},
+        {"id": "release-bootstrap", "title": "Release Bootstrap", "weight": 1, "evidence": [{"kind": "pr", "number": 162, "state": "merged"}]},
+        {"id": "proxmox-integration", "title": "Proxmox Integration", "weight": 1, "evidence": [{"kind": "pr", "number": 167, "state": "merged"}]},
         {"id": "vm-lifecycle", "title": "VM Lifecycle", "weight": 1, "evidence": []},
         {"id": "containers", "title": "Container Management", "weight": 1, "evidence": []},
         {"id": "resource-scheduler", "title": "Resource Scheduler", "weight": 1, "evidence": []},
@@ -90,9 +90,9 @@
     {
       "version": "0.17.0",
       "branch": "release/0.17.0",
-      "state": "planned",
+      "state": "active",
       "workstreams": [
-        {"id": "release-bootstrap", "title": "Release Bootstrap", "weight": 1, "evidence": []},
+        {"id": "release-bootstrap", "title": "Release Bootstrap", "weight": 1, "evidence": [{"kind": "pr", "number": 164, "state": "merged"}]},
         {"id": "device-registry", "title": "Device Registry", "weight": 1, "evidence": []},
         {"id": "zigbee", "title": "ZigBee Gateway", "weight": 1, "evidence": []},
         {"id": "automation-engine", "title": "Automation Engine", "weight": 1, "evidence": []},
@@ -105,9 +105,9 @@
     {
       "version": "0.18.0",
       "branch": "release/0.18.0",
-      "state": "planned",
+      "state": "active",
       "workstreams": [
-        {"id": "release-bootstrap", "title": "Release Bootstrap", "weight": 1, "evidence": []},
+        {"id": "release-bootstrap", "title": "Release Bootstrap", "weight": 1, "evidence": [{"kind": "pr", "number": 166, "state": "merged"}]},
         {"id": "identity", "title": "Identity / RBAC", "weight": 1, "evidence": []},
         {"id": "certificate-lifecycle", "title": "Certificate Lifecycle", "weight": 1, "evidence": []},
         {"id": "remote-access", "title": "Remote Access", "weight": 1, "evidence": []},
