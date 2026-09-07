@@ -32,7 +32,9 @@ Architecture Decision Record обязателен для решений, кот�
 7. [ADR-0007 — signed stable release channel](0007-signed-stable-release-channel.md);
 8. [ADR-0008 — local administrator authentication for Home Center 0.8](0008-local-administrator-authentication.md);
 9. [ADR-0009 — authentication-free deployment probes for Home Center 0.8](0009-auth-free-deployment-v2.md);
-10. [ADR-0010 — optional bounded Active Directory authentication](0010-optional-ad-authentication.md).
+10. [ADR-0010 — optional bounded Active Directory authentication](0010-optional-ad-authentication.md);
+11. [ADR-0013 — 0.10 Core Planning Boundary](0013-core-planning-boundary.md);
+12. [ADR-0014 — ModuleManifest v2 and artifact trust boundary](0014-module-manifest-v2-trust-boundary.md).
 
 ## Следующие решения
 
@@ -44,8 +46,4 @@ Architecture Decision Record обязателен для решений, кот�
 
 README не принимает будущие решения автоматически; он задаёт процесс их фиксации.
 
-## Proposed decisions for 0.11.0
-
-- [ADR-0014 — ModuleManifest v2 and artifact trust boundary](0014-module-manifest-v2-trust-boundary.md).
-
-ADR-0014 remains proposed until review and CI acceptance. It does not activate module acquisition, extraction, installation, lifecycle execution or a privileged Market runtime.
+ADR-0014 is accepted for the 0.11 development line only. It does not activate module acquisition, extraction, installation, lifecycle execution, production rollout or a privileged Market runtime.
