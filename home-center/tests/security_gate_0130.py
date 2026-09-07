@@ -9,6 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]
 INTENT = ROOT / "product/control-plane/src/home_center/core/intent_engine.py"
 INTENT_SERVICE = ROOT / "product/control-plane/src/home_center/intent_service.py"
 INTENT_PREFLIGHT = ROOT / "product/control-plane/src/home_center/intent_preflight.py"
+PLACEMENT_PLANNER = ROOT / "product/control-plane/src/home_center/placement_planner.py"
 RESOURCE_SNAPSHOT = ROOT / "product/control-plane/src/home_center/resource_snapshot.py"
 RUNTIME = ROOT / "product/control-plane/src/home_center/runtime.py"
 API_V2 = ROOT / "product/control-plane/src/home_center/api_v2.py"
@@ -48,6 +49,23 @@ def imported_roots(path: Path) -> set[str]:
         elif isinstance(node, ast.ImportFrom):
             imports.add((node.module or "").split(".", 1)[0])
     return imports
+
+
+def require_pure(path: Path, *, label: str) -> str:
+    source = path.read_text(encoding="utf-8")
+    tree = ast.parse(source, filename=str(path))
+    calls = {dotted(node.func) for node in ast.walk(tree) if isinstance(node, ast.Call)}
+    require(
+        not imported_roots(path).intersection(
+            {"http", "os", "pathlib", "requests", "socket", "sqlite3", "subprocess", "urllib"}
+        ),
+        f"{label} gained I/O, persistence, process, or network surface",
+    )
+    require(
+        not calls.intersection({"eval", "exec", "open", "os.system", "subprocess.Popen", "subprocess.run"}),
+        f"{label} gained execution or file-write primitive",
+    )
+    return source
 
 
 def main() -> int:
@@ -115,27 +133,18 @@ def main() -> int:
         '"resource_snapshot_unavailable"',
         '"resource_snapshot_invalid"',
         "blockers = resource_preflight(request, snapshot)",
+        "decision = placement_for(request, snapshot)",
+        "return attach_placement(plan, decision)",
+        '"placement_unavailable"',
     ):
         require(marker in service, f"authenticated intent service guard missing: {marker}")
-    require(
-        service.index("plan = self._engine.compile(request, permissions={permission})")
-        < service.index("provider = self._resource_snapshot_provider"),
-        "resource preflight can run before core policy/contract planning",
-    )
+    compile_index = service.index("plan = self._engine.compile(request, permissions={permission})")
+    provider_index = service.index("provider = self._resource_snapshot_provider")
+    preflight_index = service.index("blockers = resource_preflight(request, snapshot)")
+    placement_index = service.index("decision = placement_for(request, snapshot)")
+    require(compile_index < provider_index < preflight_index < placement_index, "planning/preflight/placement order is unsafe")
 
-    preflight = INTENT_PREFLIGHT.read_text(encoding="utf-8")
-    preflight_tree = ast.parse(preflight, filename=str(INTENT_PREFLIGHT))
-    preflight_calls = {dotted(node.func) for node in ast.walk(preflight_tree) if isinstance(node, ast.Call)}
-    require(
-        not imported_roots(INTENT_PREFLIGHT).intersection(
-            {"http", "os", "pathlib", "requests", "socket", "sqlite3", "subprocess", "urllib"}
-        ),
-        "intent resource preflight gained I/O, persistence, process, or network surface",
-    )
-    require(
-        not preflight_calls.intersection({"eval", "exec", "open", "os.system", "subprocess.Popen", "subprocess.run"}),
-        "intent resource preflight gained execution or file-write primitive",
-    )
+    preflight = require_pure(INTENT_PREFLIGHT, label="intent resource preflight")
     for marker in (
         'snapshot.get("schema") != "home-center.resource-snapshot.v1"',
         'snapshot.get("production_mutation_enabled") is not False',
@@ -148,19 +157,29 @@ def main() -> int:
     ):
         require(marker in preflight, f"resource-aware preflight guard missing: {marker}")
 
-    resources = RESOURCE_SNAPSHOT.read_text(encoding="utf-8")
-    resource_tree = ast.parse(resources, filename=str(RESOURCE_SNAPSHOT))
-    resource_calls = {dotted(node.func) for node in ast.walk(resource_tree) if isinstance(node, ast.Call)}
-    require(
-        not imported_roots(RESOURCE_SNAPSHOT).intersection(
-            {"http", "os", "pathlib", "requests", "socket", "sqlite3", "subprocess", "urllib"}
-        ),
-        "resource snapshot gained I/O, persistence, process, or network surface",
-    )
-    require(
-        not resource_calls.intersection({"eval", "exec", "open", "os.system", "subprocess.Popen", "subprocess.run"}),
-        "resource snapshot gained execution or file-write primitive",
-    )
+    placement = require_pure(PLACEMENT_PLANNER, label="placement planner")
+    for marker in (
+        'snapshot.get("schema") != "home-center.resource-snapshot.v1"',
+        'snapshot.get("planning_ready") is not True',
+        'snapshot.get("production_mutation_enabled") is not False',
+        "required_nodes = 2 if high_availability else 1",
+        'strategy = "storage-headroom-v1"',
+        'strategy = "balanced-headroom-v1"',
+        "weakest = min(cpu_headroom, memory_headroom, storage_headroom)",
+        "ranked.sort()",
+        '"reservation_created": False',
+        '"production_mutation_enabled": False',
+        'payload["placement"] = decision.to_dict()',
+        "production_execution_enabled=False",
+    ):
+        require(marker in placement, f"placement planning safety marker missing: {marker}")
+    for forbidden in ("reserve", "requests.", "socket.", "subprocess.", "os.system", "open("):
+        if forbidden == "reserve":
+            require("def reserve" not in placement and "reserve(" not in placement, "placement planner exposes reservation primitive")
+        else:
+            require(forbidden not in placement, f"placement planner forbidden surface: {forbidden}")
+
+    resources = require_pure(RESOURCE_SNAPSHOT, label="resource snapshot")
     for marker in (
         'capability.get("schema") != "home-center.node-capability.v1"',
         'raise ResourceSnapshotError("node_identity_mismatch")',
@@ -210,6 +229,7 @@ def main() -> int:
     required_contracts = (
         "contracts/intents/intent-request.v1.schema.json",
         "contracts/intents/intent-plan.v1.schema.json",
+        "contracts/intents/placement.v1.schema.json",
         "contracts/openapi/home-center-intents.v1.openapi.json",
         "contracts/resources/resource-snapshot.v1.schema.json",
         "contracts/openapi/home-center-resources.v1.openapi.json",

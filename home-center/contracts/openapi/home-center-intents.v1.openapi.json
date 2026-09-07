@@ -3,7 +3,7 @@
   "info": {
     "title": "Home Center 0.13 Intent Planning API",
     "version": "0.13.0-development",
-    "description": "Authenticated plan-only API for deterministic infrastructure intents. This surface does not execute infrastructure mutations."
+    "description": "Authenticated plan-only API for deterministic infrastructure intents. Successful Storage and Virtualization plans include non-reserving provider-neutral placement metadata. This surface does not execute infrastructure mutations."
   },
   "paths": {
     "/api/v1/intents/plan": {
@@ -20,7 +20,7 @@
         },
         "responses": {
           "200": {
-            "description": "Deterministic planned or blocked intent",
+            "description": "Deterministic planned or blocked intent; resource create plans may include home-center.placement.v1 metadata in the create-step input",
             "content": {
               "application/json": {
                 "schema": {"$ref": "../intents/intent-plan.v1.schema.json"}

@@ -9,6 +9,7 @@ from typing import Any, Callable, Final, Mapping
 from .core.intent_engine import IntentEngine, IntentKind, IntentPlan, IntentPlanState, IntentRequest
 from .core.policy_engine import AccessMode, PolicyEngine, PolicyRule
 from .intent_preflight import IntentPreflightError, resource_preflight
+from .placement_planner import PlacementPlannerError, attach_placement, placement_for
 from .resource_snapshot import ResourceSnapshotError
 
 
@@ -105,4 +106,9 @@ class IntentPlanningService:
             return self._blocked(request, "resource_snapshot_invalid")
         if blockers:
             return self._blocked(request, *blockers)
-        return plan
+
+        try:
+            decision = placement_for(request, snapshot)
+            return attach_placement(plan, decision)
+        except PlacementPlannerError:
+            return self._blocked(request, "placement_unavailable")
