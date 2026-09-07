@@ -3,11 +3,11 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Home Center — управление домашней инфраструктурой</title>
-  <meta name="description" content="Home Center — local-first платформа для управления домашней и малой серверной инфраструктурой через единый Web UI и API.">
-  <meta name="theme-color" content="#0b1514">
-  <meta property="og:title" content="Home Center">
-  <meta property="og:description" content="Домашняя инфраструктура — в одном центре управления.">
+  <title>Home Center — домашний сервер, виртуализация и умный дом</title>
+  <meta name="description" content="Home Center объединяет домашние серверы, виртуализацию, сервисы и будущие сценарии умного дома в одном local-first интерфейсе.">
+  <meta name="theme-color" content="#07110f">
+  <meta property="og:title" content="Home Center — центр управления домашней инфраструктурой">
+  <meta property="og:description" content="Домашний сервер, виртуализация, сервисы и устройства — в одном понятном интерфейсе.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://home.control-center.pro/">
   <link rel="canonical" href="https://home.control-center.pro/">
@@ -20,141 +20,116 @@
   <a class="skip" href="#content">К содержимому</a>
   <header class="site-header" data-header>
     <div class="shell header-inner">
-      <a class="brand" href="/" aria-label="Home Center — главная">
-        <img src="/assets/logo.svg" alt="" width="34" height="34">
-        <span>Home Center</span>
-      </a>
-      <button class="menu-button" type="button" aria-expanded="false" aria-controls="site-nav" data-menu-button>
-        <span></span><span></span><span></span><span class="sr-only">Меню</span>
-      </button>
-      <nav id="site-nav" class="site-nav" aria-label="Основная навигация" data-menu>
-        <a href="#capabilities">Возможности</a>
-        <a href="#architecture">Архитектура</a>
-        <a href="/releases.html">Релизы</a>
-        <a href="/docs.html">Документация</a>
-      </nav>
-      <a class="header-release" href="/releases.html"><span>Актуальный релиз</span><strong>0.14.0</strong></a>
+      <a class="brand" href="/" aria-label="Home Center — главная"><img src="/assets/logo.svg" alt="" width="34" height="34"><span>Home Center</span></a>
+      <button class="menu-button" type="button" aria-expanded="false" aria-controls="site-nav" data-menu-button><span></span><span></span><span></span><span class="sr-only">Меню</span></button>
+      <nav id="site-nav" class="site-nav" aria-label="Основная навигация" data-menu><a href="#scenarios">Для дома</a><a href="#interfaces">Интерфейс</a><a href="/docs.html">Установка</a><a href="#development">В разработке</a><a href="/releases.html">Релизы</a></nav>
+      <a class="header-release" href="/releases.html"><span>Текущий релиз</span><strong>0.14.0</strong></a>
     </div>
   </header>
 
   <main id="content">
-    <section class="hero">
+    <section class="hero home-hero">
       <div class="shell hero-grid">
         <div class="hero-copy reveal">
-          <div class="eyebrow"><span class="status-dot"></span> Home Center 0.14.0 · релиз опубликован</div>
-          <h1>Домашняя инфраструктура.<br><em>В одном центре.</em></h1>
-          <p class="lead">Local-first платформа для управления домашними серверами, узлами и сервисами через единый Web UI и API — без привязки продукта к конкретной инфраструктуре.</p>
-          <div class="hero-actions">
-            <a class="button primary" href="#capabilities">Посмотреть возможности</a>
-            <a class="button secondary" href="/releases.html">Что вошло в 0.14.0</a>
-          </div>
-          <div class="hero-facts" aria-label="Ключевые свойства">
-            <span>Local-first</span><span>Single / multi-node</span><span>Web UI + API</span><span>Fail-closed</span>
-          </div>
+          <div class="eyebrow"><span class="status-dot"></span> Home Center 0.14.0 · доступен для самостоятельной установки</div>
+          <h1>Ваш домашний сервер.<br><em>Без зоопарка панелей.</em></h1>
+          <p class="lead">Home Center — local-first центр управления домашней инфраструктурой. Серверы, ресурсы, сервисы и постепенно виртуализация и устройства умного дома собираются в одном Web-интерфейсе.</p>
+          <div class="hero-actions"><a class="button primary" href="#scenarios">Посмотреть домашние сценарии</a><a class="button secondary" href="/docs.html">Установить Home Center</a></div>
+          <div class="hero-facts" aria-label="Ключевые свойства"><span>Работает локально</span><span>Web UI</span><span>Linux</span><span>Обновления с проверкой</span></div>
         </div>
 
-        <div class="hero-console reveal" aria-label="Схема Home Center">
-          <div class="console-top">
-            <span class="console-title">Home Center</span>
-            <span class="pill ok">Система доступна</span>
+        <div class="ui-window hero-dashboard reveal" aria-label="Пример домашней панели Home Center">
+          <div class="ui-titlebar"><div><span class="ui-dot"></span><strong>Мой дом</strong></div><span class="ui-version">0.14.0</span></div>
+          <div class="home-overview">
+            <article class="overview-primary"><span class="micro-label">Состояние</span><strong>Всё в порядке</strong><small>2 узла доступны · резервная копия выполнена</small></article>
+            <article><span class="micro-label">Серверы</span><strong>2</strong><small>online</small></article>
+            <article><span class="micro-label">Сервисы</span><strong>8</strong><small>7 active · 1 standby</small></article>
           </div>
-          <div class="metric-grid">
-            <article><small>Узлы</small><strong>2</strong><span>управляемый контур</span></article>
-            <article><small>Версия</small><strong>0.14.0</strong><span>опубликованный релиз</span></article>
+          <div class="home-list">
+            <div class="home-row"><span class="home-icon">S1</span><div><strong>Домашний сервер</strong><small>CPU 18% · RAM 41%</small></div><span class="state ok">Online</span></div>
+            <div class="home-row"><span class="home-icon">S2</span><div><strong>Резервный узел</strong><small>Готов к работе</small></div><span class="state ok">Online</span></div>
+            <div class="home-row compact"><span>Сертификаты</span><strong>В норме</strong></div>
+            <div class="home-row compact"><span>Последний backup</span><strong>Сегодня, 01:10</strong></div>
           </div>
-          <div class="node-card active">
-            <span class="node-icon">01</span>
-            <div><strong>Основной узел</strong><small>Control plane · healthy</small></div>
-            <span class="node-state">Online</span>
-          </div>
-          <div class="node-card">
-            <span class="node-icon">02</span>
-            <div><strong>Второй узел</strong><small>Managed node · ready</small></div>
-            <span class="node-state">Online</span>
-          </div>
-          <div class="console-bottom">
-            <span>Lifecycle</span><span>Compute</span><span>Certificates</span><span>Modules</span>
-          </div>
+          <div class="mock-note">Пример представления интерфейса</div>
         </div>
       </div>
     </section>
 
-    <section class="section" id="capabilities">
+    <section class="section intro-strip">
+      <div class="shell intro-grid reveal">
+        <div><span class="big-number">01</span><strong>Начните с сервера</strong><p>Старый ПК, мини-ПК или отдельный Linux-сервер становится точкой управления домашними сервисами.</p></div>
+        <div><span class="big-number">02</span><strong>Добавляйте возможности</strong><p>Виртуализация, модули и устройства подключаются по мере развития Home Center — без смены основной панели.</p></div>
+        <div><span class="big-number">03</span><strong>Оставайтесь хозяином данных</strong><p>Базовая модель local-first: управление расположено рядом с вашей инфраструктурой, а внешняя публикация включается отдельно.</p></div>
+      </div>
+    </section>
+
+    <section class="section" id="scenarios">
       <div class="shell">
-        <div class="section-head reveal">
-          <div class="kicker">Возможности</div>
-          <h2>Управление инфраструктурой как единым продуктом</h2>
-          <p>Home Center объединяет жизненный цикл узлов, планирование ресурсов, локальные сервисы и эксплуатационные операции в одной модели.</p>
-        </div>
-        <div class="feature-grid">
-          <article class="feature-card reveal"><div class="feature-no">01</div><h3>Node Lifecycle v2</h3><p>Добавление, проверка, обслуживание и безопасный вывод узлов с явными preflight-проверками и границами операций.</p></article>
-          <article class="feature-card reveal"><div class="feature-no">02</div><h3>Compute Framework</h3><p>Детерминированное планирование вычислительных ресурсов, размещения и резервирования для VM/LXC-сценариев.</p></article>
-          <article class="feature-card reveal"><div class="feature-no">03</div><h3>Home Lab Manager</h3><p>Единое представление домашнего контура: узлы, роли, состояние и дальнейшее расширение сервисов через модули.</p></article>
-          <article class="feature-card reveal"><div class="feature-no">04</div><h3>Certificate Lifecycle</h3><p>Типизированная модель жизненного цикла сертификатов с проверяемыми планами и контролируемыми границами активации.</p></article>
-          <article class="feature-card reveal"><div class="feature-no">05</div><h3>Module Supply Chain</h3><p>Проверка происхождения, зависимостей, разрешений и жизненного цикла модулей до разрешения установки.</p></article>
-          <article class="feature-card reveal"><div class="feature-no">06</div><h3>Local Admin & Recovery</h3><p>Локальная административная модель, защищённое восстановление и контролируемые операции с учётными данными.</p></article>
+        <div class="section-head reveal"><div class="kicker">Сценарии дома</div><h2>Не «инфраструктура ради инфраструктуры», а полезные домашние задачи</h2><p>Home Center строится вокруг того, что действительно хочется видеть и контролировать дома: где работают сервисы, хватает ли ресурсов, есть ли резервная копия и что требует внимания.</p></div>
+        <div class="scenario-grid">
+          <article class="scenario-card reveal"><div class="scenario-icon">01</div><div class="scenario-status now">Уже сейчас</div><h3>Домашний сервер</h3><p>Единая панель состояния узлов, ролей, версии, health-checks, сертификатов и эксплуатационных операций.</p><ul><li>видеть, что доступно;</li><li>быстро заметить проблему;</li><li>не вспоминать адрес каждой отдельной панели.</li></ul></article>
+          <article class="scenario-card reveal"><div class="scenario-icon">02</div><div class="scenario-status next">0.15–0.16</div><h3>Home Lab и Proxmox</h3><p>Инвентаризация CPU, RAM, дисков и сети, затем единое представление Proxmox, VM и LXC с планированием размещения.</p><ul><li>понять, где есть свободные ресурсы;</li><li>видеть виртуальные машины и контейнеры;</li><li>управлять жизненным циклом из одного места.</li></ul></article>
+          <article class="scenario-card reveal"><div class="scenario-icon">03</div><div class="scenario-status next">Развитие модулей</div><h3>Домашние сервисы</h3><p>Модульная модель для локальных приложений: хранение, медиасервисы, игровые и другие домашние сервисы — с понятным состоянием и зависимостями.</p><ul><li>единый каталог возможностей;</li><li>проверка совместимости до установки;</li><li>единый lifecycle вместо ручной рутины.</li></ul></article>
+          <article class="scenario-card reveal"><div class="scenario-icon">04</div><div class="scenario-status future">0.17</div><h3>Умный дом</h3><p>Реестр устройств, помещения и capabilities станут основой для ZigBee, сценариев автоматизации, MQTT/Webhooks и интеграции с Яндекс Умным домом.</p><ul><li>устройства в одной модели;</li><li>автоматизации между разными системами;</li><li>домашний мобильный интерфейс.</li></ul></article>
+          <article class="scenario-card reveal"><div class="scenario-icon">05</div><div class="scenario-status future">0.18</div><h3>Семейный доступ</h3><p>Роли и права позволят отделить административные операции от обычного просмотра и повседневного управления.</p><ul><li>локальный администратор;</li><li>опциональные учётные записи каталога;</li><li>принцип «разрешено только необходимое».</li></ul></article>
+          <article class="scenario-card reveal"><div class="scenario-icon">06</div><div class="scenario-status future">0.18</div><h3>Доступ из поездки</h3><p>Удалённый доступ развивается как отдельная защищённая функция: локальная работа остаётся основной, внешний доступ не включается сам по себе.</p><ul><li>явное включение;</li><li>сертификаты и контроль доступа;</li><li>резервирование конфигурации и данных.</li></ul></article>
         </div>
       </div>
     </section>
 
-    <section class="section section-dark" id="architecture">
-      <div class="shell split">
-        <div class="section-head reveal">
-          <div class="kicker">Архитектура</div>
-          <h2>Сначала план. Затем действие.</h2>
-          <p>Критические операции проходят через типизированные контракты, проверки совместимости и явную границу исполнения. Это снижает риск случайных инфраструктурных изменений.</p>
-          <ul class="checks">
-            <li>предварительная проверка состояния и зависимостей;</li>
-            <li>детерминированный результат планирования;</li>
-            <li>явные границы прав и исполнения;</li>
-            <li>диагностируемый failure path.</li>
-          </ul>
+    <section class="section section-dark" id="interfaces">
+      <div class="shell">
+        <div class="section-head reveal"><div class="kicker">Примеры интерфейса</div><h2>Один язык интерфейса — от сервера до умного дома</h2><p>Ниже не рекламные картинки, а адаптивные макеты того, как Home Center сводит домашние задачи к состоянию, понятным действиям и предупреждениям.</p></div>
+        <div class="interface-gallery">
+          <article class="ui-window ui-example reveal">
+            <div class="ui-titlebar"><div><span class="ui-dot"></span><strong>Обзор дома</strong></div><span class="demo-tag live">Текущий стиль</span></div>
+            <div class="mock-layout"><aside class="mock-sidebar"><b>Обзор</b><span>Узлы</span><span>Сервисы</span><span>Резервные копии</span><span>Настройки</span></aside><div class="mock-content"><div class="mock-heading"><div><small>Добрый вечер</small><strong>Дом работает нормально</strong></div><span class="state ok">Healthy</span></div><div class="mock-kpis"><div><small>Узлы</small><strong>2 / 2</strong></div><div><small>Хранилище</small><strong>38%</strong></div><div><small>Backup</small><strong>OK</strong></div></div><div class="mock-service"><span>Файловое хранилище</span><strong>Работает</strong></div><div class="mock-service"><span>Домашние приложения</span><strong>7 online</strong></div></div></div>
+          </article>
+          <article class="ui-window ui-example reveal">
+            <div class="ui-titlebar"><div><span class="ui-dot"></span><strong>Виртуализация</strong></div><span class="demo-tag dev">Направление 0.16</span></div>
+            <div class="mock-layout"><aside class="mock-sidebar"><span>Обзор</span><b>Proxmox</b><span>VM</span><span>Контейнеры</span><span>Ресурсы</span></aside><div class="mock-content"><div class="mock-heading"><div><small>Домашний кластер</small><strong>Ресурсы и нагрузки</strong></div><span class="state ok">Quorum OK</span></div><div class="resource-bars"><div><span>CPU <b>34%</b></span><i><em style="width:34%"></em></i></div><div><span>RAM <b>30%</b></span><i><em style="width:30%"></em></i></div><div><span>Storage <b>46%</b></span><i><em style="width:46%"></em></i></div></div><div class="vm-grid"><div><span>VM</span><strong>4</strong><small>3 running</small></div><div><span>LXC</span><strong>7</strong><small>7 running</small></div></div></div></div>
+          </article>
+          <article class="ui-window ui-example reveal">
+            <div class="ui-titlebar"><div><span class="ui-dot"></span><strong>Умный дом</strong></div><span class="demo-tag future">Концепт 0.17</span></div>
+            <div class="mock-layout"><aside class="mock-sidebar"><span>Дом</span><b>Устройства</b><span>Комнаты</span><span>Сценарии</span><span>Интеграции</span></aside><div class="mock-content"><div class="mock-heading"><div><small>Устройства</small><strong>24 дома</strong></div><span class="state ok">23 online</span></div><div class="device-grid"><div><span class="device-glyph">☀</span><strong>Гостиная</strong><small>Свет · 3 устройства</small></div><div><span class="device-glyph">⌁</span><strong>Климат</strong><small>22.4 °C · 46%</small></div><div><span class="device-glyph">◉</span><strong>Датчики</strong><small>8 online</small></div><div><span class="device-glyph">▶</span><strong>Сценарии</strong><small>6 автоматизаций</small></div></div></div></div>
+          </article>
         </div>
-        <div class="flow reveal" aria-label="Архитектурный поток">
-          <div class="flow-step"><span>1</span><div><strong>Намерение</strong><small>Оператор выбирает целевое изменение</small></div></div>
-          <div class="flow-line"></div>
-          <div class="flow-step"><span>2</span><div><strong>Preflight</strong><small>Проверка состояния, ресурсов и ограничений</small></div></div>
-          <div class="flow-line"></div>
-          <div class="flow-step"><span>3</span><div><strong>План</strong><small>Типизированный и воспроизводимый результат</small></div></div>
-          <div class="flow-line muted"></div>
-          <div class="flow-step future"><span>4</span><div><strong>Исполнение</strong><small>Только после разрешённой границы активации</small></div></div>
-        </div>
+        <p class="interface-caption reveal">Макеты показывают целевое представление. Функции, помеченные версиями 0.16/0.17, находятся в разработке и не выдаются здесь за возможности текущего релиза.</p>
       </div>
     </section>
 
-    <section class="section release-band">
-      <div class="shell release-grid reveal">
-        <div>
-          <div class="kicker">Текущая линия</div>
-          <h2>Home Center 0.14.0</h2>
-          <p>Расширение product lifecycle: Node Lifecycle v2, Compute Framework, Home Lab Manager, Certificate Lifecycle и обновлённый read-only planning UI.</p>
-        </div>
-        <div class="release-status">
-          <div><span>Статус</span><strong>Released</strong></div>
-          <div><span>Опубликован</span><strong>07.09.2026</strong></div>
-          <div><span>Safety boundary</span><strong>Plan-only</strong></div>
-        </div>
-      </div>
-      <div class="shell notice reveal">
-        <strong>Граница релиза 0.14.0.</strong>
-        <p>Planning UI и planners не запускают provider-, module-, certificate- или compute-изменения. Публикация релиза не равна активации изменений в управляемой инфраструктуре.</p>
+    <section class="section install-preview" id="install">
+      <div class="shell split install-split">
+        <div class="section-head reveal"><div class="kicker">Самостоятельная установка</div><h2>Скачали. Проверили. Установили.</h2><p>Публичная сборка Home Center Free 0.14.0 доступна как Linux amd64 архив с отдельной SHA-256 суммой. Установка не перенастраивает ваш роутер, DNS или firewall автоматически.</p><div class="hero-actions"><a class="button primary" href="/docs.html">Пошаговая инструкция</a><a class="button secondary" href="https://github.com/ControlCenterSoft/home-center-free/releases/latest">Скачать последний релиз</a></div></div>
+        <div class="terminal reveal" aria-label="Краткий пример установки"><div class="terminal-top"><span></span><span></span><span></span><b>home-center</b></div><pre><code><span># 1. Проверить архив</span>
+bash deploy/scripts/home-center-release.sh verify \
+  --artifact home-center-free-0.14.0-linux-amd64.tar.gz \
+  --checksum home-center-free-0.14.0-linux-amd64.tar.gz.sha256
+
+<span># 2. После установки запустить сервис</span>
+sudo systemctl enable --now \
+  home-center.service home-center-backup.timer</code></pre></div>
       </div>
     </section>
 
-    <section class="section">
-      <div class="shell cta reveal">
-        <div><div class="kicker">Подробнее</div><h2>Версии, границы и документация</h2><p>Публичная информация разделяет опубликованный код, активированные возможности и будущие направления — без скрытых обещаний.</p></div>
-        <div class="cta-actions"><a class="button primary" href="/releases.html">История релизов</a><a class="button secondary" href="/docs.html">Документация</a></div>
+    <section class="section development-section" id="development">
+      <div class="shell">
+        <div class="section-head reveal"><div class="kicker">Сейчас в разработке</div><h2>От управления серверами — к полноценному центру дома</h2><p>Версии 0.15–0.18 разрабатываются параллельно. Каждая добавляет отдельный слой, но не меняет принцип: сначала понятная модель и проверка, затем управляемое действие.</p></div>
+        <div class="roadmap-grid">
+          <article class="roadmap-card reveal"><div class="roadmap-top"><span class="version">0.15</span><span class="roadmap-state">В разработке</span></div><h3>Home Infrastructure</h3><p><strong>Уже сделано:</strong> базовая инвентаризация CPU, RAM, виртуализации, дисков, сети и capabilities.</p><p><strong>Дальше:</strong> обнаружение узлов, deployment profiles, интеграция автоматизации и отдельный Infrastructure UI.</p><div class="result-box"><small>Результат для дома</small><strong>Home Center сам понимает, из чего состоит ваш домашний контур и что на нём можно разместить.</strong></div></article>
+          <article class="roadmap-card reveal"><div class="roadmap-top"><span class="version">0.16</span><span class="roadmap-state">В разработке</span></div><h3>Proxmox & Compute</h3><p><strong>Уже сделано:</strong> типизированное обнаружение Proxmox и безопасное планирование поверх Compute Framework.</p><p><strong>Дальше:</strong> lifecycle VM/LXC, планировщик ресурсов и compute-адаптеры.</p><div class="result-box"><small>Результат для дома</small><strong>Proxmox, виртуальные машины и контейнеры становятся частью единой панели Home Center.</strong></div></article>
+          <article class="roadmap-card reveal"><div class="roadmap-top"><span class="version">0.17</span><span class="roadmap-state review">Первый слой на проверке</span></div><h3>Smart Home & IoT</h3><p><strong>Сейчас:</strong> Device Registry — единая модель устройств, помещений, состояний и capabilities.</p><p><strong>Дальше:</strong> ZigBee, Automation Engine, MQTT/Webhooks, Яндекс Умный дом и мобильный интерфейс.</p><div class="result-box"><small>Результат для дома</small><strong>Серверная часть и умный дом перестают жить в разных мирах.</strong></div></article>
+          <article class="roadmap-card reveal"><div class="roadmap-top"><span class="version">0.18</span><span class="roadmap-state review">Первый слой на проверке</span></div><h3>Family Access & Resilience</h3><p><strong>Сейчас:</strong> модель Identity/RBAC с вычислением эффективных прав и default-deny.</p><p><strong>Дальше:</strong> certificate lifecycle, remote access, backup federation и security hardening.</p><div class="result-box"><small>Результат для дома</small><strong>Безопасный семейный доступ, удалённое управление и более устойчивое восстановление.</strong></div></article>
+        </div>
+        <div class="notice reveal"><strong>Важно:</strong><p>0.15–0.18 — активные линии разработки. Конкретная функция становится доступной пользователю только после её выпуска в релизе; наличие макета или roadmap не означает production activation.</p></div>
       </div>
     </section>
+
+    <section class="section release-band"><div class="shell release-grid reveal"><div><div class="kicker">Текущий стабильный публичный релиз</div><h2>Home Center 0.14.0</h2><p>Текущая публичная линия включает расширение lifecycle, Compute Framework, Home Lab Manager, Certificate Lifecycle и planning UI. Исполнение инфраструктурных изменений из этих planning-компонентов остаётся ограниченным.</p></div><div class="release-status"><div><span>Версия</span><strong>0.14.0</strong></div><div><span>Публичная сборка</span><strong>Доступна</strong></div><div><span>Safety boundary</span><strong>Plan-only</strong></div></div></div></section>
+    <section class="section"><div class="shell cta reveal"><div><div class="kicker">Начать</div><h2>Попробуйте Home Center дома</h2><p>Начните с опубликованной сборки, а roadmap покажет, какие домашние функции появятся следующими.</p></div><div class="cta-actions"><a class="button primary" href="/docs.html">Установка и обновление</a><a class="button secondary" href="/releases.html">Релизы и roadmap</a></div></div></section>
   </main>
 
-  <footer class="site-footer">
-    <div class="shell footer-inner">
-      <div class="brand footer-brand"><img src="/assets/logo.svg" alt="" width="30" height="30"><span>Home Center</span></div>
-      <p>Local-first управление домашней и малой серверной инфраструктурой.</p>
-      <span>© 2026 Home Center</span>
-    </div>
-  </footer>
+  <footer class="site-footer"><div class="shell footer-inner"><div class="brand footer-brand"><img src="/assets/logo.svg" alt="" width="30" height="30"><span>Home Center</span></div><p>Local-first центр управления домашней инфраструктурой.</p><span>© 2026 Home Center</span></div></footer>
 </body>
 </html>
