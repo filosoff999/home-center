@@ -6,6 +6,7 @@ on:
       - "tools/public_export.py"
       - "tools/public_source_overlay.py"
       - "tools/public_export_finalize.py"
+      - "tools/public_ci_finalize.py"
       - "tools/public_privacy_scan.py"
       - "tools/public_build_artifact.sh"
       - ".github/workflows/public-export.yml"
@@ -62,6 +63,7 @@ jobs:
             --source-revision "$PUBLIC_SOURCE_REVISION" \
             --source-tag "$PUBLIC_TAG"
           python3 tools/public_export_finalize.py --output "$out"
+          python3 tools/public_ci_finalize.py --output "$out"
           install -m 0755 tools/public_privacy_scan.py "$out/tools/privacy_scan.py"
           install -m 0755 tools/public_build_artifact.sh "$out/deploy/scripts/build-public-artifact.sh"
           OUT="$out" PYTHONPATH=tools python3 - <<'PY'
@@ -95,6 +97,8 @@ jobs:
           grep -q -- '--peer-cert' "$out/deploy/scripts/install-public.sh"
           grep -q -- '--web-cert' "$out/deploy/scripts/install-public.sh"
           grep -q 'WEB_AND_PEER_CERTIFICATES_MUST_DIFFER' "$out/deploy/scripts/install-public.sh"
+          grep -q 'sha256sum -c PUBLIC_EXPORT_MANIFEST.sha256' "$out/.github/workflows/ci.yml"
+          ! grep -q "python3 - <<'PY'" "$out/.github/workflows/ci.yml"
           ! find "$out" -type f \( -name '*.pyc' -o -name '*.pyo' \) -print -quit | grep -q .
           ! find "$out" -type d -name __pycache__ -print -quit | grep -q .
           (cd "$out" && sha256sum -c PUBLIC_EXPORT_MANIFEST.sha256)
