@@ -1,0 +1,95 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://home-center.local/contracts/auth/local-admin-recovery-acceptance.v1.schema.json",
+  "title": "Home Center local-admin recovery acceptance v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "cluster_id", "success", "rollback", "ambiguous", "recovery_boundary", "audit"],
+  "properties": {
+    "schema": {"const": "home-center.local-admin-recovery-acceptance.v1"},
+    "cluster_id": {"type": "string", "minLength": 3, "maxLength": 64},
+    "success": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["transaction_id", "commit_order", "nodes", "terminal_phase", "outcome"],
+      "properties": {
+        "transaction_id": {"type": "string", "pattern": "^la-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{16}$"},
+        "commit_order": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/nodeId"}
+        },
+        "nodes": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {"$ref": "#/$defs/nodeEvidence"}
+        },
+        "terminal_phase": {"const": "completed"},
+        "outcome": {"const": "accepted"}
+      }
+    },
+    "rollback": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["terminal_phase", "outcome", "old_credential_canary", "new_credential_canary", "automatic_retry"],
+      "properties": {
+        "terminal_phase": {"const": "rolled_back"},
+        "outcome": {"const": "rolled_back"},
+        "old_credential_canary": {"const": "passed"},
+        "new_credential_canary": {"const": "rejected"},
+        "automatic_retry": {"const": false}
+      }
+    },
+    "ambiguous": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["terminal_phase", "outcome", "recovery_required", "automatic_retry", "remote_recovery_enabled"],
+      "properties": {
+        "terminal_phase": {"const": "recovery_required"},
+        "outcome": {"const": "unknown"},
+        "recovery_required": {"const": true},
+        "automatic_retry": {"const": false},
+        "remote_recovery_enabled": {"const": false}
+      }
+    },
+    "recovery_boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["local_console_only", "root_required", "ssh_pty_rejected", "evidence_chain"],
+      "properties": {
+        "local_console_only": {"const": true},
+        "root_required": {"const": true},
+        "ssh_pty_rejected": {"const": true},
+        "evidence_chain": {"const": "passed"}
+      }
+    },
+    "audit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["audit_chain", "secret_scan"],
+      "properties": {
+        "audit_chain": {"const": "passed"},
+        "secret_scan": {"const": "passed"}
+      }
+    }
+  },
+  "$defs": {
+    "nodeId": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,63}$"},
+    "digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "nodeEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["node_id", "role", "commit_sequence", "new_credential_canary", "credential_record_sha256"],
+      "properties": {
+        "node_id": {"$ref": "#/$defs/nodeId"},
+        "role": {"enum": ["standby", "leader"]},
+        "commit_sequence": {"type": "integer", "minimum": 1, "maximum": 2},
+        "new_credential_canary": {"const": "passed"},
+        "credential_record_sha256": {"$ref": "#/$defs/digest"}
+      }
+    }
+  }
+}
