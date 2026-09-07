@@ -36,6 +36,24 @@ class DevelopmentControlTests(unittest.TestCase):
         }
         control.validate_pr_event(registry, event)
 
+    def test_pr_gate_accepts_latest_registered_release_and_main(self) -> None:
+        registry = control.load_registry(ROOT / ".hc-dev" / "releases.json")
+        latest = registry["releases"][-1]["version"]
+        release_event = {
+            "pull_request": {
+                "base": {"ref": f"release/{latest}"},
+                "body": f"Target release: {latest}\n\nTracking Issue: #151\n",
+            }
+        }
+        main_event = {
+            "pull_request": {
+                "base": {"ref": "main"},
+                "body": "Target release: main\n\nTracking Issue: #150\n",
+            }
+        }
+        control.validate_pr_event(registry, release_event)
+        control.validate_pr_event(registry, main_event)
+
     def test_pr_gate_rejects_release_mismatch(self) -> None:
         registry = control.load_registry(ROOT / ".hc-dev" / "releases.json")
         event = {
