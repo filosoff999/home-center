@@ -8,6 +8,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 MODULE = ROOT / "product/control-plane/src/home_center/module_artifact.py"
 MANIFEST = ROOT / "product/control-plane/src/home_center/module_manifest.py"
+PLANNER = ROOT / "product/control-plane/src/home_center/module_admission.py"
 
 
 def require(condition: bool, message: str) -> None:
@@ -27,7 +28,9 @@ def dotted(node: ast.AST) -> str:
 def main() -> int:
     source = MODULE.read_text(encoding="utf-8")
     manifest = MANIFEST.read_text(encoding="utf-8")
+    planner = PLANNER.read_text(encoding="utf-8")
     tree = ast.parse(source, filename=str(MODULE))
+    planner_tree = ast.parse(planner, filename=str(PLANNER))
 
     imports: set[str] = set()
     calls: set[str] = set()
@@ -38,6 +41,16 @@ def main() -> int:
             imports.add((node.module or "").split(".", 1)[0])
         elif isinstance(node, ast.Call):
             calls.add(dotted(node.func))
+
+    planner_imports: set[str] = set()
+    planner_calls: set[str] = set()
+    for node in ast.walk(planner_tree):
+        if isinstance(node, ast.Import):
+            planner_imports.update(alias.name.split(".", 1)[0] for alias in node.names)
+        elif isinstance(node, ast.ImportFrom):
+            planner_imports.add((node.module or "").split(".", 1)[0])
+        elif isinstance(node, ast.Call):
+            planner_calls.add(dotted(node.func))
 
     require(not imports.intersection({"http", "requests", "socket", "urllib"}), "network client imported")
     require(not calls.intersection({"eval", "exec", "os.system", "subprocess.Popen"}), "unsafe execution primitive")
@@ -65,11 +78,39 @@ def main() -> int:
     for marker in ("manifest_duplicate_key", "manifest_float_rejected", "manifest_constant_rejected"):
         require(marker in manifest, f"manifest JSON guard missing: {marker}")
 
+    require(
+        not planner_imports.intersection(
+            {"http", "os", "pathlib", "requests", "shutil", "socket", "subprocess", "tempfile", "urllib"}
+        ),
+        "planner I/O or execution module imported",
+    )
+    require(
+        not planner_calls.intersection(
+            {"eval", "exec", "open", "io.open", "os.system", "subprocess.Popen", "subprocess.run"}
+        ),
+        "planner I/O or execution primitive enabled",
+    )
+    for marker in (
+        "PRODUCTION_ACTIVATION_ENABLED = False",
+        "MAX_ADMISSION_REQUEST_BYTES = 1024 * 1024",
+        "planner_candidate_ambiguous",
+        "planner_dependency_cycle",
+        "planner_module_conflict",
+        "planner_requested_module_already_installed",
+        "production_activation_enabled",
+        "load_and_plan_module_admission",
+    ):
+        require(marker in planner, f"module admission guard missing: {marker}")
+    for forbidden_field in ('"nodes"', '"placement"', '"rollout"', '"execute"', '"granted_permissions"'):
+        require(forbidden_field not in planner, f"planner authority field enabled: {forbidden_field}")
+
     contracts = {
         "module-manifest.v2.schema.json",
         "module-provenance.v1.schema.json",
         "module-dsse-envelope.v1.schema.json",
         "module-trust-policy.v1.schema.json",
+        "module-admission-request.v1.schema.json",
+        "module-admission-result.v1.schema.json",
     }
     present = {path.name for path in (ROOT / "contracts/modules").glob("*.json")}
     require(contracts <= present, "module supply-chain contract missing")
