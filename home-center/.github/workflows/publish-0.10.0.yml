@@ -81,6 +81,36 @@ jobs:
           set -Eeuo pipefail
           artifact="$RUNNER_TEMP/home-center-0100-first/home-center-$VERSION-linux-amd64.tar.gz"
           checksum="$artifact.sha256"
+          notes="$RUNNER_TEMP/release-notes-0.10.0.md"
+          cat >"$notes" <<'EOF'
+          # Home Center 0.10.0
+
+          Home Center 0.10.0 establishes the versioned Core planning boundary while preserving the accepted 0.9.2 runtime, authentication, release-integrity and two-node safety controls.
+
+          ## Exact predecessor
+
+          - version: `0.9.2`;
+          - source revision: `689d90995a4f365e2f19640486b136b525f29c6d`;
+          - artifact SHA-256: `90d5cb0b657abfdd13f077b4a2347c5066fbaddcd4f4bfa6b25944e73a8abe87`.
+
+          ## Core foundation
+
+          - closed command, result and error schemas;
+          - typed input and output contracts for the five admitted planning actions;
+          - plan-only Node, Upgrade, Configuration, Service and Policy modules;
+          - exact action dispatch and an explicit API compatibility matrix;
+          - default-deny policy behavior and deterministic dependency planning.
+
+          ## Safety boundary
+
+          The new Core can validate requests and describe plans. It has no executor, process runner, filesystem mutation surface, network client, scheduler, reconciler or production activation authority. No public Core HTTP route is introduced in this release.
+
+          Publishing `v0.10.0` is not production deployment authority. The accepted production baseline remains Home Center `0.9.2` on `dc01` and `dc02`; any future 0.10 rollout still requires separate authorization, exact version/revision/artifact admission and the staged `dc02 -> canary/soak -> dc01` procedure.
+
+          The 0.9.x feature line is closed on the published `v0.9.2` release. Any later 0.9.x security or maintenance exception requires explicit authorization.
+
+          Documentation correction: an earlier generated note named 0.7.0 as the production baseline. The authoritative accepted baseline at publication is the exact 0.9.2 identity; the `v0.10.0` tag and immutable assets were not changed by this correction.
+          EOF
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             tag_sha="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" --jq '.object.sha')"
             test "$tag_sha" = "$SOURCE_SHA"
@@ -91,13 +121,16 @@ jobs:
             assets="$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json assets --jq '.assets[].name')"
             grep -Fx "home-center-$VERSION-linux-amd64.tar.gz" <<<"$assets"
             grep -Fx "home-center-$VERSION-linux-amd64.tar.gz.sha256" <<<"$assets"
+            gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --notes-file "$notes"
+            gh api "repos/$GITHUB_REPOSITORY/releases/tags/$TAG" --jq '.body' | \
+              grep -F 'accepted production baseline remains Home Center `0.9.2`'
             exit 0
           fi
           gh release create "$TAG" "$artifact" "$checksum" \
             --repo "$GITHUB_REPOSITORY" \
             --target "$SOURCE_SHA" \
             --title "Home Center $VERSION" \
-            --notes-file docs/RELEASE-NOTES-0.10.0.md
+            --notes-file "$notes"
           tag_sha="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" --jq '.object.sha')"
           test "$tag_sha" = "$SOURCE_SHA"
           digest="$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$TAG" --jq '.assets[] | select(.name == "home-center-'"$VERSION"'-linux-amd64.tar.gz") | .digest')"
