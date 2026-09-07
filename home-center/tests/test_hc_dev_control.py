@@ -16,7 +16,9 @@ class DevelopmentControlTests(unittest.TestCase):
     def test_repository_registry_is_valid(self) -> None:
         registry = control.load_registry(ROOT / ".hc-dev" / "releases.json")
         self.assertEqual(registry["schema_version"], 1)
-        self.assertEqual([item["version"] for item in registry["releases"]], ["0.11.0", "0.12.0", "0.13.0", "0.14.0"])
+        versions = [item["version"] for item in registry["releases"]]
+        self.assertGreaterEqual(len(versions), 4)
+        self.assertEqual(versions, [f"0.{minor}.0" for minor in range(11, 11 + len(versions))])
 
     def test_render_bar_is_bounded(self) -> None:
         self.assertEqual(control.render_bar(0), "[░░░░░░░░░░]")
@@ -33,6 +35,24 @@ class DevelopmentControlTests(unittest.TestCase):
             }
         }
         control.validate_pr_event(registry, event)
+
+    def test_pr_gate_accepts_latest_registered_release_and_main(self) -> None:
+        registry = control.load_registry(ROOT / ".hc-dev" / "releases.json")
+        latest = registry["releases"][-1]["version"]
+        release_event = {
+            "pull_request": {
+                "base": {"ref": f"release/{latest}"},
+                "body": f"Target release: {latest}\n\nTracking Issue: #151\n",
+            }
+        }
+        main_event = {
+            "pull_request": {
+                "base": {"ref": "main"},
+                "body": "Target release: main\n\nTracking Issue: #150\n",
+            }
+        }
+        control.validate_pr_event(registry, release_event)
+        control.validate_pr_event(registry, main_event)
 
     def test_pr_gate_rejects_release_mismatch(self) -> None:
         registry = control.load_registry(ROOT / ".hc-dev" / "releases.json")
