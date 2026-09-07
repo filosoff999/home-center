@@ -28,12 +28,21 @@ from .auth import SessionManager
 from .external_access import ExternalAccessRejected, ExternalRequestContext
 from .local_admin_auth import LocalAdminAuthError
 from .module_admission import MAX_ADMISSION_REQUEST_BYTES
+from .module_permission_acknowledgement import (
+    ACKNOWLEDGEMENT_ID,
+    MAX_PERMISSION_ACKNOWLEDGEMENT_REQUEST_BYTES,
+    ModulePermissionAcknowledgementError,
+    acknowledgement_list,
+    load_and_prepare_module_permission_acknowledgement,
+    render_module_permission_acknowledgement,
+)
 from .module_permission_review import (
     ModulePermissionReviewError,
     empty_permission_review,
     load_and_build_module_permission_review,
 )
 from .runtime import Runtime
+from .store import IdempotencyConflict
 from .util import utc_now
 
 
@@ -240,6 +249,48 @@ class RuntimeRequestHandler(BaseHTTPRequestHandler):
             self._json(200, self.runtime.actions.catalog())
         elif path == "/api/v1/modules/permission-review":
             self._json(200, empty_permission_review())
+        elif path == "/api/v1/modules/permission-review/acknowledgements":
+            params = parse_qs(parsed.query)
+            try:
+                limit = int(params.get("limit", ["20"])[0])
+            except ValueError:
+                limit = 20
+            try:
+                records = self.runtime.store.module_permission_acknowledgements(
+                    actor=actor, limit=limit
+                )
+                self._json(HTTPStatus.OK, acknowledgement_list(records))
+            except Exception:
+                LOG.exception("module permission acknowledgement list failed")
+                self._error(
+                    HTTPStatus.INTERNAL_SERVER_ERROR,
+                    "module_permission_acknowledgement_internal_error",
+                    "Не удалось прочитать подтверждения разрешений",
+                    correlation_id,
+                )
+        elif path.startswith("/api/v1/modules/permission-review/acknowledgements/"):
+            acknowledgement_id = path.removeprefix(
+                "/api/v1/modules/permission-review/acknowledgements/"
+            )
+            if not ACKNOWLEDGEMENT_ID.fullmatch(acknowledgement_id):
+                self._error(HTTPStatus.NOT_FOUND, "not_found", "Ресурс не найден", correlation_id)
+                return
+            try:
+                record = self.runtime.store.module_permission_acknowledgement(
+                    acknowledgement_id, actor=actor
+                )
+                if record is None:
+                    self._error(HTTPStatus.NOT_FOUND, "not_found", "Ресурс не найден", correlation_id)
+                    return
+                self._json(HTTPStatus.OK, render_module_permission_acknowledgement(record))
+            except Exception:
+                LOG.exception("module permission acknowledgement read failed")
+                self._error(
+                    HTTPStatus.INTERNAL_SERVER_ERROR,
+                    "module_permission_acknowledgement_internal_error",
+                    "Не удалось прочитать подтверждение разрешений",
+                    correlation_id,
+                )
         elif path == "/api/v1/jobs":
             self._json(200, {"schema": "home-center.jobs.v1", "items": self.runtime.store.jobs(100)})
         elif path == "/api/v1/audit":
@@ -354,6 +405,93 @@ class RuntimeRequestHandler(BaseHTTPRequestHandler):
                 )
                 return
             self._json(HTTPStatus.OK, review.to_dict())
+            return
+        if path == "/api/v1/modules/permission-review/acknowledgements":
+            try:
+                payload = self._read_body(
+                    max_bytes=MAX_PERMISSION_ACKNOWLEDGEMENT_REQUEST_BYTES
+                )
+                draft = load_and_prepare_module_permission_acknowledgement(
+                    payload, actor=actor
+                )
+                record, created = self.runtime.store.record_module_permission_acknowledgement(
+                    actor=draft.actor,
+                    idempotency_key=draft.idempotency_key,
+                    request_hash=draft.request_hash,
+                    review_id=draft.review_id,
+                    scope_id=draft.scope_id,
+                    review=draft.review,
+                    created_at=draft.created_at,
+                    expires_at=draft.expires_at,
+                    correlation_id=correlation_id,
+                )
+                rendered = render_module_permission_acknowledgement(record)
+                self.runtime.store.audit(
+                    actor=actor,
+                    action="module.permission_review.acknowledge",
+                    target=record["acknowledgement_id"],
+                    outcome="accepted",
+                    correlation_id=correlation_id,
+                    details={
+                        "review_id": record["review_id"],
+                        "scope_id": record["scope_id"],
+                        "expires_at": record["expires_at"],
+                        "idempotent_replay": not created,
+                        "authorization_decision_persisted": False,
+                        "permission_grants_applied": False,
+                        "lifecycle_execution_enabled": False,
+                        "production_activation_enabled": False,
+                    },
+                )
+            except IdempotencyConflict:
+                self.runtime.store.audit(
+                    actor=actor,
+                    action="module.permission_review.acknowledge",
+                    target=self.runtime.config.node_id,
+                    outcome="denied",
+                    correlation_id=correlation_id,
+                    details={"reason": "idempotency_conflict"},
+                )
+                self._error(
+                    HTTPStatus.CONFLICT,
+                    "module_permission_acknowledgement_conflict",
+                    "Ключ идемпотентности уже использован",
+                    correlation_id,
+                )
+                return
+            except (ValueError, ModulePermissionAcknowledgementError):
+                self.runtime.store.audit(
+                    actor=actor,
+                    action="module.permission_review.acknowledge",
+                    target=self.runtime.config.node_id,
+                    outcome="denied",
+                    correlation_id=correlation_id,
+                    details={"reason": "request_rejected"},
+                )
+                self._error(
+                    HTTPStatus.BAD_REQUEST,
+                    "module_permission_acknowledgement_rejected",
+                    "Подтверждение ознакомления отклонено",
+                    correlation_id,
+                )
+                return
+            except Exception:
+                LOG.exception("module permission acknowledgement failed")
+                self._error(
+                    HTTPStatus.INTERNAL_SERVER_ERROR,
+                    "module_permission_acknowledgement_internal_error",
+                    "Внутренняя ошибка подтверждения разрешений",
+                    correlation_id,
+                )
+                return
+            self._json(
+                HTTPStatus.CREATED if created else HTTPStatus.OK,
+                {
+                    "schema": "home-center.module-permission-acknowledgement-result.v1",
+                    "idempotent_replay": not created,
+                    "acknowledgement": rendered,
+                },
+            )
             return
         if path.startswith("/api/v1/actions/"):
             action_id = path.removeprefix("/api/v1/actions/")

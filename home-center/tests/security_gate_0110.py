@@ -10,7 +10,10 @@ MODULE = ROOT / "product/control-plane/src/home_center/module_artifact.py"
 MANIFEST = ROOT / "product/control-plane/src/home_center/module_manifest.py"
 PLANNER = ROOT / "product/control-plane/src/home_center/module_admission.py"
 REVIEW = ROOT / "product/control-plane/src/home_center/module_permission_review.py"
+ACKNOWLEDGEMENT = ROOT / "product/control-plane/src/home_center/module_permission_acknowledgement.py"
 API = ROOT / "product/control-plane/src/home_center/api.py"
+STORE = ROOT / "product/control-plane/src/home_center/store.py"
+RUNTIME = ROOT / "product/control-plane/src/home_center/runtime.py"
 WEB_INDEX = ROOT / "product/web/static/index.html"
 WEB_SCRIPT = ROOT / "product/web/static/app.js"
 
@@ -34,12 +37,16 @@ def main() -> int:
     manifest = MANIFEST.read_text(encoding="utf-8")
     planner = PLANNER.read_text(encoding="utf-8")
     review = REVIEW.read_text(encoding="utf-8")
+    acknowledgement = ACKNOWLEDGEMENT.read_text(encoding="utf-8")
     api = API.read_text(encoding="utf-8")
+    store = STORE.read_text(encoding="utf-8")
+    runtime = RUNTIME.read_text(encoding="utf-8")
     web_index = WEB_INDEX.read_text(encoding="utf-8")
     web_script = WEB_SCRIPT.read_text(encoding="utf-8")
     tree = ast.parse(source, filename=str(MODULE))
     planner_tree = ast.parse(planner, filename=str(PLANNER))
     review_tree = ast.parse(review, filename=str(REVIEW))
+    acknowledgement_tree = ast.parse(acknowledgement, filename=str(ACKNOWLEDGEMENT))
 
     imports: set[str] = set()
     calls: set[str] = set()
@@ -70,6 +77,16 @@ def main() -> int:
             review_imports.add((node.module or "").split(".", 1)[0])
         elif isinstance(node, ast.Call):
             review_calls.add(dotted(node.func))
+
+    acknowledgement_imports: set[str] = set()
+    acknowledgement_calls: set[str] = set()
+    for node in ast.walk(acknowledgement_tree):
+        if isinstance(node, ast.Import):
+            acknowledgement_imports.update(alias.name.split(".", 1)[0] for alias in node.names)
+        elif isinstance(node, ast.ImportFrom):
+            acknowledgement_imports.add((node.module or "").split(".", 1)[0])
+        elif isinstance(node, ast.Call):
+            acknowledgement_calls.add(dotted(node.func))
 
     require(not imports.intersection({"http", "requests", "socket", "urllib"}), "network client imported")
     require(not calls.intersection({"eval", "exec", "os.system", "subprocess.Popen"}), "unsafe execution primitive")
@@ -155,6 +172,69 @@ def main() -> int:
     for forbidden_route in ("permission-review/approve", "permission-review/grant", "permission-review/install"):
         require(forbidden_route not in api + web_index + web_script, f"permission authority route enabled: {forbidden_route}")
 
+    require(
+        not acknowledgement_imports.intersection(
+            {"http", "os", "pathlib", "requests", "shutil", "socket", "subprocess", "tempfile", "urllib"}
+        ),
+        "permission acknowledgement I/O or execution module imported",
+    )
+    require(
+        not acknowledgement_calls.intersection(
+            {"eval", "exec", "open", "io.open", "os.system", "subprocess.Popen", "subprocess.run"}
+        ),
+        "permission acknowledgement I/O or execution primitive enabled",
+    )
+    for marker in (
+        "ACKNOWLEDGEMENT_TTL_SECONDS = 15 * 60",
+        "ACKNOWLEDGEMENT_PERSISTENCE_ENABLED = True",
+        "AUTHORIZATION_DECISION_PERSISTED = False",
+        "PERMISSION_GRANTS_APPLIED = False",
+        "LIFECYCLE_EXECUTION_ENABLED = False",
+        "PRODUCTION_ACTIVATION_ENABLED = False",
+        '"consumable": False',
+        "load_and_prepare_module_permission_acknowledgement",
+    ):
+        require(marker in acknowledgement, f"module acknowledgement guard missing: {marker}")
+    for marker in (
+        "module_permission_acknowledgements",
+        "BEGIN IMMEDIATE",
+        "UNIQUE(actor, idempotency_key)",
+        "module-permission-acknowledgement.v1\\0",
+        "verify_module_permission_acknowledgements",
+    ):
+        require(marker in store, f"module acknowledgement persistence guard missing: {marker}")
+    require(
+        "self.store.verify_module_permission_acknowledgements()" in runtime,
+        "module acknowledgement readiness integrity gate missing",
+    )
+    require(
+        'path == "/api/v1/modules/permission-review/acknowledgements"' in api,
+        "module acknowledgement collection API missing",
+    )
+    require(
+        'path.startswith("/api/v1/modules/permission-review/acknowledgements/")' in api,
+        "module acknowledgement item API missing",
+    )
+    require(
+        "MAX_PERMISSION_ACKNOWLEDGEMENT_REQUEST_BYTES" in api,
+        "module acknowledgement request body is not bounded",
+    )
+    require("moduleAcknowledgementHistory" in web_index, "module acknowledgement UI history missing")
+    require(
+        "function renderModulePermissionAcknowledgements()" in web_script,
+        "module acknowledgement UI renderer missing",
+    )
+    for forbidden_route in (
+        "acknowledgements/approve",
+        "acknowledgements/grant",
+        "acknowledgements/install",
+        "acknowledgements/consume",
+    ):
+        require(
+            forbidden_route not in api + web_index + web_script,
+            f"module acknowledgement authority route enabled: {forbidden_route}",
+        )
+
     contracts = {
         "module-manifest.v2.schema.json",
         "module-provenance.v1.schema.json",
@@ -164,6 +244,10 @@ def main() -> int:
         "module-admission-result.v1.schema.json",
         "module-permission-review.v1.schema.json",
         "module-permission-review-status.v1.schema.json",
+        "module-permission-acknowledgement-request.v1.schema.json",
+        "module-permission-acknowledgement.v1.schema.json",
+        "module-permission-acknowledgement-result.v1.schema.json",
+        "module-permission-acknowledgement-list.v1.schema.json",
     }
     present = {path.name for path in (ROOT / "contracts/modules").glob("*.json")}
     require(contracts <= present, "module supply-chain contract missing")

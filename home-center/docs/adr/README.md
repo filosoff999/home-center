@@ -38,6 +38,10 @@ Architecture Decision Record обязателен для решений, кот�
 13. [ADR-0015 — Deterministic module admission planner boundary](0015-module-admission-planner-boundary.md);
 14. [ADR-0016 — Read-only module permission review](0016-read-only-module-permission-review.md).
 
+## Proposed decisions
+
+1. [ADR-0017 — Expiring module permission acknowledgement boundary](0017-module-permission-acknowledgement-boundary.md).
+
 ## Следующие решения
 
 - node trust/enrollment protocol beyond the accepted two-node bootstrap;
@@ -53,3 +57,5 @@ ADR-0014 is accepted for the 0.11 development line only. It does not activate mo
 ADR-0015 is accepted for the 0.11 development line only. It adds a side-effect-free local admission decision and no topology, lifecycle, permission-grant or production authority.
 
 ADR-0016 is accepted for the 0.11 development line only. It adds an authenticated read-only review surface and no decision persistence, permission grant, lifecycle or production authority.
+
+ADR-0017 is proposed for the 0.11 development line only. It persists expiring review evidence with a non-consumable handoff reference and adds no authorization, grant, lifecycle or production authority.

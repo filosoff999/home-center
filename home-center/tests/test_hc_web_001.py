@@ -51,6 +51,22 @@ class HCWeb001RegressionTests(unittest.TestCase):
         self.assertIn(".node-row { grid-template-columns: 42px 1fr auto; }", css)
         self.assertIn("overflow-x: auto", css)
 
+    def test_module_acknowledgement_history_is_actor_scoped_and_non_authorizing(self) -> None:
+        html = (ROOT / "product/web/static/index.html").read_text(encoding="utf-8")
+        javascript = (ROOT / "product/web/static/app.js").read_text(encoding="utf-8")
+        self.assertIn('id="moduleAcknowledgementHistory"', html)
+        self.assertIn(
+            'api("/api/v1/modules/permission-review/acknowledgements?limit=20")',
+            javascript,
+        )
+        self.assertIn("function renderModulePermissionAcknowledgements()", javascript)
+        self.assertIn("history.authorization_decisions_enabled === false", javascript)
+        self.assertIn("item.lifecycle_handoff?.consumable === false", javascript)
+        self.assertIn("item.lifecycle_execution_enabled === false", javascript)
+        self.assertNotIn("permission-review/acknowledgements/approve", javascript)
+        self.assertNotIn("permission-review/acknowledgements/install", javascript)
+        self.assertNotIn("innerHTML", javascript)
+
 
 if __name__ == "__main__":
     unittest.main()

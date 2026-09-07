@@ -86,6 +86,30 @@ MIGRATIONS: tuple[tuple[int, str], ...] = (
         );
         """,
     ),
+    (
+        3,
+        """
+        CREATE TABLE IF NOT EXISTS module_permission_acknowledgements (
+            acknowledgement_id TEXT PRIMARY KEY,
+            review_id TEXT NOT NULL,
+            scope_id TEXT NOT NULL,
+            actor TEXT NOT NULL,
+            idempotency_key TEXT NOT NULL,
+            request_hash TEXT NOT NULL,
+            review_json TEXT NOT NULL,
+            state TEXT NOT NULL CHECK(state IN ('recorded', 'superseded')),
+            created_at TEXT NOT NULL,
+            expires_at TEXT NOT NULL,
+            correlation_id TEXT NOT NULL,
+            record_hash TEXT NOT NULL UNIQUE,
+            UNIQUE(actor, idempotency_key)
+        );
+        CREATE INDEX IF NOT EXISTS module_permission_acknowledgements_actor_created
+        ON module_permission_acknowledgements(actor, created_at DESC);
+        CREATE INDEX IF NOT EXISTS module_permission_acknowledgements_actor_scope
+        ON module_permission_acknowledgements(actor, scope_id, state);
+        """,
+    ),
 )
 
 
@@ -110,6 +134,7 @@ class StateStore:
         os.chmod(path, 0o640)
         self.set_meta("cluster_id", cluster_id)
         self.verify_audit_chain()
+        self.verify_module_permission_acknowledgements()
 
     def close(self) -> None:
         with self._lock:
@@ -444,6 +469,179 @@ class StateStore:
         if row is None:
             raise RuntimeError("action job transition failed")
         return self._decode_job(row)
+
+    def _module_acknowledgement_hash(self, record: dict[str, Any]) -> str:
+        material = canonical_json(
+            {
+                "schema": "home-center.module-permission-acknowledgement-record.v1",
+                "acknowledgement_id": record["acknowledgement_id"],
+                "review_id": record["review_id"],
+                "scope_id": record["scope_id"],
+                "actor": record["actor"],
+                "idempotency_key": record["idempotency_key"],
+                "request_hash": record["request_hash"],
+                "review": record["review"],
+                "state": record["state"],
+                "created_at": record["created_at"],
+                "expires_at": record["expires_at"],
+                "correlation_id": record["correlation_id"],
+            }
+        ).encode("utf-8")
+        return hmac.new(
+            self.audit_key,
+            b"module-permission-acknowledgement.v1\0" + material,
+            hashlib.sha256,
+        ).hexdigest()
+
+    def _decode_module_permission_acknowledgement(self, row: sqlite3.Row) -> dict[str, Any]:
+        try:
+            review = json.loads(row["review_json"])
+        except (json.JSONDecodeError, TypeError) as exc:
+            raise RuntimeError("module permission acknowledgement encoding failure") from exc
+        record = {
+            "acknowledgement_id": row["acknowledgement_id"],
+            "review_id": row["review_id"],
+            "scope_id": row["scope_id"],
+            "actor": row["actor"],
+            "idempotency_key": row["idempotency_key"],
+            "request_hash": row["request_hash"],
+            "review": review,
+            "state": row["state"],
+            "created_at": row["created_at"],
+            "expires_at": row["expires_at"],
+            "correlation_id": row["correlation_id"],
+        }
+        expected = self._module_acknowledgement_hash(record)
+        if not hmac.compare_digest(expected, row["record_hash"]):
+            raise RuntimeError("module permission acknowledgement integrity failure")
+        return record
+
+    def record_module_permission_acknowledgement(
+        self,
+        *,
+        actor: str,
+        idempotency_key: str,
+        request_hash: str,
+        review_id: str,
+        scope_id: str,
+        review: dict[str, Any],
+        created_at: str,
+        expires_at: str,
+        correlation_id: str,
+    ) -> tuple[dict[str, Any], bool]:
+        """Atomically persist or replay an actor-bound acknowledgement."""
+
+        acknowledgement_id = str(uuid.uuid4())
+        record = {
+            "acknowledgement_id": acknowledgement_id,
+            "review_id": review_id,
+            "scope_id": scope_id,
+            "actor": actor,
+            "idempotency_key": idempotency_key,
+            "request_hash": request_hash,
+            "review": review,
+            "state": "recorded",
+            "created_at": created_at,
+            "expires_at": expires_at,
+            "correlation_id": correlation_id,
+        }
+        with self._lock:
+            self._connection.execute("BEGIN IMMEDIATE")
+            try:
+                existing = self._connection.execute(
+                    """SELECT * FROM module_permission_acknowledgements
+                    WHERE actor=? AND idempotency_key=?""",
+                    (actor, idempotency_key),
+                ).fetchone()
+                if existing is not None:
+                    decoded = self._decode_module_permission_acknowledgement(existing)
+                    if decoded["request_hash"] != request_hash:
+                        raise IdempotencyConflict("module acknowledgement conflict")
+                    self._connection.commit()
+                    return decoded, False
+
+                superseded = self._connection.execute(
+                    """SELECT * FROM module_permission_acknowledgements
+                    WHERE actor=? AND scope_id=? AND state='recorded'""",
+                    (actor, scope_id),
+                ).fetchall()
+                for old_row in superseded:
+                    old_record = self._decode_module_permission_acknowledgement(old_row)
+                    old_record["state"] = "superseded"
+                    updated = self._connection.execute(
+                        """UPDATE module_permission_acknowledgements
+                        SET state='superseded', record_hash=?
+                        WHERE acknowledgement_id=? AND state='recorded'""",
+                        (
+                            self._module_acknowledgement_hash(old_record),
+                            old_record["acknowledgement_id"],
+                        ),
+                    )
+                    if updated.rowcount != 1:
+                        raise RuntimeError("module acknowledgement state changed concurrently")
+
+                self._connection.execute(
+                    """INSERT INTO module_permission_acknowledgements(
+                    acknowledgement_id,review_id,scope_id,actor,idempotency_key,request_hash,
+                    review_json,state,created_at,expires_at,correlation_id,record_hash
+                    ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)""",
+                    (
+                        acknowledgement_id,
+                        review_id,
+                        scope_id,
+                        actor,
+                        idempotency_key,
+                        request_hash,
+                        canonical_json(review),
+                        "recorded",
+                        created_at,
+                        expires_at,
+                        correlation_id,
+                        self._module_acknowledgement_hash(record),
+                    ),
+                )
+                row = self._connection.execute(
+                    "SELECT * FROM module_permission_acknowledgements WHERE acknowledgement_id=?",
+                    (acknowledgement_id,),
+                ).fetchone()
+                self._connection.commit()
+            except Exception:
+                self._connection.rollback()
+                raise
+        if row is None:
+            raise RuntimeError("module acknowledgement persistence failed")
+        return self._decode_module_permission_acknowledgement(row), True
+
+    def module_permission_acknowledgement(
+        self, acknowledgement_id: str, *, actor: str
+    ) -> dict[str, Any] | None:
+        with self._lock:
+            row = self._connection.execute(
+                """SELECT * FROM module_permission_acknowledgements
+                WHERE acknowledgement_id=? AND actor=?""",
+                (acknowledgement_id, actor),
+            ).fetchone()
+        return self._decode_module_permission_acknowledgement(row) if row is not None else None
+
+    def module_permission_acknowledgements(
+        self, *, actor: str, limit: int = 20
+    ) -> list[dict[str, Any]]:
+        bounded_limit = max(1, min(limit, 100))
+        with self._lock:
+            rows = self._connection.execute(
+                """SELECT * FROM module_permission_acknowledgements
+                WHERE actor=? ORDER BY created_at DESC, acknowledgement_id DESC LIMIT ?""",
+                (actor, bounded_limit),
+            ).fetchall()
+        return [self._decode_module_permission_acknowledgement(row) for row in rows]
+
+    def verify_module_permission_acknowledgements(self) -> None:
+        with self._lock:
+            rows = self._connection.execute(
+                "SELECT * FROM module_permission_acknowledgements ORDER BY acknowledgement_id"
+            ).fetchall()
+        for row in rows:
+            self._decode_module_permission_acknowledgement(row)
 
     def desired_state(self) -> list[dict[str, Any]]:
         with self._lock:

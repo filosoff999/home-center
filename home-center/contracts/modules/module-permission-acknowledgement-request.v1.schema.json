@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://home-center.local/contracts/modules/module-permission-acknowledgement-request.v1.schema.json",
+  "title": "Home Center module permission acknowledgement request v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "review_id", "acknowledgement", "idempotency_key", "admission_request"],
+  "properties": {
+    "schema": {"const": "home-center.module-permission-acknowledgement-request.v1"},
+    "review_id": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "acknowledgement": {"const": "permissions-reviewed"},
+    "idempotency_key": {
+      "type": "string",
+      "minLength": 8,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{7,127}$"
+    },
+    "admission_request": {"$ref": "module-admission-request.v1.schema.json"}
+  }
+}
