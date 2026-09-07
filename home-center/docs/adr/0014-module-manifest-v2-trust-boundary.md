@@ -1,4 +1,4 @@
-# ADR-0014 — ModuleManifest v2 trust boundary
+# ADR-0014 — ModuleManifest v2 and artifact trust boundary
 
 - **Status:** Proposed
 - **Date:** 2026-09-07
@@ -11,9 +11,9 @@ The existing `ModuleManifest v1` is a structural placeholder. It leaves nested o
 
 ## Decision
 
-Home Center 0.11.0 introduces a closed `ModuleManifest v2` and a separate deterministic semantic validator.
+Home Center 0.11.0 introduces a closed `ModuleManifest v2`, a deterministic semantic validator and an offline package-admission boundary.
 
-The manifest describes requirements and authority requested by a module. It never grants that authority and contains no executable command, arbitrary argument vector, filesystem path, service name or download URL. A future planner must independently compare the declaration with node capabilities, policy, topology and a cryptographically verified content-addressed artifact.
+The manifest describes requirements and authority requested by a module. It never grants that authority and contains no executable command, arbitrary argument vector, filesystem path, service name or download URL. A future planner must independently compare the declaration with node capabilities, policy and topology. The package-admission boundary may verify caller-supplied bytes and stage the exact archive under a digest-derived object key, but it cannot acquire, extract, install, activate or execute the package.
 
 Security-sensitive invariants include:
 
@@ -29,6 +29,17 @@ Security-sensitive invariants include:
 - every backup-required persistent resource is covered by required restore validation;
 - provenance threshold cannot exceed the declared unique signer set.
 
+Artifact-admission invariants include:
+
+- canonical DSSE payload and ECDSA P-256/SHA-256 threshold signatures from manifest-declared publisher keys;
+- public-key IDs equal the SHA-256 fingerprint of SubjectPublicKeyInfo DER;
+- publisher scope and active/retired/revoked key state are enforced fail closed;
+- a cycle-free manifest binding hashes canonical JSON after zeroing only `artifact.provenance.statement_sha256`;
+- the signed statement binds exact module, normalized manifest, artifact digest/size/media type and immutable build source identity;
+- archive members are bounded and traversal, aliases, links, devices, duplicate names and set-id modes are rejected;
+- exact bytes are published without overwrite under `sha256/<prefix>/<digest>/artifact.tar.gz` using no-follow directory traversal, exclusive temporary creation, atomic hard-link publication and fsync;
+- an existing object is accepted only when its exact digest and byte size match.
+
 ## Alternatives considered
 
 ### Extend v1 in place
@@ -43,9 +54,13 @@ Rejected because catalog data must not become a generic privileged execution sur
 
 Rejected because schema/semantic acceptance must precede package acquisition, cryptographic verification, policy review, sandboxing and lifecycle execution.
 
+### Put the final statement digest and final manifest digest inside each other
+
+Rejected because it creates a cryptographic hash cycle. The versioned manifest-binding algorithm zeroes only the statement digest before canonical hashing; the final manifest still pins the signed statement digest.
+
 ## Security and data impact
 
-The increment is read-only and production-inert. It processes only bounded manifest bytes and returns a non-secret immutable identity. It does not access the network, filesystem, services, credentials or production nodes.
+The increments are production-inert. Validation processes bounded caller-supplied bytes. Staging writes only verified archive bytes beneath an explicit pre-provisioned object-store root; the source path is never caller-controlled and archives are never extracted. The verifier uses a fixed OpenSSL binary and public keys only. It does not access the network, services, private credentials or production nodes.
 
 ## Compatibility and migration
 
@@ -53,11 +68,11 @@ The increment is read-only and production-inert. It processes only bounded manif
 
 ## Failure and recovery
 
-Any unknown field, malformed type/value, duplicate key/identity, inconsistent relationship or insufficient provenance declaration fails closed with a bounded reason code. Validation has no side effects, so recovery is correction and revalidation of a new immutable manifest.
+Any unknown field, malformed type/value, duplicate key/identity, inconsistent relationship, invalid signature, unsafe archive or object collision fails closed with a bounded reason code. All cryptographic and archive checks complete before staging. Interrupted temporary writes are unpublished; replay is idempotent only for exact existing bytes.
 
 ## Consequences
 
-This creates a stable input for later content-addressed staging and dependency planning while keeping execution disabled. The contract is intentionally stricter than the current placeholder and may require explicit publisher work.
+This creates a stable input for dependency planning and a verified immutable artifact store while keeping package acquisition, extraction and execution disabled. The contract is intentionally stricter than the current placeholder and requires explicit publisher signing work.
 
 ## Validation and evidence
 
@@ -66,4 +81,7 @@ This creates a stable input for later content-addressed staging and dependency p
 - duplicate/unknown/invalid identity negative tests;
 - dependency/conflict/permission/action semantic tests;
 - backup/lifecycle/provenance negative tests;
+- DSSE tamper, threshold, key-policy and normalized-manifest binding tests;
+- archive traversal/link/type and object-store collision tests;
+- atomic/idempotent staging tests;
 - Python 3.12/3.14 and reproducible artifact CI.
