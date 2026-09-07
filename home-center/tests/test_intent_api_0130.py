@@ -56,6 +56,25 @@ def _credential() -> dict[str, object]:
     }
 
 
+def _capability(*, node_id: str, name: str, role: str, address: str, cpu_count: int, memory_bytes: int) -> dict[str, object]:
+    return {
+        "schema": "home-center.node-capability.v1",
+        "observed_at": "2026-09-07T13:00:00Z",
+        "node": {
+            "id": node_id,
+            "name": name,
+            "role": role,
+            "address": address,
+            "machine_identity_hash": "a" * 24,
+        },
+        "operating_system": {"id": "ubuntu", "version": "26.04", "kernel": "test", "architecture": "x86_64"},
+        "hardware": {"cpu_count": cpu_count, "memory_bytes": memory_bytes},
+        "storage": {"root": {"total_bytes": 1000, "used_bytes": 400, "free_bytes": 500}},
+        "services": {},
+        "capabilities": ["inventory.v1", "health.v1"],
+    }
+
+
 class IntentApi0130Tests(unittest.TestCase):
     def setUp(self) -> None:
         self.tmp = tempfile.TemporaryDirectory()
@@ -138,6 +157,15 @@ class IntentApi0130Tests(unittest.TestCase):
                 headers=headers,
                 data=json.dumps(body).encode("utf-8"),
             ),
+            timeout=3,
+        )
+
+    def _get(self, path: str, *, authenticated: bool = True):
+        headers = {"Accept": "application/json"}
+        if authenticated:
+            headers["Cookie"] = self.cookie
+        return urllib.request.urlopen(
+            urllib.request.Request(self.base + path, method="GET", headers=headers),
             timeout=3,
         )
 
@@ -238,6 +266,44 @@ class IntentApi0130Tests(unittest.TestCase):
         self.assertEqual(rejected.exception.code, 403)
         error = json.loads(rejected.exception.read())
         self.assertEqual(error["error"]["code"], "cross_origin_request_rejected")
+
+    def test_resource_snapshot_requires_auth_and_returns_only_trusted_capacity(self) -> None:
+        self.runtime.store.upsert_node(
+            _capability(
+                node_id="hm-dm-dc01",
+                name="dc01",
+                role="leader",
+                address="127.0.0.1",
+                cpu_count=4,
+                memory_bytes=8 * 1024**3,
+            ),
+            "ready",
+        )
+        self.runtime.store.upsert_node(
+            _capability(
+                node_id="hm-dm-dc02",
+                name="dc02",
+                role="standby",
+                address="127.0.0.2",
+                cpu_count=8,
+                memory_bytes=16 * 1024**3,
+            ),
+            "ready",
+        )
+        with self.assertRaises(urllib.error.HTTPError) as unauthenticated:
+            self._get("/api/v1/resources", authenticated=False)
+        self.assertEqual(unauthenticated.exception.code, 401)
+
+        with self._get("/api/v1/resources") as response:
+            value = json.load(response)
+        self.assertEqual(value["schema"], "home-center.resource-snapshot.v1")
+        self.assertTrue(value["planning_ready"])
+        self.assertFalse(value["production_mutation_enabled"])
+        self.assertEqual(value["totals"]["cpu_count"], 12)
+        self.assertEqual(value["totals"]["memory_bytes"], 24 * 1024**3)
+        encoded = json.dumps(value, sort_keys=True)
+        self.assertNotIn("127.0.0.1", encoded)
+        self.assertNotIn("machine_identity_hash", encoded)
 
 
 if __name__ == "__main__":

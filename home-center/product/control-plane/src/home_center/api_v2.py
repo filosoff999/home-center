@@ -14,6 +14,7 @@ from .api import RuntimeRequestHandler
 from .core.intent_engine import IntentEngineError, IntentRequest
 from .intent_service import IntentAuthorizationError
 from .release_identity import ReleaseIdentityError, current_release_identity
+from .resource_snapshot import ResourceSnapshotError
 from .tls_status import _certificate_profile, _chain_valid, status as tls_status
 
 
@@ -99,6 +100,21 @@ class RuntimeRequestHandlerV2(RuntimeRequestHandler):
                     "role": self.runtime.config.role,
                 },
             )
+            return
+        if path == "/api/v1/resources":
+            if not self._require_actor(correlation_id):
+                return
+            try:
+                value = self.runtime.resource_snapshot()
+            except ResourceSnapshotError:
+                self._error(
+                    HTTPStatus.SERVICE_UNAVAILABLE,
+                    "resource_snapshot_unavailable",
+                    "Снимок ресурсов временно недоступен",
+                    correlation_id,
+                )
+                return
+            self._json(HTTPStatus.OK, value)
             return
         if path == "/api/v1/tls/ca.crt":
             try:
