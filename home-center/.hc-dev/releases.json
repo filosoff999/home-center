@@ -42,7 +42,7 @@
         {"id": "placement", "title": "Deterministic Placement", "weight": 1, "evidence": [{"kind": "pr", "number": 111, "state": "merged"}]},
         {"id": "reservation", "title": "Reservation / Scheduler Boundary", "weight": 1, "evidence": [{"kind": "pr", "number": 127, "state": "merged"}]},
         {"id": "providers", "title": "Provider Execution Framework", "weight": 1, "evidence": [{"kind": "pr", "number": 135, "state": "merged"}]},
-        {"id": "acceptance", "title": "Acceptance / Release Qualification", "weight": 1, "evidence": []}
+        {"id": "acceptance", "title": "Acceptance / Release Qualification", "weight": 1, "evidence": [{"kind": "pr", "number": 140, "state": "merged"}]}
       ]
     },
     {
@@ -56,7 +56,7 @@
         {"id": "home-lab-manager", "title": "Home Lab Manager", "weight": 1, "evidence": [{"kind": "pr", "number": 114, "state": "merged"}]},
         {"id": "certificate-lifecycle", "title": "Certificate Lifecycle", "weight": 1, "evidence": [{"kind": "pr", "number": 114, "state": "merged"}]},
         {"id": "ui-expansion", "title": "UI Expansion", "weight": 1, "evidence": [{"kind": "pr", "number": 137, "state": "merged"}]},
-        {"id": "acceptance-tests", "title": "Acceptance Tests", "weight": 1, "evidence": []}
+        {"id": "acceptance-tests", "title": "Acceptance Tests", "weight": 1, "evidence": [{"kind": "pr", "number": 141, "state": "merged"}]}
       ]
     }
   ]
