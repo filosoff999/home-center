@@ -158,6 +158,17 @@ class ModuleManifestTests(unittest.TestCase):
         value["actions"][0]["idempotent"] = False
         self.assert_rejected(value, "mutation_action_not_idempotent")
 
+    def test_runtime_limits_match_contract_and_text_is_log_safe(self) -> None:
+        value = valid_manifest()
+        value["actions"] = value["actions"][:4]
+        self.assert_rejected(value, "actions_rejected")
+        value = valid_manifest()
+        value["health"] = []
+        self.assert_rejected(value, "health_rejected")
+        value = valid_manifest()
+        value["network"]["inbound"][0]["purpose"] = "line one\nline two"
+        self.assert_rejected(value, "network_purpose_rejected")
+
     def test_backup_must_cover_every_declared_persistent_resource(self) -> None:
         value = valid_manifest()
         value["backup"]["data_ids"] = []
@@ -173,6 +184,9 @@ class ModuleManifestTests(unittest.TestCase):
         value = valid_manifest()
         value["lifecycle"]["remove"]["data_policy"] = "wipe"
         self.assert_rejected(value, "lifecycle_remove_rejected")
+        value = valid_manifest()
+        value["actions"][0]["risk"] = "read-only"
+        self.assert_rejected(value, "lifecycle_action_risk_rejected")
 
     def test_artifact_identity_and_threshold_are_bounded(self) -> None:
         value = valid_manifest()
