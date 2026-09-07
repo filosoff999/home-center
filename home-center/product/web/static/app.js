@@ -1,6 +1,6 @@
 "use strict";
 
-const state = { overview: null, profile: null, backups: [], audit: [], tls: null, authProviders: null, currentView: "overview" };
+const state = { overview: null, profile: null, backups: [], audit: [], tls: null, authProviders: null, session: null, currentView: "overview" };
 const LOGIN_ERROR_MESSAGES = Object.freeze({
   invalid_credentials: "Неверное имя пользователя или пароль.",
   too_many_requests: "Слишком много попыток входа. Повторите позже.",
@@ -77,12 +77,14 @@ async function optionalApi(path) {
 
 function showLogin() {
   $("#loginLayer").hidden = false;
+  $("#loginError").classList.remove("success");
   $("#loginError").textContent = "";
   window.setTimeout(() => $("#usernameInput").focus(), 0);
 }
 
 function hideLogin() {
   $("#loginLayer").hidden = true;
+  $("#loginError").classList.remove("success");
   $("#loginError").textContent = "";
   $("#loginForm").reset();
 }
@@ -114,6 +116,7 @@ async function login(event) {
   const passwordInput = $("#passwordInput");
   const password = passwordInput.value;
   button.disabled = true;
+  $("#loginError").classList.remove("success");
   $("#loginError").textContent = "";
   try {
     await authenticate(provider, username, password);
@@ -135,6 +138,54 @@ async function logout() {
   finally { showLogin(); }
 }
 
+async function changeLocalAdminPassword(event) {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const button = form.querySelector("button");
+  const currentInput = $("#currentAdminPassword");
+  const newInput = $("#newAdminPassword");
+  const confirmInput = $("#confirmAdminPassword");
+  const message = $("#passwordChangeMessage");
+  const currentPassword = currentInput.value;
+  const newPassword = newInput.value;
+  const confirmation = confirmInput.value;
+  message.className = "form-message";
+  message.textContent = "";
+  if (newPassword !== confirmation) {
+    newInput.value = "";
+    confirmInput.value = "";
+    message.classList.add("error");
+    message.textContent = "Новый пароль и подтверждение не совпадают.";
+    newInput.focus();
+    return;
+  }
+  button.disabled = true;
+  try {
+    await api("/api/v1/auth/local-admin/password/change", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        schema: "home-center.local-admin-password-change.v1",
+        current_password: currentPassword,
+        new_password: newPassword,
+      }),
+    });
+    form.reset();
+    try { await api("/api/v1/session/logout", { method: "POST" }); } catch (_) { /* lock locally */ }
+    showLogin();
+    $("#loginError").classList.add("success");
+    $("#loginError").textContent = "Пароль изменён. Войдите с новым паролем.";
+  } catch (error) {
+    message.classList.add("error");
+    message.textContent = error.message;
+  } finally {
+    currentInput.value = "";
+    newInput.value = "";
+    confirmInput.value = "";
+    button.disabled = false;
+  }
+}
+
 function switchView(view) {
   state.currentView = view;
   const titles = {
@@ -145,6 +196,7 @@ function switchView(view) {
     backups: ["Восстановление", "Резервные копии"],
     jobs: ["Оркестрация", "Задания"],
     audit: ["Evidence", "Аудит"],
+    settings: ["Локальная учётная запись", "Настройки"],
   };
   if (!titles[view]) return;
   $$(".nav-item").forEach((item) => item.classList.toggle("active", item.dataset.view === view));
@@ -329,10 +381,10 @@ async function refresh() {
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
-  $("#loginForm").addEventListener("submit", login); $("#logoutButton").addEventListener("click", logout); $("#mobileLogoutButton").addEventListener("click", logout); $("#refreshButton").addEventListener("click", refresh);
+  $("#loginForm").addEventListener("submit", login); $("#passwordChangeForm").addEventListener("submit", changeLocalAdminPassword); $("#logoutButton").addEventListener("click", logout); $("#mobileLogoutButton").addEventListener("click", logout); $("#refreshButton").addEventListener("click", refresh);
   $$(".nav-item").forEach((item)=>item.addEventListener("click",()=>switchView(item.dataset.view)));
   $$("[data-go]").forEach((item)=>item.addEventListener("click",()=>switchView(item.dataset.go)));
   await loadAuthProviders();
-  try { await api("/api/v1/session"); hideLogin(); await refresh(); } catch (error) { if (error.message !== "authentication_required") showLogin(); }
+  try { state.session = await api("/api/v1/session"); hideLogin(); await refresh(); } catch (error) { if (error.message !== "authentication_required") showLogin(); }
   setInterval(()=>{ if ($("#loginLayer").hidden) refresh(); },15000);
 });

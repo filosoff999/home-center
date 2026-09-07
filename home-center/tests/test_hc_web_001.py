@@ -34,6 +34,26 @@ class HCWeb001RegressionTests(unittest.TestCase):
         self.assertRegex(javascript, re.compile(r"hideLogin\(\);\s*await refresh\(\);", re.DOTALL))
         self.assertRegex(javascript, re.compile(r"async function logout\(\).*?showLogin\(\);", re.DOTALL))
 
+    def test_password_change_form_clears_secrets_and_uses_closed_api(self) -> None:
+        index = (ROOT / "product/web/static/index.html").read_text(encoding="utf-8")
+        javascript = (ROOT / "product/web/static/app.js").read_text(encoding="utf-8")
+        for marker in (
+            'id="passwordChangeForm"',
+            'autocomplete="current-password"',
+            'autocomplete="new-password"',
+            'minlength="8"',
+        ):
+            self.assertIn(marker, index)
+        self.assertIn('/api/v1/auth/local-admin/password/change', javascript)
+        self.assertIn('schema: "home-center.local-admin-password-change.v1"', javascript)
+        self.assertIn('currentInput.value = "";', javascript)
+        self.assertIn('newInput.value = "";', javascript)
+        self.assertIn('confirmInput.value = "";', javascript)
+        self.assertNotIn("localStorage", javascript)
+        self.assertNotIn("sessionStorage", javascript)
+        self.assertNotIn("console.", javascript)
+
 
 if __name__ == "__main__":
     unittest.main()
+

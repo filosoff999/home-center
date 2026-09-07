@@ -18,8 +18,12 @@ from home_center.privileged_helper import (
     _classify_bounded_action_failure,
     _receive_request,
     _sha256,
+    _execute_secret_request,
+    _validate_policy,
+    _validate_secret_request,
     _validate_request,
 )
+import home_center.privileged_helper_v2  # noqa: E402,F401
 
 
 class HelperTests(unittest.TestCase):
@@ -50,6 +54,53 @@ class HelperTests(unittest.TestCase):
             "params": {},
             "nonce": "0123456789abcdef0123456789abcdef",
         }
+
+    def secret_req(self) -> dict:
+        return {
+            "schema": "home-center.helper.secret-request.v1",
+            "request_id": "local-admin-0001",
+            "action": "local-admin.password.rotate.v1",
+            "params": {
+                "username": "admin",
+                "current_password": "current password 17",
+                "new_password": "new password 42",
+            },
+            "nonce": "0123456789abcdef0123456789abcdef",
+        }
+
+    def test_secret_rotation_is_allowlisted_but_never_hashed_or_persisted(self) -> None:
+        request = self.secret_req()
+        policy = {
+            "schema": "home-center.helper.policy.v1",
+            "callers": {"home-center": ["local-admin.password.rotate"]},
+            "enabled_actions": ["local-admin.password.rotate.v1"],
+        }
+        _validate_policy(policy)
+        _validate_secret_request(request)
+        group = mock.Mock(pw_gid=1234)
+        with (
+            mock.patch("home_center.privileged_helper.os.geteuid", return_value=0),
+            mock.patch("home_center.privileged_helper.pwd.getpwnam", return_value=group),
+            mock.patch("home_center.privileged_helper.LocalAdminCredentialRotator") as rotator,
+            mock.patch("home_center.privileged_helper._sha256") as request_hash,
+        ):
+            result = _execute_secret_request(request, caller_uid=1234, caller_name="home-center", policy=policy)
+        request_hash.assert_not_called()
+        rotator.return_value.rotate.assert_called_once_with(
+            "admin", "current password 17", "new password 42"
+        )
+        self.assertEqual(result["status"], "succeeded")
+        serialized = json.dumps(result)
+        self.assertNotIn("current password", serialized)
+        self.assertNotIn("new password", serialized)
+        self.assertNotIn("request_sha256", result)
+
+    def test_secret_request_rejects_generic_path_and_command_fields(self) -> None:
+        for field, value in (("path", "/tmp/file"), ("command", ["/bin/sh"])):
+            request = self.secret_req()
+            request["params"][field] = value
+            with self.subTest(field=field), self.assertRaises(HelperError):
+                _validate_secret_request(request)
 
     def test_probe_and_exact_replay(self) -> None:
         engine = HelperEngine(self.policy, self.state)
@@ -338,3 +389,4 @@ class HelperTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+

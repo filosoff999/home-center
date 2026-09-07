@@ -16,6 +16,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from .local_admin_rotation import LocalAdminCredentialRotator, LocalAdminRotationError
+
 REQUEST_SCHEMA = "home-center.helper.request.v1"
 RESULT_SCHEMA = "home-center.helper.result.v1"
 POLICY_SCHEMA = "home-center.helper.policy.v1"
@@ -54,6 +56,7 @@ ACTIONS: dict[str, Action] = {
         timeout_seconds=5,
     ),
 }
+SECRET_ACTIONS: dict[str, str] = {}
 PERMISSIONS = frozenset(action.permission for action in ACTIONS.values())
 
 
@@ -137,7 +140,7 @@ def _validate_policy(policy: dict[str, Any]) -> None:
         if len(set(permissions)) != len(permissions):
             raise HelperError("duplicate_policy_permission")
     enabled = policy.get("enabled_actions")
-    if not isinstance(enabled, list) or any(item not in ACTIONS for item in enabled):
+    if not isinstance(enabled, list) or any(item not in ACTIONS and item not in SECRET_ACTIONS for item in enabled):
         raise HelperError("invalid_enabled_actions")
     if len(set(enabled)) != len(enabled):
         raise HelperError("duplicate_enabled_action")
@@ -163,6 +166,103 @@ def _validate_request(request: dict[str, Any]) -> None:
         raise HelperError("unknown_action")
     if request.get("params") != {}:
         raise HelperError("invalid_action_params")
+
+
+def _validate_secret_request(request: dict[str, Any]) -> None:
+    if set(request) != {"schema", "request_id", "action", "params", "nonce"}:
+        raise HelperError("invalid_secret_request_keys")
+    if request.get("schema") != "home-center.helper.secret-request.v1":
+        raise HelperError("invalid_secret_request_schema")
+    request_id = request.get("request_id")
+    if (
+        not isinstance(request_id, str)
+        or not 8 <= len(request_id) <= 96
+        or any(ch not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789._-" for ch in request_id)
+    ):
+        raise HelperError("invalid_secret_request_id")
+    nonce = request.get("nonce")
+    if not isinstance(nonce, str) or len(nonce) != 32 or any(ch not in "0123456789abcdef" for ch in nonce):
+        raise HelperError("invalid_secret_request_nonce")
+    if request.get("action") != "local-admin.password.rotate.v1":
+        raise HelperError("unknown_secret_action")
+    params = request.get("params")
+    if not isinstance(params, dict) or set(params) != {"username", "current_password", "new_password"}:
+        raise HelperError("invalid_secret_action_params")
+    if not isinstance(params.get("username"), str):
+        raise HelperError("invalid_secret_username")
+    for name in ("current_password", "new_password"):
+        value = params.get(name)
+        if not isinstance(value, str):
+            raise HelperError("invalid_secret_password")
+        try:
+            encoded = value.encode("utf-8", errors="strict")
+        except UnicodeEncodeError as exc:
+            raise HelperError("invalid_secret_password") from exc
+        # JSON contracts bound character count. Keep the transport bound large
+        # enough for 256 UTF-8 characters and let the credential layer enforce
+        # its stricter byte policy with a typed, non-secret rejection.
+        if not 1 <= len(encoded) <= 1024:
+            raise HelperError("invalid_secret_password")
+
+
+def _secret_result(request: dict[str, Any], *, status: str, reason: str | None) -> dict[str, Any]:
+    return {
+        "schema": "home-center.helper.secret-result.v1",
+        "request_id": request["request_id"],
+        "action": request["action"],
+        "status": status,
+        "reason": reason,
+        "completed_at": _utc_now(),
+    }
+
+
+def _execute_secret_request(
+    request: dict[str, Any],
+    *,
+    caller_uid: int,
+    caller_name: str,
+    policy: dict[str, Any],
+) -> dict[str, Any]:
+    """Execute a credential mutation without durable request hashing or capture."""
+
+    _validate_secret_request(request)
+    action = request["action"]
+    permission = SECRET_ACTIONS.get(action)
+    caller_permissions = policy["callers"].get(caller_name)
+    if caller_permissions is None:
+        return _secret_result(request, status="rejected", reason="caller_not_allowed")
+    if action not in policy["enabled_actions"]:
+        return _secret_result(request, status="rejected", reason="action_disabled")
+    if permission is None or permission not in caller_permissions:
+        return _secret_result(request, status="rejected", reason="permission_denied")
+    if os.geteuid() != 0 or caller_uid == 0:
+        return _secret_result(request, status="rejected", reason="secret_action_context_rejected")
+    try:
+        group = pwd.getpwnam("home-center").pw_gid
+        params = request["params"]
+        rotator = LocalAdminCredentialRotator(
+            Path("/etc/home-center/secrets/local-admin.json"),
+            expected_uid=0,
+            expected_gid=group,
+            expected_mode=0o640,
+            expected_directory_uid=0,
+            expected_directory_gid=group,
+            expected_directory_mode=0o750,
+        )
+        rotator.rotate(params["username"], params["current_password"], params["new_password"])
+    except LocalAdminRotationError as exc:
+        policy_rejections = {
+            "current_password_invalid",
+            "password_too_short",
+            "password_letter_required",
+            "password_digit_required",
+            "password_rejected",
+        }
+        status = "rejected" if exc.code in policy_rejections else "failed"
+        return _secret_result(request, status=status, reason=exc.code)
+    except (KeyError, OSError):
+        return _secret_result(request, status="failed", reason="credential_rotation_unavailable")
+    return _secret_result(request, status="succeeded", reason=None)
 
 
 def _bounded_text(value: bytes | str | None) -> str:
@@ -618,7 +718,15 @@ def serve(socket_path: Path, policy_path: Path, state_path: Path) -> None:
                     request = json.loads(line.decode("utf-8"))
                     if not isinstance(request, dict):
                         raise HelperError("request_root_must_be_object")
-                    result = engine.execute(request, caller_uid=uid, caller_name=name)
+                    if request.get("schema") == "home-center.helper.secret-request.v1":
+                        result = _execute_secret_request(
+                            request,
+                            caller_uid=uid,
+                            caller_name=name,
+                            policy=engine.policy,
+                        )
+                    else:
+                        result = engine.execute(request, caller_uid=uid, caller_name=name)
                 except (HelperError, UnicodeDecodeError, json.JSONDecodeError, KeyError, ValueError, TimeoutError):
                     result = _protocol_rejection("invalid_request")
                 except Exception:

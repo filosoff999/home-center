@@ -26,6 +26,7 @@ from .actions import (
 from .ad_auth import AdAuthError
 from .auth import SessionManager
 from .external_access import ExternalAccessRejected, ExternalRequestContext
+from .helper_client import HelperClientError
 from .local_admin_auth import LocalAdminAuthError
 from .runtime import Runtime
 from .util import utc_now
@@ -324,6 +325,9 @@ class RuntimeRequestHandler(BaseHTTPRequestHandler):
         actor = self._require_actor(correlation_id)
         if not actor:
             return
+        if path == "/api/v1/auth/local-admin/password/change":
+            self._change_local_admin_password(actor, correlation_id, context)
+            return
         if path.startswith("/api/v1/actions/"):
             action_id = path.removeprefix("/api/v1/actions/")
             try:
@@ -370,6 +374,114 @@ class RuntimeRequestHandler(BaseHTTPRequestHandler):
             )
             return
         self._error(405, "typed_action_not_available", "Изменение не входит в эту сертифицированную версию", correlation_id)
+
+    def _change_local_admin_password(
+        self,
+        actor: str,
+        correlation_id: str,
+        context: ExternalRequestContext,
+    ) -> None:
+        if actor != f"local-admin:{self.runtime.local_admin.username}":
+            self.runtime.store.audit(
+                actor=actor,
+                action="local-admin.password.change",
+                target=self.runtime.config.node_id,
+                outcome="denied",
+                correlation_id=correlation_id,
+                details={"reason": "local_admin_session_required", **self._origin_details(context)},
+            )
+            self._error(
+                HTTPStatus.FORBIDDEN,
+                "local_admin_session_required",
+                "Требуется локальная учётная запись администратора",
+                correlation_id,
+            )
+            return
+        try:
+            body = self._read_json(max_bytes=2048)
+            if set(body) != {"schema", "current_password", "new_password"}:
+                raise ValueError("invalid password change shape")
+            if body.get("schema") != "home-center.local-admin-password-change.v1":
+                raise ValueError("invalid password change schema")
+            current_password = body.get("current_password")
+            new_password = body.get("new_password")
+            if not isinstance(current_password, str) or not isinstance(new_password, str):
+                raise ValueError("invalid password change types")
+        except (ValueError, TypeError, json.JSONDecodeError):
+            self.runtime.store.audit(
+                actor=actor,
+                action="local-admin.password.change",
+                target=self.runtime.config.node_id,
+                outcome="denied",
+                correlation_id=correlation_id,
+                details={"reason": "invalid_request", **self._origin_details(context)},
+            )
+            self._error(
+                HTTPStatus.BAD_REQUEST,
+                "invalid_password_change_request",
+                "Некорректный запрос смены пароля",
+                correlation_id,
+            )
+            return
+        try:
+            self.runtime.change_local_admin_password(current_password, new_password)
+        except HelperClientError as exc:
+            reason = str(exc)
+            policy_errors = {
+                "password_too_short": "Пароль должен содержать не менее 8 символов",
+                "password_letter_required": "Пароль должен содержать хотя бы одну букву",
+                "password_digit_required": "Пароль должен содержать хотя бы одну цифру",
+                "password_rejected": "Пароль не соответствует политике безопасности",
+            }
+            if reason == "current_password_invalid":
+                status, code, message = HTTPStatus.FORBIDDEN, reason, "Текущий пароль указан неверно"
+            elif reason in policy_errors:
+                status, code, message = HTTPStatus.BAD_REQUEST, reason, policy_errors[reason]
+            else:
+                status = HTTPStatus.SERVICE_UNAVAILABLE
+                code, message = "credential_rotation_unavailable", "Смена пароля временно недоступна"
+            self.runtime.store.audit(
+                actor=actor,
+                action="local-admin.password.change",
+                target=self.runtime.config.node_id,
+                outcome="denied" if status in {HTTPStatus.BAD_REQUEST, HTTPStatus.FORBIDDEN} else "failed",
+                correlation_id=correlation_id,
+                details={"reason": code, "policy": "local-admin-password-v1", **self._origin_details(context)},
+            )
+            self._error(status, code, message, correlation_id)
+            return
+        except LocalAdminAuthError:
+            self.runtime.store.audit(
+                actor=actor,
+                action="local-admin.password.change",
+                target=self.runtime.config.node_id,
+                outcome="failed",
+                correlation_id=correlation_id,
+                details={"reason": "credential_reload_failed", **self._origin_details(context)},
+            )
+            self._error(
+                HTTPStatus.SERVICE_UNAVAILABLE,
+                "credential_rotation_unavailable",
+                "Смена пароля временно недоступна",
+                correlation_id,
+            )
+            return
+        self.runtime.store.audit(
+            actor=actor,
+            action="local-admin.password.change",
+            target=self.runtime.config.node_id,
+            outcome="accepted",
+            correlation_id=correlation_id,
+            details={"policy": "local-admin-password-v1", **self._origin_details(context)},
+        )
+        self._json(
+            HTTPStatus.OK,
+            {
+                "schema": "home-center.local-admin-password-change-result.v1",
+                "status": "changed",
+                "node_id": self.runtime.config.node_id,
+            },
+        )
 
     def do_PUT(self) -> None:  # noqa: N802
         self._reject_mutation()

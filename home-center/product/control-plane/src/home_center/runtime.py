@@ -14,6 +14,7 @@ from .ad_auth import AdAuthenticator
 from .auth import LoginRateLimiter, SessionManager
 from .config import Config
 from .external_access import ExternalAccessPolicy, ExternalRequestRateLimiter
+from .helper_client import HelperClientError, rotate_local_admin_password
 from .local_admin_auth import LocalAdminCredentialStore
 from .reconcile import Reconciler
 from .store import StateStore
@@ -34,6 +35,7 @@ class Runtime:
             expected_gid=os.getegid(),
             expected_mode=0o640,
         )
+        self.local_admin_password_rotator = rotate_local_admin_password
         self.sessions = SessionManager(config.session_key_file)
         self.login_limiter = LoginRateLimiter()
         self.ad_auth = AdAuthenticator(config.ad_auth)
@@ -46,6 +48,24 @@ class Runtime:
         self.external_request_limiter = ExternalRequestRateLimiter()
         self.actions = ActionRegistry(config.node_id, self.store)
         self.reconciler = Reconciler(config, self.store)
+
+    def change_local_admin_password(self, current_password: str, new_password: str) -> None:
+        """Rotate through the root helper, then reload only validated local state."""
+
+        result = self.local_admin_password_rotator(
+            self.local_admin.username,
+            current_password,
+            new_password,
+        )
+        if result.get("status") != "succeeded":
+            reason = result.get("reason")
+            raise HelperClientError(reason if isinstance(reason, str) else "credential_rotation_failed")
+        self.local_admin = LocalAdminCredentialStore(
+            self.config.local_admin_credentials_file,
+            expected_uid=self.local_admin.expected_uid,
+            expected_gid=self.local_admin.expected_gid,
+            expected_mode=self.local_admin.expected_mode,
+        )
 
     def start(self) -> None:
         self.store.audit(

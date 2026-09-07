@@ -17,7 +17,7 @@
 * { box-sizing: border-box; }
 html { min-height: 100%; background: var(--bg); }
 body { margin: 0; min-height: 100vh; color: var(--text); background: radial-gradient(circle at 76% 5%, rgba(57, 128, 177, .12), transparent 34%), linear-gradient(145deg, #080e19, #0a1220 60%, #090f19); }
-button, input { font: inherit; }
+button, input, select { font: inherit; }
 button { color: inherit; }
 .ambient { position: fixed; pointer-events: none; filter: blur(90px); opacity: .16; border-radius: 50%; }
 .ambient-a { width: 360px; height: 360px; background: #25d7a1; left: 12%; top: 12%; }
@@ -161,6 +161,14 @@ td { padding: 13px 12px; border-top: 1px solid rgba(255,255,255,.055); vertical-
 .primary-button { width: 100%; margin-top: 12px; padding: 13px; border: 0; border-radius: 11px; color: #07131b; background: linear-gradient(90deg,#66e9bd,#67b8ee); font-weight: 750; cursor: pointer; }
 .login-card > small { display: block; margin-top: 18px; color: #65758b; text-align: center; font-size: 9px; }
 .form-error { min-height: 17px; margin-top: 9px; color: #ff9aa8; font-size: 10px; }
+.form-error.success { color: var(--accent); }
+.settings-form { display: grid; gap: 8px; }
+.settings-form label { margin-top: 5px; color: #bdc9d9; font-size: 10px; }
+.settings-form input { width: 100%; padding: 13px 14px; border: 1px solid rgba(255,255,255,.12); border-radius: 11px; outline: 0; color: var(--text); background: #09121f; }
+.settings-form input:focus { border-color: rgba(99,230,183,.55); box-shadow: 0 0 0 3px rgba(99,230,183,.08); }
+.form-hint { margin: 3px 0 0; color: var(--muted); font-size: 10px; }
+.form-message { min-height: 20px; color: var(--accent); font-size: 11px; }
+.form-message.error { color: #ff9aa8; }
 
 @media (max-width: 1000px) {
   .metric-grid { grid-template-columns: repeat(2,1fr); }
