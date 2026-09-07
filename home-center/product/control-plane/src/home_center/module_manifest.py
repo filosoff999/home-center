@@ -83,7 +83,12 @@ def _string(value: Any, pattern: re.Pattern[str], code: str, *, maximum: int = 1
 
 
 def _plain_string(value: Any, code: str, *, maximum: int = 256) -> str:
-    if not isinstance(value, str) or not 1 <= len(value) <= maximum or value != value.strip():
+    if (
+        not isinstance(value, str)
+        or not 1 <= len(value) <= maximum
+        or value != value.strip()
+        or any(ord(character) < 32 or ord(character) == 127 for character in value)
+    ):
         raise ModuleManifestError(code)
     return value
 
@@ -161,6 +166,8 @@ def validate_manifest(value: dict[str, Any]) -> ModuleManifestIdentity:
         raise ModuleManifestError("compatibility_empty")
 
     dependencies = _array(root["dependencies"], "dependencies_rejected")
+    if len(dependencies) > 128:
+        raise ModuleManifestError("dependencies_rejected")
     dependency_ids: list[str] = []
     for item in dependencies:
         dependency = _object(
@@ -188,9 +195,10 @@ def validate_manifest(value: dict[str, Any]) -> ModuleManifestIdentity:
     permissions = _unique_strings(root["permissions"], PERMISSION, "permissions_rejected")
 
     actions = _array(root["actions"], "actions_rejected")
-    if len(actions) > 128:
+    if not 5 <= len(actions) <= 128:
         raise ModuleManifestError("actions_rejected")
     action_ids: list[str] = []
+    action_risks: dict[str, str] = {}
     for item in actions:
         action = _object(
             item,
@@ -209,6 +217,7 @@ def validate_manifest(value: dict[str, Any]) -> ModuleManifestIdentity:
         if action["risk"] != "read-only" and action["idempotent"] is not True:
             raise ModuleManifestError("mutation_action_not_idempotent")
         action_ids.append(action_id)
+        action_risks[action_id] = action["risk"]
     if len(action_ids) != len(set(action_ids)):
         raise ModuleManifestError("action_duplicate_rejected")
 
@@ -234,6 +243,8 @@ def validate_manifest(value: dict[str, Any]) -> ModuleManifestIdentity:
             endpoint_keys.add(key)
 
     storage = _array(root["storage"], "storage_rejected")
+    if len(storage) > 128:
+        raise ModuleManifestError("storage_rejected")
     storage_ids: list[str] = []
     persistent_ids: set[str] = set()
     for item in storage:
@@ -251,6 +262,8 @@ def validate_manifest(value: dict[str, Any]) -> ModuleManifestIdentity:
         raise ModuleManifestError("storage_duplicate_rejected")
 
     health = _array(root["health"], "health_rejected")
+    if not 1 <= len(health) <= 64:
+        raise ModuleManifestError("health_rejected")
     health_ids: list[str] = []
     for item in health:
         probe = _object(item, {"id", "kind", "interval_seconds", "timeout_seconds"}, "health_probe_rejected")
@@ -284,9 +297,13 @@ def validate_manifest(value: dict[str, Any]) -> ModuleManifestIdentity:
             raise ModuleManifestError("lifecycle_action_unknown")
         if step["action"] == step["rollback_action"]:
             raise ModuleManifestError("lifecycle_rollback_rejected")
+        if action_risks[step["action"]] != "mutation" or action_risks[step["rollback_action"]] != "mutation":
+            raise ModuleManifestError("lifecycle_action_risk_rejected")
     remove = _object(lifecycle["remove"], {"action", "data_policy"}, "lifecycle_remove_rejected")
     if remove["action"] not in action_ids or remove["data_policy"] != "preserve":
         raise ModuleManifestError("lifecycle_remove_rejected")
+    if action_risks[remove["action"]] != "mutation":
+        raise ModuleManifestError("lifecycle_action_risk_rejected")
 
     artifact = _object(
         root["artifact"], {"sha256", "size_bytes", "media_type", "provenance"}, "artifact_rejected"
