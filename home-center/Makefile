@@ -1,6 +1,9 @@
-.PHONY: test e2e security contracts build ci
+.PHONY: dev-control test e2e security contracts build ci
 
 PYTHON ?= python3
+
+dev-control:
+	$(PYTHON) tools/hc_dev_control.py validate
 
 test:
 	PYTHONPATH=product/control-plane/src $(PYTHON) -m unittest discover -s tests -p 'test_*.py' -v
@@ -20,4 +23,4 @@ contracts:
 build:
 	bash deploy/scripts/build-artifact.sh dist
 
-ci: contracts test e2e security build
+ci: dev-control contracts test e2e security build
