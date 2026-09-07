@@ -55,7 +55,7 @@
         {"id": "compute-framework", "title": "Compute Framework", "weight": 1, "evidence": [{"kind": "pr", "number": 114, "state": "merged"}]},
         {"id": "home-lab-manager", "title": "Home Lab Manager", "weight": 1, "evidence": [{"kind": "pr", "number": 114, "state": "merged"}]},
         {"id": "certificate-lifecycle", "title": "Certificate Lifecycle", "weight": 1, "evidence": [{"kind": "pr", "number": 114, "state": "merged"}]},
-        {"id": "ui-expansion", "title": "UI Expansion", "weight": 1, "evidence": []},
+        {"id": "ui-expansion", "title": "UI Expansion", "weight": 1, "evidence": [{"kind": "pr", "number": 137, "state": "merged"}]},
         {"id": "acceptance-tests", "title": "Acceptance Tests", "weight": 1, "evidence": []}
       ]
     }
