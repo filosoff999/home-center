@@ -14,7 +14,7 @@
         {"id": "permission-ack", "title": "Permission Acknowledgement", "weight": 1, "evidence": [{"kind": "pr", "number": 95, "state": "merged"}]},
         {"id": "lifecycle-planning", "title": "Lifecycle Planning", "weight": 1, "evidence": [{"kind": "pr", "number": 99, "state": "merged"}]},
         {"id": "artifact-binding", "title": "Trusted Artifact Publication Binding", "weight": 1, "evidence": [{"kind": "pr", "number": 110, "state": "merged"}]},
-        {"id": "authorization-execution", "title": "Authorization / Execution Boundary", "weight": 1, "evidence": []},
+        {"id": "authorization-execution", "title": "Authorization / Execution Boundary", "weight": 1, "evidence": [{"kind": "pr", "number": 125, "state": "merged"}]},
         {"id": "acceptance", "title": "Acceptance / Release Qualification", "weight": 1, "evidence": []}
       ]
     },
@@ -26,7 +26,7 @@
         {"id": "password-rotation", "title": "Local Admin Password Rotation", "weight": 1, "evidence": [{"kind": "pr", "number": 89, "state": "merged"}]},
         {"id": "console-recovery", "title": "Protected Console Recovery", "weight": 1, "evidence": [{"kind": "pr", "number": 94, "state": "merged"}]},
         {"id": "two-node-transaction", "title": "Two-node Credential Transaction", "weight": 1, "evidence": [{"kind": "pr", "number": 105, "state": "merged"}]},
-        {"id": "recovery-acceptance", "title": "Failure / Recovery Acceptance", "weight": 1, "evidence": []},
+        {"id": "recovery-acceptance", "title": "Failure / Recovery Acceptance", "weight": 1, "evidence": [{"kind": "pr", "number": 126, "state": "merged"}]},
         {"id": "acceptance", "title": "Acceptance / Release Qualification", "weight": 1, "evidence": []}
       ]
     },
@@ -40,7 +40,7 @@
         {"id": "resource-snapshot", "title": "Trusted Resource Snapshot", "weight": 1, "evidence": [{"kind": "pr", "number": 104, "state": "merged"}]},
         {"id": "resource-preflight", "title": "Resource-aware Preflight", "weight": 1, "evidence": [{"kind": "pr", "number": 108, "state": "merged"}]},
         {"id": "placement", "title": "Deterministic Placement", "weight": 1, "evidence": [{"kind": "pr", "number": 111, "state": "merged"}]},
-        {"id": "reservation", "title": "Reservation / Scheduler Boundary", "weight": 1, "evidence": []},
+        {"id": "reservation", "title": "Reservation / Scheduler Boundary", "weight": 1, "evidence": [{"kind": "pr", "number": 127, "state": "merged"}]},
         {"id": "providers", "title": "Provider Execution Framework", "weight": 1, "evidence": []},
         {"id": "acceptance", "title": "Acceptance / Release Qualification", "weight": 1, "evidence": []}
       ]
@@ -50,11 +50,11 @@
       "branch": "release/0.14.0",
       "state": "active",
       "workstreams": [
-        {"id": "product-boundary-cleanup", "title": "Product Boundary Cleanup", "weight": 1, "evidence": []},
-        {"id": "core-lifecycle-v2", "title": "Core Lifecycle v2", "weight": 1, "evidence": []},
-        {"id": "compute-framework", "title": "Compute Framework", "weight": 1, "evidence": []},
-        {"id": "home-lab-manager", "title": "Home Lab Manager", "weight": 1, "evidence": []},
-        {"id": "certificate-lifecycle", "title": "Certificate Lifecycle", "weight": 1, "evidence": []},
+        {"id": "product-boundary-cleanup", "title": "Product Boundary Cleanup", "weight": 1, "evidence": [{"kind": "pr", "number": 114, "state": "merged"}]},
+        {"id": "core-lifecycle-v2", "title": "Core Lifecycle v2", "weight": 1, "evidence": [{"kind": "pr", "number": 114, "state": "merged"}]},
+        {"id": "compute-framework", "title": "Compute Framework", "weight": 1, "evidence": [{"kind": "pr", "number": 114, "state": "merged"}]},
+        {"id": "home-lab-manager", "title": "Home Lab Manager", "weight": 1, "evidence": [{"kind": "pr", "number": 114, "state": "merged"}]},
+        {"id": "certificate-lifecycle", "title": "Certificate Lifecycle", "weight": 1, "evidence": [{"kind": "pr", "number": 114, "state": "merged"}]},
         {"id": "ui-expansion", "title": "UI Expansion", "weight": 1, "evidence": []},
         {"id": "acceptance-tests", "title": "Acceptance Tests", "weight": 1, "evidence": []}
       ]
