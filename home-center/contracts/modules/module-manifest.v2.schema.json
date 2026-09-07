@@ -188,7 +188,7 @@
     "symbolicId": {"type": "string", "maxLength": 128, "pattern": "^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$"},
     "permission": {"type": "string", "maxLength": 128, "pattern": "^[a-z][a-z0-9.-]*\\.[a-z][a-z0-9.-]*$"},
     "digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
-    "keyId": {"type": "string", "maxLength": 128, "pattern": "^[a-z0-9](?:[a-z0-9._:-]{0,126}[a-z0-9])?$"},
+    "keyId": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
     "action": {
       "type": "object",
       "additionalProperties": false,
