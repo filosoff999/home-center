@@ -351,6 +351,23 @@ class ModuleAdmissionTests(unittest.TestCase):
         for forbidden in ("command", "grant", "node", "placement", "rollout", "service"):
             self.assertNotIn(forbidden, rendered)
 
+    def test_aggregated_permissions_match_result_contract_bound(self) -> None:
+        first = candidate(
+            "org.test.first",
+            extra_permissions=[f"first.scope-{index}" for index in range(70)],
+        )
+        second = candidate(
+            "org.test.second",
+            extra_permissions=[f"second.scope-{index}" for index in range(70)],
+        )
+        self.assert_rejected(
+            request(
+                [first, second],
+                [("org.test.first", "1.0.0"), ("org.test.second", "1.0.0")],
+            ),
+            "planner_permissions_rejected",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -34,6 +34,23 @@ class HCWeb001RegressionTests(unittest.TestCase):
         self.assertRegex(javascript, re.compile(r"hideLogin\(\);\s*await refresh\(\);", re.DOTALL))
         self.assertRegex(javascript, re.compile(r"async function logout\(\).*?showLogin\(\);", re.DOTALL))
 
+    def test_module_permission_review_is_read_only_and_mobile_safe(self) -> None:
+        html = (ROOT / "product/web/static/index.html").read_text(encoding="utf-8")
+        javascript = (ROOT / "product/web/static/app.js").read_text(encoding="utf-8")
+        css = (ROOT / "product/web/static/app.css").read_text(encoding="utf-8")
+        self.assertIn('data-view="modules"', html)
+        self.assertIn('data-panel="modules"', html)
+        self.assertIn('id="modulePermissionReview"', html)
+        self.assertIn('api("/api/v1/modules/permission-review")', javascript)
+        self.assertIn("function renderModulePermissionReview()", javascript)
+        self.assertIn("review.permission_grants_applied === false", javascript)
+        self.assertIn("review.production_activation_enabled === false", javascript)
+        self.assertNotIn("innerHTML", javascript)
+        self.assertNotIn("permission-review/approve", javascript)
+        self.assertNotIn("permission-review/grant", javascript)
+        self.assertIn(".node-row { grid-template-columns: 42px 1fr auto; }", css)
+        self.assertIn("overflow-x: auto", css)
+
 
 if __name__ == "__main__":
     unittest.main()

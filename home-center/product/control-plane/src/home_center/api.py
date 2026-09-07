@@ -27,6 +27,12 @@ from .ad_auth import AdAuthError
 from .auth import SessionManager
 from .external_access import ExternalAccessRejected, ExternalRequestContext
 from .local_admin_auth import LocalAdminAuthError
+from .module_admission import MAX_ADMISSION_REQUEST_BYTES
+from .module_permission_review import (
+    ModulePermissionReviewError,
+    empty_permission_review,
+    load_and_build_module_permission_review,
+)
 from .runtime import Runtime
 from .util import utc_now
 
@@ -232,6 +238,8 @@ class RuntimeRequestHandler(BaseHTTPRequestHandler):
             self._json(200, {"schema": "home-center.nodes.v1", "items": self.runtime.store.nodes()})
         elif path == "/api/v1/actions":
             self._json(200, self.runtime.actions.catalog())
+        elif path == "/api/v1/modules/permission-review":
+            self._json(200, empty_permission_review())
         elif path == "/api/v1/jobs":
             self._json(200, {"schema": "home-center.jobs.v1", "items": self.runtime.store.jobs(100)})
         elif path == "/api/v1/audit":
@@ -324,6 +332,29 @@ class RuntimeRequestHandler(BaseHTTPRequestHandler):
         actor = self._require_actor(correlation_id)
         if not actor:
             return
+        if path == "/api/v1/modules/permission-review/preview":
+            try:
+                payload = self._read_body(max_bytes=MAX_ADMISSION_REQUEST_BYTES)
+                review = load_and_build_module_permission_review(payload)
+            except (ValueError, ModulePermissionReviewError):
+                self._error(
+                    HTTPStatus.BAD_REQUEST,
+                    "module_permission_review_rejected",
+                    "Запрос предварительного просмотра прав отклонён",
+                    correlation_id,
+                )
+                return
+            except Exception:
+                LOG.exception("module permission review preview failed")
+                self._error(
+                    HTTPStatus.INTERNAL_SERVER_ERROR,
+                    "module_permission_review_internal_error",
+                    "Внутренняя ошибка предварительного просмотра прав",
+                    correlation_id,
+                )
+                return
+            self._json(HTTPStatus.OK, review.to_dict())
+            return
         if path.startswith("/api/v1/actions/"):
             action_id = path.removeprefix("/api/v1/actions/")
             try:
@@ -391,7 +422,7 @@ class RuntimeRequestHandler(BaseHTTPRequestHandler):
             return
         self._error(405, "typed_action_not_available", "Изменение не входит в эту сертифицированную версию", correlation_id)
 
-    def _read_json(self, max_bytes: int = 4096) -> dict[str, Any]:
+    def _read_body(self, max_bytes: int) -> bytes:
         if self.headers.get_content_type() != "application/json":
             raise ValueError("content type")
         raw_length = self.headers.get("Content-Length")
@@ -413,6 +444,10 @@ class RuntimeRequestHandler(BaseHTTPRequestHandler):
             self.close_connection = True
             raise ValueError("body truncated")
         self._request_body_complete = True
+        return raw
+
+    def _read_json(self, max_bytes: int = 4096) -> dict[str, Any]:
+        raw = self._read_body(max_bytes)
         value = json.loads(raw)
         if not isinstance(value, dict):
             raise ValueError("object required")

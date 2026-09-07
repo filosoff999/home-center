@@ -26,6 +26,7 @@
       <button class="nav-item active" data-view="overview"><span class="nav-icon">◫</span>Обзор</button>
       <button class="nav-item" data-view="nodes"><span class="nav-icon">◇</span>Узлы</button>
       <button class="nav-item" data-view="cluster"><span class="nav-icon">⌘</span>Кластер</button>
+      <button class="nav-item" data-view="modules"><span class="nav-icon">▦</span>Модули</button>
       <button class="nav-item" data-view="tls"><span class="nav-icon">⌾</span>Сертификаты</button>
       <button class="nav-item" data-view="backups"><span class="nav-icon">↻</span>Резервные копии</button>
       <button class="nav-item" data-view="jobs"><span class="nav-icon">✓</span>Задания</button>
@@ -108,6 +109,17 @@
           <div class="policy-note"><strong>Почему автоматическое переключение пока выключено</strong><p>Два узла без независимого witness не могут безопасно отличить отказ соседа от разрыва связи. Home Center сохраняет единственного владельца записи и блокирует риск split-brain.</p></div>
         </article>
         <article class="panel json-panel"><div class="panel-head"><div><span class="panel-kicker">Canonical state</span><h3>Deployment Profile</h3></div></div><pre id="profileJson">Загрузка…</pre></article>
+      </section>
+
+      <section class="view" data-panel="modules">
+        <div class="section-intro"><div><p>Market / least privilege</p><h2>Проверка разрешений</h2></div><span class="tag warning">Только просмотр</span></div>
+        <div id="modulePermissionReview" class="permission-review-root" aria-live="polite">
+          <article class="panel"><div class="empty-state"><span>…</span><h3>Проверяем состояние</h3><p>Home Center загружает безопасный статус разрешений модулей.</p></div></article>
+        </div>
+        <div class="permission-boundary">
+          <strong>Просмотр не выдаёт полномочия</strong>
+          <p>На этом этапе Home Center только показывает запрошенные разрешения и связанные typed actions. Установка, сохранение решения и активация модулей заблокированы.</p>
+        </div>
       </section>
 
       <section class="view" data-panel="tls">

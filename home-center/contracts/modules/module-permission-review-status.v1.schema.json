@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://home-center.local/contracts/modules/module-permission-review-status.v1.schema.json",
+  "title": "Home Center module permission review empty status v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "status",
+    "review",
+    "decision_persistence_enabled",
+    "permission_grants_applied",
+    "production_activation_enabled"
+  ],
+  "properties": {
+    "schema": {"const": "home-center.module-permission-review-status.v1"},
+    "status": {"const": "no-pending-review"},
+    "review": {"type": "null"},
+    "decision_persistence_enabled": {"const": false},
+    "permission_grants_applied": {"const": false},
+    "production_activation_enabled": {"const": false}
+  }
+}
