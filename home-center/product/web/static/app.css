@@ -187,3 +187,8 @@ td { padding: 13px 12px; border-top: 1px solid rgba(255,255,255,.055); vertical-
   .tag { white-space: nowrap; }
   .topology-panel { padding: 20px; }
 }
+
+.mobile-logout-button { display: none; }
+@media (max-width: 760px) {
+  .mobile-logout-button { display: inline-grid; }
+}

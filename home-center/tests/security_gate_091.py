@@ -13,7 +13,7 @@ def read(path: Path) -> str:
 
 def require(condition: bool, message: str) -> None:
     if not condition:
-        raise SystemExit(f"SECURITY_GATE_090_FAIL: {message}")
+        raise SystemExit(f"SECURITY_GATE_091_FAIL: {message}")
 
 
 def main() -> None:
@@ -74,8 +74,8 @@ def main() -> None:
     require("ExternalAccessPolicy" in runtime, "external policy is not composed into runtime")
     require("ExternalRequestRateLimiter" in runtime, "external rate limiter is not composed into runtime")
     for marker in (
-        'TARGET_VERSION = "0.9.0"',
-        'PREDECESSOR_VERSION = "0.8.0"',
+        'TARGET_VERSION = "0.9.1"',
+        'PREDECESSOR_VERSION = "0.9.0"',
         'EXPECTED_NODES = ("dc02", "dc01")',
         'ROLLBACK_ORDER = ("dc01", "dc02")',
         'EXPECTED_DOMAIN = "hm.dm"',
@@ -94,7 +94,7 @@ def main() -> None:
     require("info.st_mode & 0o022" in acceptance_cli, "acceptance CLI does not protect evidence permissions")
     require("external-health.v1.schema.json" in openapi, "minimal external health contract is absent")
     require("external-access-status.v1.schema.json" in openapi, "external status contract is absent")
-    print("SECURITY_GATE_090=PASS")
+    print("SECURITY_GATE_091=PASS")
 
 
 if __name__ == "__main__":

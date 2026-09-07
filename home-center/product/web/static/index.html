@@ -47,6 +47,7 @@
       <div class="topbar-actions">
         <span class="last-update" id="lastUpdate">Ожидание данных</span>
         <button id="refreshButton" class="icon-button" aria-label="Обновить данные" title="Обновить">↻</button>
+        <button id="mobileLogoutButton" class="icon-button mobile-logout-button" aria-label="Выйти" title="Выйти">⇥</button>
         <div class="avatar" title="Администратор">PA</div>
       </div>
     </header>
@@ -157,7 +158,7 @@
       <label for="passwordInput">Пароль</label>
       <input id="passwordInput" name="password" type="password" autocomplete="current-password" minlength="1" maxlength="256" required>
       <button type="submit" class="primary-button">Войти</button>
-      <div id="loginError" class="form-error" role="alert"></div>
+      <div id="loginError" class="form-error" role="alert" aria-live="assertive"></div>
       <small>Соединение защищено TLS 1.2+ · HM.DM</small>
     </form>
   </div>

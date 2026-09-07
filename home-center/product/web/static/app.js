@@ -1,6 +1,11 @@
 "use strict";
 
 const state = { overview: null, profile: null, backups: [], audit: [], tls: null, authProviders: null, currentView: "overview" };
+const LOGIN_ERROR_MESSAGES = Object.freeze({
+  invalid_credentials: "Неверное имя пользователя или пароль.",
+  too_many_requests: "Слишком много попыток входа. Повторите позже.",
+  unavailable: "Сервис входа временно недоступен.",
+});
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
 
@@ -82,6 +87,25 @@ function hideLogin() {
   $("#loginForm").reset();
 }
 
+async function authenticate(provider, username, password) {
+  try {
+    const response = await fetch("/api/v1/session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Accept": "application/json" },
+      body: JSON.stringify({ provider, username, password }),
+      credentials: "same-origin",
+      cache: "no-store",
+    });
+    if (response.ok) return;
+    if (response.status === 401) throw new Error("invalid_credentials");
+    if (response.status === 429) throw new Error("too_many_requests");
+    throw new Error("unavailable");
+  } catch (error) {
+    if (LOGIN_ERROR_MESSAGES[error.message]) throw error;
+    throw new Error("unavailable");
+  }
+}
+
 async function login(event) {
   event.preventDefault();
   const button = event.currentTarget.querySelector("button");
@@ -92,29 +116,23 @@ async function login(event) {
   button.disabled = true;
   $("#loginError").textContent = "";
   try {
-    const response = await fetch("/api/v1/session", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "Accept": "application/json" },
-      body: JSON.stringify({ provider, username, password }),
-      credentials: "same-origin",
-      cache: "no-store",
-    });
+    await authenticate(provider, username, password);
     passwordInput.value = "";
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(data.error?.message || data.error?.code || `HTTP ${response.status}`);
+    await api("/api/v1/session");
     hideLogin();
     await refresh();
   } catch (error) {
     passwordInput.value = "";
-    $("#loginError").textContent = error.message || "Не удалось выполнить вход";
+    $("#loginError").textContent = LOGIN_ERROR_MESSAGES[error.message] || LOGIN_ERROR_MESSAGES.unavailable;
   } finally {
     button.disabled = false;
   }
 }
 
 async function logout() {
-  try { await api("/api/v1/session/logout", { method: "POST" }); } catch (_) { /* cookie is cleared best effort */ }
-  showLogin();
+  try { await api("/api/v1/session/logout", { method: "POST" }); }
+  catch (_) { /* the local UI still locks even when the server is unavailable */ }
+  finally { showLogin(); }
 }
 
 function switchView(view) {
@@ -311,7 +329,7 @@ async function refresh() {
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
-  $("#loginForm").addEventListener("submit", login); $("#logoutButton").addEventListener("click", logout); $("#refreshButton").addEventListener("click", refresh);
+  $("#loginForm").addEventListener("submit", login); $("#logoutButton").addEventListener("click", logout); $("#mobileLogoutButton").addEventListener("click", logout); $("#refreshButton").addEventListener("click", refresh);
   $$(".nav-item").forEach((item)=>item.addEventListener("click",()=>switchView(item.dataset.view)));
   $$("[data-go]").forEach((item)=>item.addEventListener("click",()=>switchView(item.dataset.go)));
   await loadAuthProviders();

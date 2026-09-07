@@ -44,8 +44,8 @@ from home_center.util import sha256_file  # noqa: E402
 
 
 CANDIDATE_REVISION = "9" * 40
-PREDECESSOR_REVISION = "bbb2b1e952b2072c8ce30ad6b3220c7c14280949"
-PREDECESSOR_ARTIFACT = "25fb72fdffab972703d9be2b7e457b1f4ed053bc1c013a6237558fd693e73ca8"
+PREDECESSOR_REVISION = "29b2f61071067028c14febbbaf0103c5600380e9"
+PREDECESSOR_ARTIFACT = "66531867f806c6665f41d2bb82dccfb5670403acd0c9988271714da09172f668"
 USERNAME = "admin"
 PASSWORD = "e2e correct horse battery staple"
 
@@ -241,7 +241,7 @@ class _Node:
 
 class ReleaseCandidateE2E(unittest.TestCase):
     def test_artifact_two_node_external_backup_restore_and_acceptance_chain(self) -> None:
-        self.assertEqual(__version__, "0.9.0")
+        self.assertEqual(__version__, "0.9.1")
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             artifacts: list[bytes] = []
@@ -250,7 +250,7 @@ class ReleaseCandidateE2E(unittest.TestCase):
                 output = root / f"artifact-{attempt}"
                 environment = {
                     **os.environ,
-                    "HOME_CENTER_VERSION": "0.9.0",
+                    "HOME_CENTER_VERSION": "0.9.1",
                     "HOME_CENTER_REVISION": CANDIDATE_REVISION,
                     "HOME_CENTER_RELEASE_BUILD": "0",
                     "SOURCE_DATE_EPOCH": "1767225600",
@@ -265,17 +265,17 @@ class ReleaseCandidateE2E(unittest.TestCase):
                     timeout=30,
                 )
                 self.assertEqual(result.returncode, 0, result.stderr)
-                archive = output / "home-center-0.9.0-linux-amd64.tar.gz"
+                archive = output / "home-center-0.9.1-linux-amd64.tar.gz"
                 artifacts.append(archive.read_bytes())
                 artifact_digest = sha256_file(archive)
                 if attempt == "first":
                     with tarfile.open(archive, "r:gz") as bundle:
-                        self.assertEqual(bundle.extractfile("./VERSION").read(), b"0.9.0\n")
+                        self.assertEqual(bundle.extractfile("./VERSION").read(), b"0.9.1\n")
                         self.assertEqual(bundle.extractfile("./REVISION").read(), (CANDIDATE_REVISION + "\n").encode())
                         self.assertIsNotNone(bundle.getmember("./release-candidate-verify.py"))
                         bootstrap = bundle.extractfile("./deploy/bootstrap-hm-dm.sh").read().decode()
-                        self.assertIn("ADMITTED_SOURCE_V080_VERSION=0.8.0", bootstrap)
-                        self.assertIn(f"ADMITTED_SOURCE_V080_REVISION={PREDECESSOR_REVISION}", bootstrap)
+                        self.assertIn("ADMITTED_SOURCE_V090_VERSION=0.9.0", bootstrap)
+                        self.assertIn(f"ADMITTED_SOURCE_V090_REVISION={PREDECESSOR_REVISION}", bootstrap)
             self.assertEqual(artifacts[0], artifacts[1])
 
             rollout: list[dict] = []
@@ -294,7 +294,7 @@ class ReleaseCandidateE2E(unittest.TestCase):
                             "node": name,
                             "status": "passed",
                             "observed_candidate": {
-                                "version": "0.9.0",
+                                "version": "0.9.1",
                                 "revision": CANDIDATE_REVISION,
                                 "artifact_sha256": artifact_digest,
                             },
@@ -320,15 +320,15 @@ class ReleaseCandidateE2E(unittest.TestCase):
                     node.close()
 
             predecessor = {
-                "version": "0.8.0",
+                "version": "0.9.0",
                 "revision": PREDECESSOR_REVISION,
                 "artifact_sha256": PREDECESSOR_ARTIFACT,
             }
             document = {
                 "schema": "home-center.release-candidate-acceptance.v1",
-                "acceptance_id": "ci-0.9.0-two-node-e2e",
+                "acceptance_id": "ci-0.9.1-two-node-e2e",
                 "candidate": {
-                    "version": "0.9.0",
+                    "version": "0.9.1",
                     "revision": CANDIDATE_REVISION,
                     "artifact_sha256": artifact_digest,
                 },

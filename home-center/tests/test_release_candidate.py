@@ -39,8 +39,8 @@ def pki(seed: str) -> dict[str, str]:
 
 
 def evidence() -> dict:
-    candidate = identity("0.9.0", CANDIDATE_REVISION, CANDIDATE_ARTIFACT)
-    predecessor = identity("0.8.0", PREDECESSOR_REVISION, PREDECESSOR_ARTIFACT)
+    candidate = identity("0.9.1", CANDIDATE_REVISION, CANDIDATE_ARTIFACT)
+    predecessor = identity("0.9.0", PREDECESSOR_REVISION, PREDECESSOR_ARTIFACT)
     rollout = []
     for sequence, node, seed in ((1, "dc02", "1"), (2, "dc01", "4")):
         web = pki(seed)
