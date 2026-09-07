@@ -8,6 +8,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 INTENT = ROOT / "product/control-plane/src/home_center/core/intent_engine.py"
 INTENT_SERVICE = ROOT / "product/control-plane/src/home_center/intent_service.py"
+RESOURCE_SNAPSHOT = ROOT / "product/control-plane/src/home_center/resource_snapshot.py"
 API_V2 = ROOT / "product/control-plane/src/home_center/api_v2.py"
 CORE_INIT = ROOT / "product/control-plane/src/home_center/core/__init__.py"
 
@@ -36,20 +37,23 @@ def function_calls(path: Path, function_name: str) -> set[str]:
     return {dotted(node.func) for node in ast.walk(function) if isinstance(node, ast.Call)}
 
 
-def main() -> int:
-    source = INTENT.read_text(encoding="utf-8")
-    tree = ast.parse(source, filename=str(INTENT))
-
+def imported_roots(path: Path) -> set[str]:
+    tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
     imports: set[str] = set()
-    calls: set[str] = set()
     for node in ast.walk(tree):
         if isinstance(node, ast.Import):
             imports.update(alias.name.split(".", 1)[0] for alias in node.names)
         elif isinstance(node, ast.ImportFrom):
             imports.add((node.module or "").split(".", 1)[0])
-        elif isinstance(node, ast.Call):
-            calls.add(dotted(node.func))
+    return imports
 
+
+def main() -> int:
+    source = INTENT.read_text(encoding="utf-8")
+    tree = ast.parse(source, filename=str(INTENT))
+
+    imports = imported_roots(INTENT)
+    calls = {dotted(node.func) for node in ast.walk(tree) if isinstance(node, ast.Call)}
     require(
         not imports.intersection({"http", "os", "pathlib", "requests", "socket", "subprocess", "urllib"}),
         "intent planner has I/O, process, or network import surface",
@@ -87,13 +91,7 @@ def main() -> int:
         require(marker in source, f"intent safety marker missing: {marker}")
 
     service = INTENT_SERVICE.read_text(encoding="utf-8")
-    service_tree = ast.parse(service, filename=str(INTENT_SERVICE))
-    service_imports: set[str] = set()
-    for node in ast.walk(service_tree):
-        if isinstance(node, ast.Import):
-            service_imports.update(alias.name.split(".", 1)[0] for alias in node.names)
-        elif isinstance(node, ast.ImportFrom):
-            service_imports.add((node.module or "").split(".", 1)[0])
+    service_imports = imported_roots(INTENT_SERVICE)
     require(
         not service_imports.intersection({"http", "os", "pathlib", "requests", "socket", "subprocess", "urllib"}),
         "intent service gained I/O, process, or network surface",
@@ -111,11 +109,40 @@ def main() -> int:
     ):
         require(marker in service, f"authenticated intent service guard missing: {marker}")
 
+    resources = RESOURCE_SNAPSHOT.read_text(encoding="utf-8")
+    resource_tree = ast.parse(resources, filename=str(RESOURCE_SNAPSHOT))
+    resource_calls = {dotted(node.func) for node in ast.walk(resource_tree) if isinstance(node, ast.Call)}
+    require(
+        not imported_roots(RESOURCE_SNAPSHOT).intersection(
+            {"http", "os", "pathlib", "requests", "socket", "sqlite3", "subprocess", "urllib"}
+        ),
+        "resource snapshot gained I/O, persistence, process, or network surface",
+    )
+    require(
+        not resource_calls.intersection({"eval", "exec", "open", "os.system", "subprocess.Popen", "subprocess.run"}),
+        "resource snapshot gained execution or file-write primitive",
+    )
+    for marker in (
+        'capability.get("schema") != "home-center.node-capability.v1"',
+        'raise ResourceSnapshotError("node_identity_mismatch")',
+        '"planning_ready": planning_ready',
+        '"production_mutation_enabled": False',
+        '"root_storage_total_bytes"',
+        '"root_storage_free_bytes"',
+        '"capabilities": sorted(capabilities)',
+    ):
+        require(marker in resources, f"resource snapshot safety marker missing: {marker}")
+
     api = API_V2.read_text(encoding="utf-8")
     post_calls = function_calls(API_V2, "do_POST")
+    get_calls = function_calls(API_V2, "do_GET")
     require(
         not post_calls.intersection({"eval", "exec", "open", "os.system", "subprocess.Popen", "subprocess.run"}),
         "Intent API POST handler gained execution primitive",
+    )
+    require(
+        not get_calls.intersection({"eval", "exec", "open", "os.system", "subprocess.Popen", "subprocess.run"}),
+        "read-only API GET handler gained execution primitive",
     )
     for marker in (
         'path != "/api/v1/intents/plan"',
@@ -127,16 +154,21 @@ def main() -> int:
         '"intent_permission_denied"',
         '"invalid_intent_request"',
         "plan.to_dict()",
+        'path == "/api/v1/resources"',
+        "self.runtime.resource_snapshot()",
+        '"resource_snapshot_unavailable"',
     ):
-        require(marker in api, f"Intent API boundary guard missing: {marker}")
+        require(marker in api, f"0.13 API boundary guard missing: {marker}")
     require('"actor": request.actor' not in api, "audit must not persist client-supplied actor")
 
     required_contracts = (
         "contracts/intents/intent-request.v1.schema.json",
         "contracts/intents/intent-plan.v1.schema.json",
         "contracts/openapi/home-center-intents.v1.openapi.json",
+        "contracts/resources/resource-snapshot.v1.schema.json",
+        "contracts/openapi/home-center-resources.v1.openapi.json",
     )
-    require(all((ROOT / path).is_file() for path in required_contracts), "0.13 intent contract missing")
+    require(all((ROOT / path).is_file() for path in required_contracts), "0.13 contract missing")
 
     core_init = CORE_INIT.read_text(encoding="utf-8")
     require("IntentEngine" in core_init and "IntentRequest" in core_init, "intent planner is not exported by core")
