@@ -18,6 +18,7 @@ from .helper_client import HelperClientError, rotate_local_admin_password
 from .intent_service import IntentPlanningService
 from .local_admin_auth import LocalAdminCredentialStore
 from .reconcile import Reconciler
+from .resource_snapshot import build_resource_snapshot
 from .store import StateStore
 from .util import sha256_file, utc_now
 
@@ -123,8 +124,9 @@ class Runtime:
 
     def overview(self) -> dict[str, Any]:
         nodes = self.store.nodes()
+        expected_nodes = len(self.profile["spec"]["nodes"])
         ready_nodes = sum(node["status"] == "ready" for node in nodes)
-        status = "healthy" if ready_nodes == 2 and len(nodes) == 2 else "degraded"
+        status = "healthy" if ready_nodes == expected_nodes and len(nodes) == expected_nodes else "degraded"
         return {
             "schema": "home-center.overview.v1",
             "observed_at": utc_now(),
@@ -136,7 +138,7 @@ class Runtime:
                 "profile_version": self.profile["metadata"]["version"],
                 "local_role": self.config.role,
                 "ready_nodes": ready_nodes,
-                "expected_nodes": 2,
+                "expected_nodes": expected_nodes,
                 "automatic_failover": False,
                 "split_brain_policy": "single-writer-manual-failover",
             },
@@ -144,6 +146,15 @@ class Runtime:
             "jobs": self.store.jobs(10),
             "audit_head": self.store.verify_audit_chain(),
         }
+
+    def resource_snapshot(self) -> dict[str, Any]:
+        """Return validated capacity facts from persisted node observations only."""
+
+        return build_resource_snapshot(
+            cluster_id=self.config.cluster_id,
+            expected_nodes=len(self.profile["spec"]["nodes"]),
+            nodes=self.store.nodes(),
+        )
 
     def backup_inventory(self) -> list[dict[str, Any]]:
         items: list[dict[str, Any]] = []
