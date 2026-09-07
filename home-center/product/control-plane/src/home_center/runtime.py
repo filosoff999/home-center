@@ -67,6 +67,22 @@ class Runtime:
             expected_mode=self.local_admin.expected_mode,
         )
 
+    def authenticate_local_admin(self, username: str, password: str) -> str | None:
+        """Reload the atomic verifier before every local authentication.
+
+        This makes an offline, local-console recovery effective without a
+        service restart while retaining exact metadata validation.
+        """
+
+        current = LocalAdminCredentialStore(
+            self.config.local_admin_credentials_file,
+            expected_uid=self.local_admin.expected_uid,
+            expected_gid=self.local_admin.expected_gid,
+            expected_mode=self.local_admin.expected_mode,
+        )
+        self.local_admin = current
+        return current.authenticate(username, password)
+
     def start(self) -> None:
         self.store.audit(
             actor="system:runtime",

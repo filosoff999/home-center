@@ -66,6 +66,8 @@ class ReleaseSuccessor0110Tests(unittest.TestCase):
                 bootstrap = package.extractfile("./deploy/bootstrap-hm-dm.sh").read().decode()
                 installer = package.extractfile("./deploy/install-node.sh").read().decode()
                 web_css = package.extractfile("./web/app.css").read().decode()
+                recovery_cli = package.extractfile("./recover-local-admin.py").read().decode()
+                recovery_module = package.extractfile("./home_center/local_admin_recovery.py").read().decode()
         deployment = bootstrap + "\n" + installer
         for marker in (
             "UPGRADE_POLICY_SCHEMA=home-center.upgrade-policy.v2",
@@ -82,6 +84,12 @@ class ReleaseSuccessor0110Tests(unittest.TestCase):
         for forbidden in ("Authorization: Bearer", "ADMIN_TOKEN", "AUTH_CONFIG", "/api/v1/overview"):
             self.assertNotIn(forbidden, deployment)
         self.assertIn(".login-layer[hidden]", web_css)
+        self.assertIn("LOCAL_CONSOLE.fullmatch", recovery_cli)
+        self.assertIn("getpass.getpass", recovery_cli)
+        self.assertNotIn('add_argument("--password"', recovery_cli)
+        self.assertNotIn("os.environ", recovery_cli)
+        self.assertIn("home-center.local-admin-recovery-evidence.v1", recovery_module)
+        self.assertIn("RECOVERY_EVIDENCE_DIRECTORY=/var/lib/home-center-recovery", installer)
 
     def test_upgrade_renderer_fails_closed_on_shape_drift(self) -> None:
         renderer = ROOT / "deploy/scripts/render-upgrade-policy-v2.py"
@@ -103,5 +111,4 @@ class ReleaseSuccessor0110Tests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-
 
