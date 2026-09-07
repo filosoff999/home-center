@@ -14,7 +14,7 @@ MODULE_ID = re.compile(r"^[a-z0-9](?:[a-z0-9.-]{0,126}[a-z0-9])?$")
 SYMBOLIC_ID = re.compile(r"^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$")
 PERMISSION = re.compile(r"^[a-z][a-z0-9.-]*\.[a-z][a-z0-9.-]*$")
 DIGEST = re.compile(r"^[0-9a-f]{64}$")
-KEY_ID = re.compile(r"^[a-z0-9](?:[a-z0-9._:-]{0,126}[a-z0-9])?$")
+KEY_ID = re.compile(r"^sha256:[0-9a-f]{64}$")
 
 
 class ModuleManifestError(ValueError):
@@ -44,20 +44,35 @@ def _duplicate_rejecting_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
     return value
 
 
+def _reject_float(_: str) -> None:
+    raise ModuleManifestError("manifest_float_rejected")
+
+
+def _reject_constant(_: str) -> None:
+    raise ModuleManifestError("manifest_constant_rejected")
+
+
 def load_manifest(payload: bytes) -> dict[str, Any]:
     """Decode a bounded JSON manifest while rejecting duplicate object keys."""
 
     if not isinstance(payload, bytes) or not 0 < len(payload) <= MAX_MANIFEST_BYTES:
         raise ModuleManifestError("manifest_size_rejected")
+    if payload.startswith(b"\xef\xbb\xbf"):
+        raise ModuleManifestError("manifest_bom_rejected")
     try:
         text = payload.decode("utf-8")
     except UnicodeDecodeError as exc:
         raise ModuleManifestError("manifest_encoding_rejected") from exc
     try:
-        value = json.loads(text, object_pairs_hook=_duplicate_rejecting_object)
+        value = json.loads(
+            text,
+            object_pairs_hook=_duplicate_rejecting_object,
+            parse_float=_reject_float,
+            parse_constant=_reject_constant,
+        )
     except ModuleManifestError:
         raise
-    except (json.JSONDecodeError, RecursionError) as exc:
+    except (json.JSONDecodeError, RecursionError, ValueError) as exc:
         raise ModuleManifestError("manifest_json_rejected") from exc
     if not isinstance(value, dict):
         raise ModuleManifestError("manifest_root_rejected")
