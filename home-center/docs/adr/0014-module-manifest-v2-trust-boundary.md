@@ -1,6 +1,6 @@
 # ADR-0014 — ModuleManifest v2 and artifact trust boundary
 
-- **Status:** Proposed
+- **Status:** Accepted for development
 - **Date:** 2026-09-07
 - **Related requirements:** HC-112, HC-114, HC-119, HC-124
 - **Tracking:** #75
