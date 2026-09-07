@@ -276,7 +276,6 @@ def plan_module_admission(request: dict[str, Any]) -> ModuleAdmissionPlan:
     satisfied: dict[str, str] = {}
     visiting: set[str] = set()
     visited: set[str] = set()
-    order: list[str] = []
 
     def check_compatibility(manifest: dict[str, Any]) -> None:
         compatibility = manifest["compatibility"]
@@ -334,6 +333,8 @@ def plan_module_admission(request: dict[str, Any]) -> ModuleAdmissionPlan:
         visiting.add(module_id)
         for dependency in sorted(manifest["dependencies"], key=lambda item: item["id"]):
             dependency_id = dependency["id"]
+            if dependency["optional"]:
+                continue
             if dependency_id in selected:
                 selected_version = selected[dependency_id]["module"]["version"]
                 if not _in_interval(
@@ -355,7 +356,6 @@ def plan_module_admission(request: dict[str, Any]) -> ModuleAdmissionPlan:
                 visit(dependency_manifest)
         visiting.remove(module_id)
         visited.add(module_id)
-        order.append(module_id)
 
     for target in requested:
         if target.module_id in installed:
@@ -364,6 +364,47 @@ def plan_module_admission(request: dict[str, Any]) -> ModuleAdmissionPlan:
         if manifest is None:
             raise ModuleAdmissionError("planner_requested_candidate_missing")
         visit(manifest)
+
+    for manifest in selected.values():
+        for dependency in manifest["dependencies"]:
+            dependency_id = dependency["id"]
+            if dependency_id in installed:
+                if not _in_interval(
+                    installed[dependency_id].version,
+                    dependency["minimum_version"],
+                    dependency["maximum_version_exclusive"],
+                ):
+                    raise ModuleAdmissionError("planner_dependency_version_incompatible")
+                satisfied[dependency_id] = installed[dependency_id].version
+            elif dependency_id in selected:
+                if not _in_interval(
+                    selected[dependency_id]["module"]["version"],
+                    dependency["minimum_version"],
+                    dependency["maximum_version_exclusive"],
+                ):
+                    raise ModuleAdmissionError("planner_dependency_version_incompatible")
+            elif not dependency["optional"]:
+                raise ModuleAdmissionError("planner_dependency_missing")
+
+    order: list[str] = []
+    ordering: set[str] = set()
+    ordered: set[str] = set()
+
+    def add_in_dependency_order(module_id: str) -> None:
+        if module_id in ordering:
+            raise ModuleAdmissionError("planner_dependency_cycle")
+        if module_id in ordered:
+            return
+        ordering.add(module_id)
+        for dependency in sorted(selected[module_id]["dependencies"], key=lambda item: item["id"]):
+            if dependency["id"] in selected:
+                add_in_dependency_order(dependency["id"])
+        ordering.remove(module_id)
+        ordered.add(module_id)
+        order.append(module_id)
+
+    for target in requested:
+        add_in_dependency_order(target.module_id)
 
     present_ids = set(selected).union(installed)
     for module_id, manifest in selected.items():
