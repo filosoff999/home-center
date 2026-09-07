@@ -13,6 +13,7 @@ import threading
 import unittest
 import urllib.error
 import urllib.request
+from datetime import UTC, datetime
 from pathlib import Path
 from unittest.mock import patch
 
@@ -32,6 +33,14 @@ from home_center.local_admin_auth import (  # noqa: E402
     KDF_P,
     KDF_R,
     SALT_BYTES,
+)
+from home_center.module_artifact import (  # noqa: E402
+    StagedModuleArtifact,
+    VerifiedModuleArtifact,
+    manifest_binding_sha256,
+)
+from home_center.module_artifact_publication import (  # noqa: E402
+    prepare_module_artifact_publication,
 )
 from home_center.module_permission_review import build_module_permission_review  # noqa: E402
 from home_center.runtime import Runtime  # noqa: E402
@@ -81,6 +90,29 @@ def module_permission_acknowledgement_body(
         "idempotency_key": idempotency_key,
         "admission_request": admission,
     }
+
+
+def record_module_artifact_publication(runtime: Runtime, manifest: dict) -> dict:
+    artifact = manifest["artifact"]
+    digest = artifact["sha256"]
+    verified = VerifiedModuleArtifact(
+        module_id=manifest["module"]["id"],
+        version=manifest["module"]["version"],
+        publisher=manifest["module"]["publisher"],
+        manifest_binding_sha256=manifest_binding_sha256(manifest),
+        statement_sha256=artifact["provenance"]["statement_sha256"],
+        artifact_sha256=digest,
+        artifact_size_bytes=artifact["size_bytes"],
+        signing_key_ids=tuple(sorted(artifact["provenance"]["signer_key_ids"])),
+        object_key=f"sha256/{digest[:2]}/{digest}/artifact.tar.gz",
+    )
+    draft = prepare_module_artifact_publication(
+        StagedModuleArtifact(verified=verified, created=False),
+        now=datetime(2026, 9, 7, 13, 0, tzinfo=UTC),
+    )
+    return runtime.store.record_module_artifact_publication(
+        publication=draft, correlation_id="api-publication-test"
+    )[0]
 
 
 class ApiTests(unittest.TestCase):
@@ -479,6 +511,74 @@ class ApiTests(unittest.TestCase):
         self.assertFalse(plan["lifecycle_execution_enabled"])
         self.assertFalse(plan["production_activation_enabled"])
         self.assertEqual(self.action_calls, 0)
+
+    def test_module_lifecycle_uses_only_server_side_publication_evidence(self) -> None:
+        manifest = candidate("org.test.api-published")
+        publication_record = record_module_artifact_publication(self.runtime, manifest)
+        acknowledgement_body = module_permission_acknowledgement_body(manifest)
+        with self.request(
+            "/api/v1/modules/permission-review/acknowledgements",
+            authenticated=True,
+            method="POST",
+            body=acknowledgement_body,
+        ) as response:
+            acknowledgement = json.load(response)["acknowledgement"]
+        preview_body = {
+            "schema": "home-center.module-install-lifecycle-request.v1",
+            "operation": "install",
+            "acknowledgement_id": acknowledgement["acknowledgement_id"],
+            "admission_request": acknowledgement_body["admission_request"],
+        }
+        with self.request(
+            "/api/v1/modules/lifecycle/preview",
+            authenticated=True,
+            method="POST",
+            body=preview_body,
+        ) as response:
+            plan = json.load(response)
+        self.assertNotIn("artifact_publication_unverified", plan["blockers"])
+        self.assertEqual(len(plan["blockers"]), 3)
+        self.assertEqual(
+            next(item for item in plan["preflight"] if item["id"] == "artifact-publication"),
+            {"id": "artifact-publication", "status": "pass", "reason": None},
+        )
+        publication = plan["steps"][0]["publication"]
+        self.assertEqual(publication["publication_id"], publication_record["publication_id"])
+        self.assertEqual(
+            publication["artifact"]["content_address"],
+            f"sha256:{manifest['artifact']['sha256']}",
+        )
+        self.assertNotIn("object_key", json.dumps(publication))
+        self.assertFalse(publication["installation_authority"])
+        self.assertFalse(plan["lifecycle_execution_enabled"])
+        self.assertEqual(self.action_calls, 0)
+
+        caller_supplied = {**preview_body, "publication_records": [publication]}
+        with self.assertRaises(urllib.error.HTTPError) as rejected:
+            self.request(
+                "/api/v1/modules/lifecycle/preview",
+                authenticated=True,
+                method="POST",
+                body=caller_supplied,
+            )
+        self.assertEqual(rejected.exception.code, 400)
+
+    def test_module_artifact_publication_tamper_fails_readiness(self) -> None:
+        manifest = candidate("org.test.api-publication-integrity")
+        publication = record_module_artifact_publication(self.runtime, manifest)
+        connection = sqlite3.connect(self.runtime.config.state_db)
+        connection.execute(
+            """UPDATE module_artifact_publications SET artifact_size_bytes=artifact_size_bytes+1
+            WHERE publication_id=?""",
+            (publication["publication_id"],),
+        )
+        connection.commit()
+        connection.close()
+
+        with patch.object(self.runtime.reconciler, "local_capability", return_value=True):
+            ready, reasons = self.runtime.ready()
+        self.assertFalse(ready)
+        self.assertIn("module_artifact_publication_integrity", reasons)
 
     def test_module_lifecycle_preview_mismatch_and_cross_origin_fail_closed(self) -> None:
         manifest = candidate("org.test.api-lifecycle-reject")

@@ -13,20 +13,31 @@ import tarfile
 import tempfile
 import unittest
 from dataclasses import FrozenInstanceError
+from datetime import UTC, datetime
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "product/control-plane/src"))
+sys.path.insert(0, str(ROOT / "tests"))
 
 from home_center.module_artifact import (  # noqa: E402
     MANIFEST_BINDING_ALGORITHM,
     PAYLOAD_TYPE,
     ModuleArtifactError,
+    StagedModuleArtifact,
     canonical_json,
     manifest_binding_sha256,
     stage_module_artifact,
     verify_module_artifact,
 )
+from home_center.module_artifact_publication import (  # noqa: E402
+    ModuleArtifactPublicationError,
+    prepare_module_artifact_publication,
+    render_module_artifact_publication,
+    stage_and_publish_module_artifact,
+)
+from home_center.store import StateStore  # noqa: E402
+from schema_validator import validate  # noqa: E402
 try:  # unittest discovery imports tests as top-level modules.
     from test_module_manifest import valid_manifest  # type: ignore[import-not-found] # noqa: E402
 except ModuleNotFoundError:  # Direct module selection imports through the namespace package.
@@ -323,6 +334,86 @@ class ModuleArtifactTests(unittest.TestCase):
             with self.assertRaises(ModuleArtifactError) as symlink:
                 stage_module_artifact(*material[:4], object_store_root=link)
             self.assertEqual(symlink.exception.code, "object_store_root_rejected")
+
+    def test_verified_staging_records_immutable_publication_evidence(self) -> None:
+        material = self.material()
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            object_store = root / "objects"
+            object_store.mkdir()
+            store = StateStore(root / "state.db", b"p" * 32, "test-cluster")
+            try:
+                first = stage_and_publish_module_artifact(
+                    *material[:4],
+                    object_store_root=object_store,
+                    store=store,
+                    correlation_id="publication-test-1",
+                    now=datetime(2026, 9, 7, 13, 0, tzinfo=UTC),
+                )
+                second = stage_and_publish_module_artifact(
+                    *material[:4],
+                    object_store_root=object_store,
+                    store=store,
+                    correlation_id="publication-test-2",
+                    now=datetime(2026, 9, 7, 13, 1, tzinfo=UTC),
+                )
+                self.assertTrue(first.artifact_created)
+                self.assertTrue(first.publication_created)
+                self.assertFalse(second.artifact_created)
+                self.assertFalse(second.publication_created)
+                self.assertEqual(first.publication, second.publication)
+                self.assertFalse(first.publication["installation_authority"])
+                self.assertFalse(first.publication["lifecycle_execution_enabled"])
+                self.assertFalse(first.publication["production_activation_enabled"])
+                schema = json.loads(
+                    (ROOT / "contracts/modules/module-artifact-publication.v1.schema.json").read_text(
+                        encoding="utf-8"
+                    )
+                )
+                validate(schema, first.publication)
+                identity = (
+                    first.publication["module"]["id"],
+                    first.publication["module"]["version"],
+                    first.publication["artifact"]["sha256"],
+                )
+                self.assertEqual(len(store.module_artifact_publications([identity])), 1)
+                store.verify_module_artifact_publications()
+
+                with store._connection:
+                    store._connection.execute(
+                        """UPDATE module_artifact_publications
+                        SET artifact_size_bytes=artifact_size_bytes+1
+                        WHERE publication_id=?""",
+                        (first.publication["publication_id"],),
+                    )
+                with self.assertRaises(RuntimeError):
+                    store.verify_module_artifact_publications()
+            finally:
+                store.close()
+
+    def test_publication_identity_is_deterministic_and_content_address_is_closed(self) -> None:
+        verified = verify_module_artifact(*self.material()[:4])
+        staged = StagedModuleArtifact(verified=verified, created=False)
+        first = prepare_module_artifact_publication(
+            staged, now=datetime(2026, 9, 7, 13, 0, tzinfo=UTC)
+        )
+        second = prepare_module_artifact_publication(
+            staged, now=datetime(2026, 9, 7, 13, 5, tzinfo=UTC)
+        )
+        self.assertEqual(first["publication_id"], second["publication_id"])
+        self.assertNotEqual(first["published_at"], second["published_at"])
+        rendered = render_module_artifact_publication(first)
+        self.assertEqual(
+            rendered["artifact"]["content_address"],
+            f"sha256:{verified.artifact_sha256}",
+        )
+        self.assertNotIn("object_key", rendered)
+
+        changed = copy.deepcopy(first)
+        changed["object_key"] = "sha256/00/" + verified.artifact_sha256 + "/artifact.tar.gz"
+        with self.assertRaises(ModuleArtifactPublicationError) as rejected:
+            render_module_artifact_publication(changed)
+        self.assertEqual(rejected.exception.code, "publication_content_address_rejected")
 
 
 def stat_mode(path: Path) -> int:

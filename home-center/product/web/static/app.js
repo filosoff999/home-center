@@ -483,12 +483,24 @@ function renderModuleLifecycle() {
     lifecycle_executor_unavailable: "Исполнитель жизненного цикла отключён",
     placement_unresolved: "Размещение по узлам не определено",
   };
+  const safePublication = (step) => step.publication === null || (
+    step.publication?.schema === "home-center.module-artifact-publication.v1"
+    && step.publication?.status === "published"
+    && step.publication?.module?.id === step.module?.id
+    && step.publication?.module?.version === step.module?.version
+    && step.publication?.artifact?.sha256 === step.module?.artifact_sha256
+    && step.publication?.artifact?.content_address === `sha256:${step.module?.artifact_sha256}`
+    && step.publication?.installation_authority === false
+    && step.publication?.lifecycle_execution_enabled === false
+    && step.publication?.production_activation_enabled === false
+  );
   const safePlan = lifecycle.schema === "home-center.module-install-lifecycle-plan.v1"
     && lifecycle.status === "blocked"
     && lifecycle.operation === "install"
     && lifecycle.acknowledgement?.consumable === false
     && Array.isArray(lifecycle.blockers)
-    && lifecycle.blockers.length === 4
+    && lifecycle.blockers.length >= 3
+    && lifecycle.blockers.length <= 4
     && lifecycle.blockers.every((item) => Object.prototype.hasOwnProperty.call(blockerLabels, item))
     && Array.isArray(lifecycle.steps)
     && lifecycle.steps.length > 0
@@ -496,6 +508,7 @@ function renderModuleLifecycle() {
     && lifecycle.steps.every((step) => step?.state === "blocked"
       && typeof step.module?.id === "string"
       && typeof step.module?.version === "string"
+      && safePublication(step)
       && typeof step.action?.id === "string"
       && step.action?.risk === "mutation"
       && step.action?.idempotent === true)
@@ -503,7 +516,10 @@ function renderModuleLifecycle() {
     && lifecycle.recovery?.state === "planned"
     && lifecycle.recovery?.data_policy === "preserve"
     && Array.isArray(lifecycle.recovery?.steps)
-    && lifecycle.recovery.steps.length === lifecycle.steps.length;
+    && lifecycle.recovery.steps.length === lifecycle.steps.length
+    && (lifecycle.blockers.includes("artifact_publication_unverified")
+      ? lifecycle.steps.some((step) => step.publication === null)
+      : lifecycle.steps.every((step) => step.publication?.status === "published"));
   if (!safePlan) {
     root.append(permissionReviewEmpty("План отклонён", "Формат preflight или recovery не соответствует закрытому контракту.", "!"));
     return;
@@ -527,6 +543,13 @@ function renderModuleLifecycle() {
     head.append(node("span", "permission-risk", "Заблокировано"));
     card.append(head);
     card.append(node("p", "mono", step.action.id));
+    card.append(node(
+      "small",
+      step.publication ? "publication-state verified" : "publication-state",
+      step.publication
+        ? `Опубликован · ${shortHash(step.publication.artifact.content_address)}`
+        : "Публикация не подтверждена",
+    ));
     card.append(node("small", "", `${step.postconditions?.length || 0} health postconditions`));
     steps.append(card);
   });

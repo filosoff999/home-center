@@ -84,6 +84,11 @@ class Runtime:
         except Exception:
             LOG.exception("module permission acknowledgement integrity validation failed")
             reasons.append("module_acknowledgement_integrity")
+        try:
+            self.store.verify_module_artifact_publications()
+        except Exception:
+            LOG.exception("module artifact publication integrity validation failed")
+            reasons.append("module_artifact_publication_integrity")
         if not self.reconciler.local_capability():
             reasons.append("inventory_unavailable")
         return not reasons, reasons

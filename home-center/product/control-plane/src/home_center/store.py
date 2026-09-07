@@ -110,6 +110,30 @@ MIGRATIONS: tuple[tuple[int, str], ...] = (
         ON module_permission_acknowledgements(actor, scope_id, state);
         """,
     ),
+    (
+        4,
+        """
+        CREATE TABLE IF NOT EXISTS module_artifact_publications (
+            publication_id TEXT PRIMARY KEY,
+            module_id TEXT NOT NULL,
+            version TEXT NOT NULL,
+            publisher TEXT NOT NULL,
+            manifest_binding_sha256 TEXT NOT NULL,
+            statement_sha256 TEXT NOT NULL,
+            artifact_sha256 TEXT NOT NULL,
+            artifact_size_bytes INTEGER NOT NULL,
+            signing_key_ids_json TEXT NOT NULL,
+            object_key TEXT NOT NULL,
+            state TEXT NOT NULL CHECK(state = 'published'),
+            published_at TEXT NOT NULL,
+            correlation_id TEXT NOT NULL,
+            record_hash TEXT NOT NULL UNIQUE,
+            UNIQUE(module_id, version, artifact_sha256)
+        );
+        CREATE INDEX IF NOT EXISTS module_artifact_publications_module_version
+        ON module_artifact_publications(module_id, version, published_at DESC);
+        """,
+    ),
 )
 
 
@@ -135,6 +159,7 @@ class StateStore:
         self.set_meta("cluster_id", cluster_id)
         self.verify_audit_chain()
         self.verify_module_permission_acknowledgements()
+        self.verify_module_artifact_publications()
 
     def close(self) -> None:
         with self._lock:
@@ -642,6 +667,166 @@ class StateStore:
             ).fetchall()
         for row in rows:
             self._decode_module_permission_acknowledgement(row)
+
+    def _module_artifact_publication_hash(self, record: dict[str, Any]) -> str:
+        material = canonical_json(
+            {
+                "schema": "home-center.module-artifact-publication-record.v1",
+                "publication_id": record["publication_id"],
+                "module_id": record["module_id"],
+                "version": record["version"],
+                "publisher": record["publisher"],
+                "manifest_binding_sha256": record["manifest_binding_sha256"],
+                "statement_sha256": record["statement_sha256"],
+                "artifact_sha256": record["artifact_sha256"],
+                "artifact_size_bytes": record["artifact_size_bytes"],
+                "signing_key_ids": record["signing_key_ids"],
+                "object_key": record["object_key"],
+                "state": record["state"],
+                "published_at": record["published_at"],
+                "correlation_id": record["correlation_id"],
+            }
+        ).encode("utf-8")
+        return hmac.new(
+            self.audit_key,
+            b"module-artifact-publication.v1\0" + material,
+            hashlib.sha256,
+        ).hexdigest()
+
+    def _decode_module_artifact_publication(self, row: sqlite3.Row) -> dict[str, Any]:
+        from .module_artifact_publication import (
+            ModuleArtifactPublicationError,
+            validate_module_artifact_publication_record,
+        )
+
+        try:
+            signing_key_ids = json.loads(row["signing_key_ids_json"])
+            publication = validate_module_artifact_publication_record(
+                {
+                    "publication_id": row["publication_id"],
+                    "module_id": row["module_id"],
+                    "version": row["version"],
+                    "publisher": row["publisher"],
+                    "manifest_binding_sha256": row["manifest_binding_sha256"],
+                    "statement_sha256": row["statement_sha256"],
+                    "artifact_sha256": row["artifact_sha256"],
+                    "artifact_size_bytes": row["artifact_size_bytes"],
+                    "signing_key_ids": signing_key_ids,
+                    "object_key": row["object_key"],
+                    "state": row["state"],
+                    "published_at": row["published_at"],
+                    "correlation_id": row["correlation_id"],
+                }
+            )
+        except (json.JSONDecodeError, TypeError, ModuleArtifactPublicationError) as exc:
+            raise RuntimeError("module artifact publication encoding failure") from exc
+        expected = self._module_artifact_publication_hash(publication)
+        if not hmac.compare_digest(expected, row["record_hash"]):
+            raise RuntimeError("module artifact publication integrity failure")
+        return publication
+
+    def record_module_artifact_publication(
+        self, *, publication: dict[str, Any], correlation_id: str
+    ) -> tuple[dict[str, Any], bool]:
+        """Atomically persist or replay immutable verified publication evidence."""
+
+        from .module_artifact_publication import validate_module_artifact_publication_record
+
+        validated = validate_module_artifact_publication_record(
+            {**publication, "correlation_id": correlation_id}
+        )
+        if "publication_id" not in validated:
+            raise ValueError("publication id required")
+        record = validated
+        with self._lock:
+            self._connection.execute("BEGIN IMMEDIATE")
+            try:
+                existing = self._connection.execute(
+                    "SELECT * FROM module_artifact_publications WHERE publication_id=?",
+                    (record["publication_id"],),
+                ).fetchone()
+                if existing is not None:
+                    decoded = self._decode_module_artifact_publication(existing)
+                    immutable_fields = set(validated) - {"published_at", "correlation_id"}
+                    if any(decoded[field] != validated[field] for field in immutable_fields):
+                        raise IdempotencyConflict("module artifact publication conflict")
+                    self._connection.commit()
+                    return decoded, False
+
+                occupied = self._connection.execute(
+                    """SELECT * FROM module_artifact_publications
+                    WHERE module_id=? AND version=? AND artifact_sha256=?""",
+                    (
+                        record["module_id"],
+                        record["version"],
+                        record["artifact_sha256"],
+                    ),
+                ).fetchone()
+                if occupied is not None:
+                    self._decode_module_artifact_publication(occupied)
+                    raise IdempotencyConflict("module artifact publication conflict")
+
+                self._connection.execute(
+                    """INSERT INTO module_artifact_publications(
+                    publication_id,module_id,version,publisher,manifest_binding_sha256,
+                    statement_sha256,artifact_sha256,artifact_size_bytes,signing_key_ids_json,
+                    object_key,state,published_at,correlation_id,record_hash
+                    ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                    (
+                        record["publication_id"],
+                        record["module_id"],
+                        record["version"],
+                        record["publisher"],
+                        record["manifest_binding_sha256"],
+                        record["statement_sha256"],
+                        record["artifact_sha256"],
+                        record["artifact_size_bytes"],
+                        canonical_json(record["signing_key_ids"]),
+                        record["object_key"],
+                        record["state"],
+                        record["published_at"],
+                        record["correlation_id"],
+                        self._module_artifact_publication_hash(record),
+                    ),
+                )
+                row = self._connection.execute(
+                    "SELECT * FROM module_artifact_publications WHERE publication_id=?",
+                    (record["publication_id"],),
+                ).fetchone()
+                self._connection.commit()
+            except Exception:
+                self._connection.rollback()
+                raise
+        if row is None:
+            raise RuntimeError("module artifact publication persistence failed")
+        return self._decode_module_artifact_publication(row), True
+
+    def module_artifact_publications(
+        self, identities: list[tuple[str, str, str]]
+    ) -> list[dict[str, Any]]:
+        """Read exact module/version/digest publications for lifecycle preflight."""
+
+        if len(identities) > 128:
+            raise ValueError("too many module artifact identities")
+        records: list[dict[str, Any]] = []
+        with self._lock:
+            for module_id, version, artifact_sha256 in sorted(set(identities)):
+                row = self._connection.execute(
+                    """SELECT * FROM module_artifact_publications
+                    WHERE module_id=? AND version=? AND artifact_sha256=?""",
+                    (module_id, version, artifact_sha256),
+                ).fetchone()
+                if row is not None:
+                    records.append(self._decode_module_artifact_publication(row))
+        return records
+
+    def verify_module_artifact_publications(self) -> None:
+        with self._lock:
+            rows = self._connection.execute(
+                "SELECT * FROM module_artifact_publications ORDER BY publication_id"
+            ).fetchall()
+        for row in rows:
+            self._decode_module_artifact_publication(row)
 
     def desired_state(self) -> list[dict[str, Any]]:
         with self._lock:

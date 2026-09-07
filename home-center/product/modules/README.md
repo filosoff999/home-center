@@ -6,7 +6,7 @@
 
 `Discovered/Available → CompatibilityChecked → Planned → Installed → Healthy → Upgrading → Healthy` либо контролируемый `Rollback/Recovery`; удаление проходит отдельный dependency-aware workflow.
 
-В текущей 0.11 линии lifecycle planner может сформировать только заблокированный install preview: dependency-first typed steps, health/backup postconditions и reverse-order recovery. Подтверждение ознакомления остаётся non-consumable evidence; artifact publication, placement, authorization, persistence и execution ещё не допускаются.
+В текущей 0.11 линии lifecycle planner может сформировать только заблокированный install preview: dependency-first typed steps, health/backup postconditions и reverse-order recovery. Подтверждение ознакомления остаётся non-consumable evidence. Для уже проверенных и content-addressed staged артефактов сервер может связать точное HMAC-защищённое publication evidence; отсутствие evidence остаётся явным blocker. Placement, authorization, lifecycle persistence и execution ещё не допускаются.
 
 ## Manifest contract
 
@@ -27,7 +27,7 @@
 
 ## Market boundary
 
-Catalog metadata не является разрешением на установку. Перед каждым lifecycle action Control Plane повторно выполняет policy, compatibility, dependency и topology gates.
+Catalog metadata не является разрешением на установку. Publication evidence создаётся только внутренним trusted pipeline после полной проверки и staging точных байтов; lifecycle caller не может передать или заменить его. Перед каждым lifecycle action Control Plane повторно выполняет policy, compatibility, dependency и topology gates.
 
 ## Cluster integration
 

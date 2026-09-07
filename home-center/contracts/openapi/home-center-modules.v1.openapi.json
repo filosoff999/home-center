@@ -153,7 +153,7 @@
     },
     "/api/v1/modules/lifecycle/preview": {
       "post": {
-        "summary": "Build a blocked, side-effect-free module install lifecycle plan",
+        "summary": "Build a blocked install plan using server-side publication evidence",
         "security": [{"sessionCookie": []}],
         "requestBody": {
           "required": true,
@@ -165,7 +165,7 @@
         },
         "responses": {
           "200": {
-            "description": "Deterministic blocked plan with preflight and reverse recovery",
+            "description": "Deterministic blocked plan with exact publication preflight and reverse recovery",
             "content": {
               "application/json": {
                 "schema": {"$ref": "../modules/module-install-lifecycle-plan.v1.schema.json"}

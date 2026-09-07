@@ -11,6 +11,7 @@ MANIFEST = ROOT / "product/control-plane/src/home_center/module_manifest.py"
 PLANNER = ROOT / "product/control-plane/src/home_center/module_admission.py"
 REVIEW = ROOT / "product/control-plane/src/home_center/module_permission_review.py"
 ACKNOWLEDGEMENT = ROOT / "product/control-plane/src/home_center/module_permission_acknowledgement.py"
+PUBLICATION = ROOT / "product/control-plane/src/home_center/module_artifact_publication.py"
 LIFECYCLE = ROOT / "product/control-plane/src/home_center/module_lifecycle.py"
 API = ROOT / "product/control-plane/src/home_center/api.py"
 STORE = ROOT / "product/control-plane/src/home_center/store.py"
@@ -39,6 +40,7 @@ def main() -> int:
     planner = PLANNER.read_text(encoding="utf-8")
     review = REVIEW.read_text(encoding="utf-8")
     acknowledgement = ACKNOWLEDGEMENT.read_text(encoding="utf-8")
+    publication = PUBLICATION.read_text(encoding="utf-8")
     lifecycle = LIFECYCLE.read_text(encoding="utf-8")
     api = API.read_text(encoding="utf-8")
     store = STORE.read_text(encoding="utf-8")
@@ -248,6 +250,44 @@ def main() -> int:
             f"module acknowledgement authority route enabled: {forbidden_route}",
         )
 
+    for marker in (
+        "stage_and_publish_module_artifact",
+        "prepare_module_artifact_publication",
+        "validate_module_artifact_publication_record",
+        "render_module_artifact_publication",
+        "installation_authority\": INSTALLATION_AUTHORITY",
+        "LIFECYCLE_EXECUTION_ENABLED = False",
+        "PRODUCTION_ACTIVATION_ENABLED = False",
+        "content_address",
+    ):
+        require(marker in publication, f"module artifact publication guard missing: {marker}")
+    for marker in (
+        "module_artifact_publications",
+        "UNIQUE(module_id, version, artifact_sha256)",
+        "module-artifact-publication.v1\\0",
+        "verify_module_artifact_publications",
+    ):
+        require(marker in store, f"module artifact publication persistence guard missing: {marker}")
+    require(
+        "self.store.verify_module_artifact_publications()" in runtime,
+        "module artifact publication readiness integrity gate missing",
+    )
+    require(
+        "module_install_artifact_identities(request)" in api
+        and "publication_records=publications" in api,
+        "lifecycle does not load publication evidence server-side",
+    )
+    for forbidden_route in (
+        "modules/artifacts/publish",
+        "modules/artifacts/upload",
+        "modules/artifacts/acquire",
+        "modules/lifecycle/publish",
+    ):
+        require(
+            forbidden_route not in api + web_index + web_script,
+            f"module artifact mutation route enabled: {forbidden_route}",
+        )
+
     require(
         not lifecycle_imports.intersection(
             {"http", "os", "pathlib", "requests", "shutil", "socket", "sqlite3", "subprocess", "tempfile", "urllib"}
@@ -273,6 +313,9 @@ def main() -> int:
         '"data_policy": "preserve"',
         "acknowledgement_request_hash",
         "lifecycle_admission_binding_rejected",
+        "lifecycle_artifact_publication_binding_rejected",
+        "lifecycle_artifact_publication_scope_rejected",
+        "REMAINING_BLOCKERS",
         "plan_module_install_lifecycle",
     ):
         require(marker in lifecycle, f"module lifecycle boundary missing: {marker}")
@@ -314,6 +357,7 @@ def main() -> int:
         "module-install-lifecycle-request.v1.schema.json",
         "module-install-lifecycle-plan.v1.schema.json",
         "module-lifecycle-status.v1.schema.json",
+        "module-artifact-publication.v1.schema.json",
     }
     present = {path.name for path in (ROOT / "contracts/modules").glob("*.json")}
     require(contracts <= present, "module supply-chain contract missing")

@@ -6,7 +6,7 @@ Web UI — действующий пользовательский интерф�
 
 Интерфейс также показывает actor-scoped историю краткоживущих подтверждений ознакомления. Он не создаёт подтверждение сам, не трактует handoff reference как разрешение и не предоставляет approve/grant/install/activate controls.
 
-Lifecycle-область показывает только безопасный no-pending status или заблокированный install preview с preflight и reverse recovery. Она не содержит start/resume/authorize/consume controls и не расширяет backend authority.
+Lifecycle-область показывает только безопасный no-pending status или заблокированный install preview с preflight и reverse recovery. Для каждого шага она различает подтверждённую content-addressed публикацию и отсутствие trusted evidence, не раскрывая внутренний object key или host path. Даже при подтверждённой публикации область не содержит start/resume/authorize/consume controls и не расширяет backend authority.
 
 ## UX invariants
 
