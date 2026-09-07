@@ -30,6 +30,8 @@ from home_center.server import HomeCenterServer
 
 
 PASSWORD = "intent api fixture password 123"
+GIB = 1024**3
+TIB = 1024**4
 
 
 def _credential() -> dict[str, object]:
@@ -69,7 +71,7 @@ def _capability(*, node_id: str, name: str, role: str, address: str, cpu_count: 
         },
         "operating_system": {"id": "ubuntu", "version": "26.04", "kernel": "test", "architecture": "x86_64"},
         "hardware": {"cpu_count": cpu_count, "memory_bytes": memory_bytes},
-        "storage": {"root": {"total_bytes": 1000, "used_bytes": 400, "free_bytes": 500}},
+        "storage": {"root": {"total_bytes": 10 * TIB, "used_bytes": 1 * TIB, "free_bytes": 8 * TIB}},
         "services": {},
         "capabilities": ["inventory.v1", "health.v1"],
     }
@@ -131,6 +133,28 @@ class IntentApi0130Tests(unittest.TestCase):
             peer_timeout_seconds=1,
         )
         self.runtime = Runtime(config, local_admin_expected_uid=os.geteuid())
+        self.runtime.store.upsert_node(
+            _capability(
+                node_id="hm-dm-dc01",
+                name="dc01",
+                role="leader",
+                address="127.0.0.1",
+                cpu_count=4,
+                memory_bytes=8 * GIB,
+            ),
+            "ready",
+        )
+        self.runtime.store.upsert_node(
+            _capability(
+                node_id="hm-dm-dc02",
+                name="dc02",
+                role="standby",
+                address="127.0.0.2",
+                cpu_count=8,
+                memory_bytes=16 * GIB,
+            ),
+            "ready",
+        )
         self.server = HomeCenterServer(("127.0.0.1", 0), RuntimeRequestHandlerV2, self.runtime)
         self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
         self.thread.start()
@@ -196,6 +220,19 @@ class IntentApi0130Tests(unittest.TestCase):
         self.assertEqual(value["state"], "planned")
         self.assertFalse(value["production_execution_enabled"])
         self.assertEqual([step["sequence"] for step in value["steps"]], [1, 2, 3])
+
+    def test_virtualization_intent_is_blocked_by_trusted_capacity(self) -> None:
+        body = self._intent(
+            "virtualization.workload.create",
+            "oversized-vm",
+            {"runtime": "vm", "vcpu": 64, "memory_mib": 131072, "disk_gib": 100, "high_availability": False},
+        )
+        with self._request(body) as response:
+            value = json.load(response)
+        self.assertEqual(value["state"], "blocked")
+        self.assertEqual(value["blockers"], ["insufficient_cpu_capacity", "insufficient_memory_capacity"])
+        self.assertEqual(value["steps"], [])
+        self.assertFalse(value["production_execution_enabled"])
 
     def test_unsafe_drain_is_valid_blocked_plan_with_no_steps(self) -> None:
         body = self._intent(
@@ -268,28 +305,6 @@ class IntentApi0130Tests(unittest.TestCase):
         self.assertEqual(error["error"]["code"], "cross_origin_request_rejected")
 
     def test_resource_snapshot_requires_auth_and_returns_only_trusted_capacity(self) -> None:
-        self.runtime.store.upsert_node(
-            _capability(
-                node_id="hm-dm-dc01",
-                name="dc01",
-                role="leader",
-                address="127.0.0.1",
-                cpu_count=4,
-                memory_bytes=8 * 1024**3,
-            ),
-            "ready",
-        )
-        self.runtime.store.upsert_node(
-            _capability(
-                node_id="hm-dm-dc02",
-                name="dc02",
-                role="standby",
-                address="127.0.0.2",
-                cpu_count=8,
-                memory_bytes=16 * 1024**3,
-            ),
-            "ready",
-        )
         with self.assertRaises(urllib.error.HTTPError) as unauthenticated:
             self._get("/api/v1/resources", authenticated=False)
         self.assertEqual(unauthenticated.exception.code, 401)
@@ -300,7 +315,7 @@ class IntentApi0130Tests(unittest.TestCase):
         self.assertTrue(value["planning_ready"])
         self.assertFalse(value["production_mutation_enabled"])
         self.assertEqual(value["totals"]["cpu_count"], 12)
-        self.assertEqual(value["totals"]["memory_bytes"], 24 * 1024**3)
+        self.assertEqual(value["totals"]["memory_bytes"], 24 * GIB)
         encoded = json.dumps(value, sort_keys=True)
         self.assertNotIn("127.0.0.1", encoded)
         self.assertNotIn("machine_identity_hash", encoded)
