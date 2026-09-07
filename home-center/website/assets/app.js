@@ -1,4 +1,20 @@
 (() => {
+  const scriptSrc = document.currentScript?.src || '';
+  let assetVersion = '';
+  if (scriptSrc) {
+    try {
+      assetVersion = new URL(scriptSrc, window.location.href).searchParams.get('v') || '';
+    } catch {
+      assetVersion = '';
+    }
+  }
+
+  const lightTheme = document.createElement('link');
+  lightTheme.rel = 'stylesheet';
+  lightTheme.href = `/assets/light.css${assetVersion ? `?v=${encodeURIComponent(assetVersion)}` : ''}`;
+  document.head.appendChild(lightTheme);
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', '#f6fbf8');
+
   const header = document.querySelector('[data-header]');
   const menuButton = document.querySelector('[data-menu-button]');
   const menu = document.querySelector('[data-menu]');
