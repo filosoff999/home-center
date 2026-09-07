@@ -15,7 +15,7 @@
         {"id": "lifecycle-planning", "title": "Lifecycle Planning", "weight": 1, "evidence": [{"kind": "pr", "number": 99, "state": "merged"}]},
         {"id": "artifact-binding", "title": "Trusted Artifact Publication Binding", "weight": 1, "evidence": [{"kind": "pr", "number": 110, "state": "merged"}]},
         {"id": "authorization-execution", "title": "Authorization / Execution Boundary", "weight": 1, "evidence": [{"kind": "pr", "number": 125, "state": "merged"}]},
-        {"id": "acceptance", "title": "Acceptance / Release Qualification", "weight": 1, "evidence": []}
+        {"id": "acceptance", "title": "Acceptance / Release Qualification", "weight": 1, "evidence": [{"kind": "pr", "number": 133, "state": "merged"}]}
       ]
     },
     {
@@ -27,7 +27,7 @@
         {"id": "console-recovery", "title": "Protected Console Recovery", "weight": 1, "evidence": [{"kind": "pr", "number": 94, "state": "merged"}]},
         {"id": "two-node-transaction", "title": "Two-node Credential Transaction", "weight": 1, "evidence": [{"kind": "pr", "number": 105, "state": "merged"}]},
         {"id": "recovery-acceptance", "title": "Failure / Recovery Acceptance", "weight": 1, "evidence": [{"kind": "pr", "number": 126, "state": "merged"}]},
-        {"id": "acceptance", "title": "Acceptance / Release Qualification", "weight": 1, "evidence": []}
+        {"id": "acceptance", "title": "Acceptance / Release Qualification", "weight": 1, "evidence": [{"kind": "pr", "number": 134, "state": "merged"}]}
       ]
     },
     {
@@ -41,7 +41,7 @@
         {"id": "resource-preflight", "title": "Resource-aware Preflight", "weight": 1, "evidence": [{"kind": "pr", "number": 108, "state": "merged"}]},
         {"id": "placement", "title": "Deterministic Placement", "weight": 1, "evidence": [{"kind": "pr", "number": 111, "state": "merged"}]},
         {"id": "reservation", "title": "Reservation / Scheduler Boundary", "weight": 1, "evidence": [{"kind": "pr", "number": 127, "state": "merged"}]},
-        {"id": "providers", "title": "Provider Execution Framework", "weight": 1, "evidence": []},
+        {"id": "providers", "title": "Provider Execution Framework", "weight": 1, "evidence": [{"kind": "pr", "number": 135, "state": "merged"}]},
         {"id": "acceptance", "title": "Acceptance / Release Qualification", "weight": 1, "evidence": []}
       ]
     },
