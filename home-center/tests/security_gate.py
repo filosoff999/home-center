@@ -42,7 +42,7 @@ for required in (
     "ExecStart=/usr/bin/python3 -I /opt/home-center/current/home_center/privileged_helper_v2.py --serve",
     "NoNewPrivileges=yes",
     "ProtectSystem=strict",
-    "ReadWritePaths=/etc/home-center/pki/web -/run/home-center-locks",
+    "ReadWritePaths=/etc/home-center/pki/web /etc/home-center/secrets -/run/home-center-locks",
     "InaccessiblePaths=-/etc/home-center/pki/ca.key -/etc/home-center/pki/web-ca/ca.key -/etc/home-center/pki/node.key",
     "ProtectHome=yes",
     "PrivateDevices=yes",
@@ -60,8 +60,12 @@ for required in (
         errors.append(f"helper systemd hardening missing: {required}")
 if "AF_INET6" in helper_unit:
     errors.append("privileged helper must not have IPv6 address families")
-if re.search(r"^ReadWritePaths=(?!/etc/home-center/pki/web -/run/home-center-locks$)", helper_unit, re.MULTILINE):
-    errors.append("privileged helper writable filesystem surface must stay limited to isolated Web PKI")
+if re.search(
+    r"^ReadWritePaths=(?!/etc/home-center/pki/web /etc/home-center/secrets -/run/home-center-locks$)",
+    helper_unit,
+    re.MULTILINE,
+):
+    errors.append("privileged helper writable filesystem surface must stay limited to Web PKI and local credentials")
 if re.search(r"^ReadWritePaths=.*?/etc/home-center/pki/node", helper_unit, re.MULTILINE):
     errors.append("privileged helper must not receive a writable peer/CA identity path")
 
@@ -191,7 +195,8 @@ for required in (
     'permission="tls.web.reconcile"',
     'argv=("/opt/home-center/current/home_center/tls_reconcile.py",)',
     'timeout_seconds=60',
-    'base.PERMISSIONS = frozenset(action.permission for action in base.ACTIONS.values())',
+    'base.SECRET_ACTIONS["local-admin.password.rotate.v1"] = "local-admin.password.rotate"',
+    "*base.SECRET_ACTIONS.values()",
 ):
     if required not in helper_v2:
         errors.append(f"P2.3 helper extension guard missing: {required}")
@@ -204,10 +209,22 @@ for forbidden in ("shell=True", "shell = True", "os.system(", "subprocess.Popen"
 helper_policy = json.loads((ROOT / "deploy/helper-policy.v1.json").read_text(encoding="utf-8"))
 if helper_policy != {
     "schema": "home-center.helper.policy.v1",
-    "callers": {"home-center": ["helper.probe", "tls.web.rotate", "tls.web.reconcile"]},
-    "enabled_actions": ["helper.probe.v1", "tls.web.activate.v1", "tls.web.reconcile.v1"],
+    "callers": {
+        "home-center": [
+            "helper.probe",
+            "tls.web.rotate",
+            "tls.web.reconcile",
+            "local-admin.password.rotate",
+        ]
+    },
+    "enabled_actions": [
+        "helper.probe.v1",
+        "tls.web.activate.v1",
+        "tls.web.reconcile.v1",
+        "local-admin.password.rotate.v1",
+    ],
 }:
-    errors.append("P2.3 helper policy must expose only probe plus bounded Web TLS activation/reconciliation")
+    errors.append("helper policy must expose only probe, bounded Web TLS actions and local password rotation")
 
 registry = json.loads((ROOT / "product/control-plane/src/home_center/action_registry.v1.json").read_text(encoding="utf-8"))
 registered = {item.get("id"): item for item in registry.get("actions", [])}

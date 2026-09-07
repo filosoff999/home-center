@@ -30,6 +30,7 @@
       <button class="nav-item" data-view="backups"><span class="nav-icon">↻</span>Резервные копии</button>
       <button class="nav-item" data-view="jobs"><span class="nav-icon">✓</span>Задания</button>
       <button class="nav-item" data-view="audit"><span class="nav-icon">≡</span>Аудит</button>
+      <button class="nav-item" data-view="settings"><span class="nav-icon">⚙</span>Настройки</button>
     </nav>
 
     <div class="sidebar-foot">
@@ -138,6 +139,35 @@
       <section class="view" data-panel="audit">
         <div class="section-intro"><div><p>Append-only evidence</p><h2>Журнал аудита</h2></div><span class="tag">HMAC chain</span></div>
         <article class="panel"><div id="auditList" class="table-wrap"></div></article>
+      </section>
+
+      <section class="view" data-panel="settings">
+        <div class="section-intro"><div><p>Локальная учётная запись</p><h2>Безопасность администратора</h2></div><span class="tag">Password policy v1</span></div>
+        <div class="content-grid two-thirds">
+          <article class="panel">
+            <div class="panel-head"><div><span class="panel-kicker">Узел</span><h3>Изменить пароль admin</h3></div></div>
+            <form id="passwordChangeForm" class="settings-form">
+              <label for="currentAdminPassword">Текущий пароль</label>
+              <input id="currentAdminPassword" name="current_password" type="password" autocomplete="current-password" maxlength="256" required>
+              <label for="newAdminPassword">Новый пароль</label>
+              <input id="newAdminPassword" name="new_password" type="password" autocomplete="new-password" minlength="8" maxlength="256" required>
+              <label for="confirmAdminPassword">Подтверждение нового пароля</label>
+              <input id="confirmAdminPassword" name="confirm_password" type="password" autocomplete="new-password" minlength="8" maxlength="256" required>
+              <p class="form-hint">Минимум 8 символов, хотя бы одна буква и одна цифра.</p>
+              <button type="submit" class="primary-button">Изменить пароль</button>
+              <div id="passwordChangeMessage" class="form-message" role="status" aria-live="polite"></div>
+            </form>
+          </article>
+          <article class="panel">
+            <div class="panel-head"><div><span class="panel-kicker">Гарантии</span><h3>Что защищает операцию</h3></div></div>
+            <ul class="check-list">
+              <li><i>✓</i><div><strong>Проверка текущего пароля</strong><span>Смена доступна только локальному администратору</span></div></li>
+              <li><i>✓</i><div><strong>Новая соль на каждом узле</strong><span>Хранится только односторонний scrypt verifier</span></div></li>
+              <li><i>✓</i><div><strong>Атомарная замена</strong><span>При ошибке сохраняется предыдущая рабочая учётная запись</span></div></li>
+              <li><i>✓</i><div><strong>Аудит без секретов</strong><span>Пароль, соль и verifier не попадают в журнал</span></div></li>
+            </ul>
+          </article>
+        </div>
       </section>
     </main>
   </div>

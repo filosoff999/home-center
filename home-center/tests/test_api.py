@@ -12,7 +12,7 @@ import unittest
 import urllib.error
 import urllib.request
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "product/control-plane/src"))
@@ -30,6 +30,7 @@ from home_center.local_admin_auth import (  # noqa: E402
     KDF_R,
     SALT_BYTES,
 )
+from home_center.local_admin_rotation import LocalAdminCredentialRotator, LocalAdminRotationError  # noqa: E402
 from home_center.runtime import Runtime  # noqa: E402
 from home_center.server import HomeCenterServer  # noqa: E402
 
@@ -71,6 +72,7 @@ class ApiTests(unittest.TestCase):
         (web / "index.html").write_text("<!doctype html><title>test</title>", encoding="utf-8")
         secrets = root / "secrets"
         secrets.mkdir()
+        os.chmod(secrets, 0o750)
         for name, value in (("session.key", b"s" * 32), ("audit.key", b"a" * 32), ("node.key", b"not-used")):
             path = secrets / name
             path.write_bytes(value)
@@ -116,6 +118,24 @@ class ApiTests(unittest.TestCase):
             peer_timeout_seconds=1,
         )
         self.runtime = Runtime(cfg, local_admin_expected_uid=os.geteuid())
+        local_rotator = LocalAdminCredentialRotator(
+            local_admin,
+            expected_uid=os.geteuid(),
+            expected_gid=os.getegid(),
+            expected_mode=0o640,
+            expected_directory_uid=os.geteuid(),
+            expected_directory_gid=os.getegid(),
+            expected_directory_mode=0o750,
+        )
+
+        def rotate_fixture(username: str, current_password: str, new_password: str) -> dict[str, object]:
+            try:
+                local_rotator.rotate(username, current_password, new_password)
+            except LocalAdminRotationError as exc:
+                return {"status": "rejected", "reason": exc.code}
+            return {"status": "succeeded", "reason": None}
+
+        self.runtime.local_admin_password_rotator = rotate_fixture
         self.action_calls = 0
         self._session_cookie: str | None = None
 
@@ -275,6 +295,98 @@ class ApiTests(unittest.TestCase):
             self.assertIn("invalid_credentials", payload)
             self.assertNotIn("wrong-password-value", payload)
             self.assertNotIn("t" * 32, payload)
+
+    def test_local_admin_password_change_rotates_credential_and_audits_no_secret(self) -> None:
+        new_password = "new secure password 42"
+        before = json.loads(self.runtime.config.local_admin_credentials_file.read_text(encoding="utf-8"))
+        with self.request(
+            "/api/v1/auth/local-admin/password/change",
+            authenticated=True,
+            method="POST",
+            body={
+                "schema": "home-center.local-admin-password-change.v1",
+                "current_password": PASSWORD,
+                "new_password": new_password,
+            },
+        ) as response:
+            value = json.load(response)
+        self.assertEqual(value["status"], "changed")
+        after = json.loads(self.runtime.config.local_admin_credentials_file.read_text(encoding="utf-8"))
+        self.assertNotEqual(before["salt_b64"], after["salt_b64"])
+        self.assertNotEqual(before["verifier_b64"], after["verifier_b64"])
+        self._session_cookie = None
+        with self.assertRaises(urllib.error.HTTPError) as caught:
+            self.request(
+                "/api/v1/session",
+                method="POST",
+                body={"provider": "local", "username": USERNAME, "password": PASSWORD},
+            )
+        self.assertEqual(caught.exception.code, 401)
+        with self.request(
+            "/api/v1/session",
+            method="POST",
+            body={"provider": "local", "username": USERNAME, "password": new_password},
+        ) as response:
+            self.assertEqual(json.load(response)["actor"], "local-admin:admin")
+        audit = next(
+            event
+            for event in self.runtime.store.audit_events(20)
+            if event["action"] == "local-admin.password.change"
+        )
+        self.assertEqual(audit["outcome"], "accepted")
+        serialized = json.dumps(audit)
+        self.assertNotIn(PASSWORD, serialized)
+        self.assertNotIn(new_password, serialized)
+        self.assertNotIn("salt_b64", serialized)
+        self.assertNotIn("verifier_b64", serialized)
+
+    def test_password_change_policy_and_wrong_current_password_fail_closed(self) -> None:
+        cases = (
+            ("wrong current 1", "new secure password 42", 403, "current_password_invalid"),
+            (PASSWORD, "short1", 400, "password_too_short"),
+            (PASSWORD, "12345678", 400, "password_letter_required"),
+            (PASSWORD, "onlyletters", 400, "password_digit_required"),
+        )
+        for current_password, new_password, status, code in cases:
+            with self.subTest(code=code), self.assertRaises(urllib.error.HTTPError) as caught:
+                self.request(
+                    "/api/v1/auth/local-admin/password/change",
+                    authenticated=True,
+                    method="POST",
+                    body={
+                        "schema": "home-center.local-admin-password-change.v1",
+                        "current_password": current_password,
+                        "new_password": new_password,
+                    },
+                )
+            self.assertEqual(caught.exception.code, status)
+            payload = caught.exception.read().decode("utf-8")
+            self.assertIn(code, payload)
+            self.assertNotIn(current_password, payload)
+            self.assertNotIn(new_password, payload)
+            self.assertTrue(self.runtime.local_admin.verify(USERNAME, PASSWORD))
+
+    def test_password_change_is_authenticated_and_cross_origin_protected(self) -> None:
+        body = {
+            "schema": "home-center.local-admin-password-change.v1",
+            "current_password": PASSWORD,
+            "new_password": "new secure password 42",
+        }
+        with self.assertRaises(urllib.error.HTTPError) as caught:
+            self.request("/api/v1/auth/local-admin/password/change", method="POST", body=body)
+        self.assertEqual(caught.exception.code, 401)
+        original_rotator = self.runtime.local_admin_password_rotator
+        self.runtime.local_admin_password_rotator = Mock(wraps=original_rotator)
+        with self.assertRaises(urllib.error.HTTPError) as caught:
+            self.request(
+                "/api/v1/auth/local-admin/password/change",
+                authenticated=True,
+                method="POST",
+                body=body,
+                extra_headers={"Origin": "https://attacker.invalid", "Sec-Fetch-Site": "cross-site"},
+            )
+        self.assertEqual(caught.exception.code, 403)
+        self.runtime.local_admin_password_rotator.assert_not_called()
 
 
     def test_optional_ad_login_success_and_failure_are_generic(self) -> None:
@@ -538,3 +650,4 @@ class ApiTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+

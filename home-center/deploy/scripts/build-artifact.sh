@@ -14,7 +14,8 @@ VERSION=${HOME_CENTER_VERSION:-$SOURCE_VERSION}
 # Immediate predecessor artifact gate: [ "$VERSION" = 0.9.0 ]
 # Published predecessor artifact gate: [ "$VERSION" = 0.9.2 ]
 # Published 0.10 source artifact gate: [ "$VERSION" = 0.10.0 ] || { echo RELEASE_VERSION_NOT_ADMITTED
-[ "$VERSION" = 0.11.0 ] || { echo RELEASE_VERSION_NOT_ADMITTED >&2; exit 66; }
+# Immediate development predecessor artifact gate: [ "$VERSION" = 0.11.0 ]
+[ "$VERSION" = 0.12.0 ] || { echo RELEASE_VERSION_NOT_ADMITTED >&2; exit 66; }
 REVISION=${HOME_CENTER_REVISION:-$(git -C "$ROOT" rev-parse HEAD 2>/dev/null || printf 'working-tree')}
 [[ "$REVISION" =~ ^[0-9a-f]{40}$ ]] || { echo REVISION_NOT_IMMUTABLE >&2; exit 66; }
 SOURCE_DATE_EPOCH=${SOURCE_DATE_EPOCH:-1767225600}
@@ -102,4 +103,5 @@ tar --sort=name --mtime="@$SOURCE_DATE_EPOCH" --owner=0 --group=0 --numeric-owne
 printf 'ARTIFACT=%s\n' "$ARCHIVE"
 printf 'SHA256=%s\n' "$(sha256sum "$ARCHIVE" | awk '{print $1}')"
 printf 'BYTES=%s\n' "$(stat -c %s "$ARCHIVE")"
+
 

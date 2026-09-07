@@ -14,7 +14,7 @@ sys.path.insert(0, str(ROOT / "product/control-plane/src"))
 
 from home_center import __version__  # noqa: E402
 
-TARGET = "0.11.0"
+TARGET = "0.12.0"
 TEST_REVISION = "8" * 40
 
 
@@ -25,12 +25,12 @@ class ReleaseSuccessor0110Tests(unittest.TestCase):
         release_js = (ROOT / "product/web/static/release.js").read_text(encoding="utf-8")
         self.assertEqual(__version__, TARGET)
         self.assertEqual(project["project"]["version"], TARGET)
-        self.assertIn('version: "0.11.0"', release_js)
+        self.assertIn('version: "0.12.0"', release_js)
 
     def test_builder_orders_release_auth_and_upgrade_renderers(self) -> None:
         builder = (ROOT / "deploy/scripts/build-artifact.sh").read_text(encoding="utf-8")
         self.assertIn('# Published 0.10 source artifact gate: [ "$VERSION" = 0.10.0 ]', builder)
-        self.assertIn('[ "$VERSION" = 0.11.0 ] || { echo RELEASE_VERSION_NOT_ADMITTED', builder)
+        self.assertIn('[ "$VERSION" = 0.12.0 ] || { echo RELEASE_VERSION_NOT_ADMITTED', builder)
         self.assertIn("HOME_CENTER_0100_CONFIG_SCHEMA_NOT_ADMITTED", builder)
         release_index = builder.index('render-release-policy.py"')
         auth_index = builder.index('render-auth-deployment-v2.py"')
@@ -59,9 +59,9 @@ class ReleaseSuccessor0110Tests(unittest.TestCase):
                 timeout=45,
             )
             self.assertEqual(result.returncode, 0, result.stderr)
-            archive = out / "home-center-0.11.0-linux-amd64.tar.gz"
+            archive = out / "home-center-0.12.0-linux-amd64.tar.gz"
             with tarfile.open(archive, "r:gz") as package:
-                self.assertEqual(package.extractfile("./VERSION").read(), b"0.11.0\n")
+                self.assertEqual(package.extractfile("./VERSION").read(), b"0.12.0\n")
                 self.assertEqual(package.extractfile("./REVISION").read(), (TEST_REVISION + "\n").encode())
                 bootstrap = package.extractfile("./deploy/bootstrap-hm-dm.sh").read().decode()
                 installer = package.extractfile("./deploy/install-node.sh").read().decode()
@@ -103,4 +103,5 @@ class ReleaseSuccessor0110Tests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
 

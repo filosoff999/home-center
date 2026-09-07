@@ -22,7 +22,10 @@ base.ACTIONS["tls.web.reconcile.v1"] = base.Action(
     argv=("/opt/home-center/current/home_center/tls_reconcile.py",),
     timeout_seconds=60,
 )
-base.PERMISSIONS = frozenset(action.permission for action in base.ACTIONS.values())
+base.SECRET_ACTIONS["local-admin.password.rotate.v1"] = "local-admin.password.rotate"
+base.PERMISSIONS = frozenset(
+    [*(action.permission for action in base.ACTIONS.values()), *base.SECRET_ACTIONS.values()]
+)
 
 
 if __name__ == "__main__":

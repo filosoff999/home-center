@@ -1,7 +1,7 @@
 "use strict";
 
 window.HOME_CENTER_RELEASE = Object.freeze({
-  version: "0.11.0",
+  version: "0.12.0",
   revision: null,
 });
 
@@ -17,4 +17,3 @@ document.addEventListener("DOMContentLoaded", () => {
     : `v${window.HOME_CENTER_RELEASE.version}`;
   if (!current) brand.append(label);
 });
-

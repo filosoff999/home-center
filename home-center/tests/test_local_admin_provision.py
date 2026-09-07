@@ -19,7 +19,7 @@ from home_center.local_admin_provision import (  # noqa: E402
 )
 
 
-PASSWORD = "correct horse battery staple"
+PASSWORD = "correct horse battery staple 1"
 
 
 class LocalAdminProvisionTests(unittest.TestCase):
@@ -111,3 +111,4 @@ class LocalAdminProvisionTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
