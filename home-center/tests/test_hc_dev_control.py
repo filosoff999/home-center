@@ -16,7 +16,9 @@ class DevelopmentControlTests(unittest.TestCase):
     def test_repository_registry_is_valid(self) -> None:
         registry = control.load_registry(ROOT / ".hc-dev" / "releases.json")
         self.assertEqual(registry["schema_version"], 1)
-        self.assertEqual([item["version"] for item in registry["releases"]], ["0.11.0", "0.12.0", "0.13.0", "0.14.0"])
+        versions = [item["version"] for item in registry["releases"]]
+        self.assertGreaterEqual(len(versions), 4)
+        self.assertEqual(versions, [f"0.{minor}.0" for minor in range(11, 11 + len(versions))])
 
     def test_render_bar_is_bounded(self) -> None:
         self.assertEqual(control.render_bar(0), "[░░░░░░░░░░]")
