@@ -41,7 +41,8 @@ def main() -> int:
 
     require(not imports.intersection({"http", "requests", "socket", "urllib"}), "network client imported")
     require(not calls.intersection({"eval", "exec", "os.system", "subprocess.Popen"}), "unsafe execution primitive")
-    require("tarfile.extract" not in calls and "tarfile.extractall" not in calls, "archive extraction enabled")
+    require(not any(call.endswith((".extract", ".extractall")) for call in calls), "archive extraction enabled")
+    require(source.count("subprocess.run(") == 1, "unexpected process execution surface")
     for forbidden in ("shell=True", "shell = True", "os.replace(", "download", "install_module", "activate_module"):
         require(forbidden not in source, f"forbidden runtime surface: {forbidden}")
 
