@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Документация — Home Center</title>
+  <meta name="description" content="Обзор публичной документации Home Center: архитектура, безопасность, эксплуатационная модель и версии.">
+  <meta name="theme-color" content="#0b1514">
+  <link rel="canonical" href="https://home.control-center.pro/docs.html">
+  <link rel="icon" href="/assets/logo.svg" type="image/svg+xml"><link rel="stylesheet" href="/assets/styles.css"><script defer src="/assets/app.js"></script>
+</head>
+<body>
+  <header class="site-header compact" data-header><div class="shell header-inner"><a class="brand" href="/"><img src="/assets/logo.svg" alt="" width="34" height="34"><span>Home Center</span></a><button class="menu-button" type="button" aria-expanded="false" aria-controls="site-nav" data-menu-button><span></span><span></span><span></span><span class="sr-only">Меню</span></button><nav id="site-nav" class="site-nav" data-menu><a href="/">Главная</a><a href="/#capabilities">Возможности</a><a href="/releases.html">Релизы</a><a class="current" href="/docs.html">Документация</a></nav><a class="header-release" href="/releases.html"><span>Актуальный релиз</span><strong>0.14.0</strong></a></div></header>
+  <main id="content">
+    <section class="page-hero"><div class="shell"><div class="kicker">Документация</div><h1>Как устроен Home Center</h1><p>Публичная модель продукта: архитектура, эксплуатационные принципы, безопасность и границы текущих возможностей.</p></div></section>
+    <section class="section"><div class="shell docs-grid">
+      <article class="doc-card"><span>01</span><h2>Local-first</h2><p>Основной контур управления и состояние продукта рассчитаны на работу рядом с управляемой инфраструктурой. Внешняя публикация интерфейсов рассматривается как отдельная контролируемая граница.</p></article>
+      <article class="doc-card"><span>02</span><h2>Узлы и роли</h2><p>Home Center формирует единую модель узлов, ролей и состояния. Изменения жизненного цикла должны проходить preflight и не обходить ограничения обязательных сервисов.</p></article>
+      <article class="doc-card"><span>03</span><h2>Аутентификация</h2><p>Базовый интерактивный вход использует локальную административную учётную запись. Поддержка каталога может включаться как отдельный провайдер без отключения локального recovery path.</p></article>
+      <article class="doc-card"><span>04</span><h2>Модули</h2><p>Модульная модель проверяет зависимости, capabilities, разрешения и доверенную публикацию артефакта до допуска к жизненному циклу.</p></article>
+      <article class="doc-card"><span>05</span><h2>Планирование ресурсов</h2><p>Intent API, trusted resource snapshot и deterministic placement позволяют сначала построить проверяемый план размещения и только затем переходить к разрешённой границе исполнения.</p></article>
+      <article class="doc-card"><span>06</span><h2>Сертификаты</h2><p>Certificate Lifecycle моделируется как типизированный процесс с явными состояниями, проверками и границами активации.</p></article>
+      <article class="doc-card"><span>07</span><h2>Failure / recovery</h2><p>Критические операции проектируются с диагностируемым отказом, bounded state и восстановлением, когда оно предусмотрено контрактом операции.</p></article>
+      <article class="doc-card"><span>08</span><h2>Версионирование</h2><p>Опубликованный релиз, production activation и фактически активные возможности — разные состояния. Публичная документация не должна подменять одно другим.</p></article>
+    </div></section>
+    <section class="section section-dark"><div class="shell split"><div class="section-head"><div class="kicker">0.14.0</div><h2>Что важно знать о текущей версии</h2><p>В 0.14.0 интерфейс и planners расширены, но операции compute, certificates, modules и provider execution не активируются самим planning UI.</p></div><div class="notice"><strong>Принцип безопасной границы</strong><p>Сначала состояние и план, затем — только явно разрешённое исполнение. Отсутствие разрешённой execution boundary означает отсутствие инфраструктурной mutation.</p></div></div></section>
+  </main>
+  <footer class="site-footer"><div class="shell footer-inner"><div class="brand footer-brand"><img src="/assets/logo.svg" alt="" width="30" height="30"><span>Home Center</span></div><p>Local-first управление домашней и малой серверной инфраструктурой.</p><span>© 2026 Home Center</span></div></footer>
+</body></html>

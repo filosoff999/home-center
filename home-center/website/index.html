@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Home Center — управление домашней инфраструктурой</title>
+  <meta name="description" content="Home Center — local-first платформа для управления домашней и малой серверной инфраструктурой через единый Web UI и API.">
+  <meta name="theme-color" content="#0b1514">
+  <meta property="og:title" content="Home Center">
+  <meta property="og:description" content="Домашняя инфраструктура — в одном центре управления.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://home.control-center.pro/">
+  <link rel="canonical" href="https://home.control-center.pro/">
+  <link rel="icon" href="/assets/logo.svg" type="image/svg+xml">
+  <link rel="manifest" href="/site.webmanifest">
+  <link rel="stylesheet" href="/assets/styles.css">
+  <script defer src="/assets/app.js"></script>
+</head>
+<body>
+  <a class="skip" href="#content">К содержимому</a>
+  <header class="site-header" data-header>
+    <div class="shell header-inner">
+      <a class="brand" href="/" aria-label="Home Center — главная">
+        <img src="/assets/logo.svg" alt="" width="34" height="34">
+        <span>Home Center</span>
+      </a>
+      <button class="menu-button" type="button" aria-expanded="false" aria-controls="site-nav" data-menu-button>
+        <span></span><span></span><span></span><span class="sr-only">Меню</span>
+      </button>
+      <nav id="site-nav" class="site-nav" aria-label="Основная навигация" data-menu>
+        <a href="#capabilities">Возможности</a>
+        <a href="#architecture">Архитектура</a>
+        <a href="/releases.html">Релизы</a>
+        <a href="/docs.html">Документация</a>
+      </nav>
+      <a class="header-release" href="/releases.html"><span>Актуальный релиз</span><strong>0.14.0</strong></a>
+    </div>
+  </header>
+
+  <main id="content">
+    <section class="hero">
+      <div class="shell hero-grid">
+        <div class="hero-copy reveal">
+          <div class="eyebrow"><span class="status-dot"></span> Home Center 0.14.0 · релиз опубликован</div>
+          <h1>Домашняя инфраструктура.<br><em>В одном центре.</em></h1>
+          <p class="lead">Local-first платформа для управления домашними серверами, узлами и сервисами через единый Web UI и API — без привязки продукта к конкретной инфраструктуре.</p>
+          <div class="hero-actions">
+            <a class="button primary" href="#capabilities">Посмотреть возможности</a>
+            <a class="button secondary" href="/releases.html">Что вошло в 0.14.0</a>
+          </div>
+          <div class="hero-facts" aria-label="Ключевые свойства">
+            <span>Local-first</span><span>Single / multi-node</span><span>Web UI + API</span><span>Fail-closed</span>
+          </div>
+        </div>
+
+        <div class="hero-console reveal" aria-label="Схема Home Center">
+          <div class="console-top">
+            <span class="console-title">Home Center</span>
+            <span class="pill ok">Система доступна</span>
+          </div>
+          <div class="metric-grid">
+            <article><small>Узлы</small><strong>2</strong><span>управляемый контур</span></article>
+            <article><small>Версия</small><strong>0.14.0</strong><span>опубликованный релиз</span></article>
+          </div>
+          <div class="node-card active">
+            <span class="node-icon">01</span>
+            <div><strong>Основной узел</strong><small>Control plane · healthy</small></div>
+            <span class="node-state">Online</span>
+          </div>
+          <div class="node-card">
+            <span class="node-icon">02</span>
+            <div><strong>Второй узел</strong><small>Managed node · ready</small></div>
+            <span class="node-state">Online</span>
+          </div>
+          <div class="console-bottom">
+            <span>Lifecycle</span><span>Compute</span><span>Certificates</span><span>Modules</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="capabilities">
+      <div class="shell">
+        <div class="section-head reveal">
+          <div class="kicker">Возможности</div>
+          <h2>Управление инфраструктурой как единым продуктом</h2>
+          <p>Home Center объединяет жизненный цикл узлов, планирование ресурсов, локальные сервисы и эксплуатационные операции в одной модели.</p>
+        </div>
+        <div class="feature-grid">
+          <article class="feature-card reveal"><div class="feature-no">01</div><h3>Node Lifecycle v2</h3><p>Добавление, проверка, обслуживание и безопасный вывод узлов с явными preflight-проверками и границами операций.</p></article>
+          <article class="feature-card reveal"><div class="feature-no">02</div><h3>Compute Framework</h3><p>Детерминированное планирование вычислительных ресурсов, размещения и резервирования для VM/LXC-сценариев.</p></article>
+          <article class="feature-card reveal"><div class="feature-no">03</div><h3>Home Lab Manager</h3><p>Единое представление домашнего контура: узлы, роли, состояние и дальнейшее расширение сервисов через модули.</p></article>
+          <article class="feature-card reveal"><div class="feature-no">04</div><h3>Certificate Lifecycle</h3><p>Типизированная модель жизненного цикла сертификатов с проверяемыми планами и контролируемыми границами активации.</p></article>
+          <article class="feature-card reveal"><div class="feature-no">05</div><h3>Module Supply Chain</h3><p>Проверка происхождения, зависимостей, разрешений и жизненного цикла модулей до разрешения установки.</p></article>
+          <article class="feature-card reveal"><div class="feature-no">06</div><h3>Local Admin & Recovery</h3><p>Локальная административная модель, защищённое восстановление и контролируемые операции с учётными данными.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-dark" id="architecture">
+      <div class="shell split">
+        <div class="section-head reveal">
+          <div class="kicker">Архитектура</div>
+          <h2>Сначала план. Затем действие.</h2>
+          <p>Критические операции проходят через типизированные контракты, проверки совместимости и явную границу исполнения. Это снижает риск случайных инфраструктурных изменений.</p>
+          <ul class="checks">
+            <li>предварительная проверка состояния и зависимостей;</li>
+            <li>детерминированный результат планирования;</li>
+            <li>явные границы прав и исполнения;</li>
+            <li>диагностируемый failure path.</li>
+          </ul>
+        </div>
+        <div class="flow reveal" aria-label="Архитектурный поток">
+          <div class="flow-step"><span>1</span><div><strong>Намерение</strong><small>Оператор выбирает целевое изменение</small></div></div>
+          <div class="flow-line"></div>
+          <div class="flow-step"><span>2</span><div><strong>Preflight</strong><small>Проверка состояния, ресурсов и ограничений</small></div></div>
+          <div class="flow-line"></div>
+          <div class="flow-step"><span>3</span><div><strong>План</strong><small>Типизированный и воспроизводимый результат</small></div></div>
+          <div class="flow-line muted"></div>
+          <div class="flow-step future"><span>4</span><div><strong>Исполнение</strong><small>Только после разрешённой границы активации</small></div></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section release-band">
+      <div class="shell release-grid reveal">
+        <div>
+          <div class="kicker">Текущая линия</div>
+          <h2>Home Center 0.14.0</h2>
+          <p>Расширение product lifecycle: Node Lifecycle v2, Compute Framework, Home Lab Manager, Certificate Lifecycle и обновлённый read-only planning UI.</p>
+        </div>
+        <div class="release-status">
+          <div><span>Статус</span><strong>Released</strong></div>
+          <div><span>Опубликован</span><strong>07.09.2026</strong></div>
+          <div><span>Safety boundary</span><strong>Plan-only</strong></div>
+        </div>
+      </div>
+      <div class="shell notice reveal">
+        <strong>Граница релиза 0.14.0.</strong>
+        <p>Planning UI и planners не запускают provider-, module-, certificate- или compute-изменения. Публикация релиза не равна активации изменений в управляемой инфраструктуре.</p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="shell cta reveal">
+        <div><div class="kicker">Подробнее</div><h2>Версии, границы и документация</h2><p>Публичная информация разделяет опубликованный код, активированные возможности и будущие направления — без скрытых обещаний.</p></div>
+        <div class="cta-actions"><a class="button primary" href="/releases.html">История релизов</a><a class="button secondary" href="/docs.html">Документация</a></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="shell footer-inner">
+      <div class="brand footer-brand"><img src="/assets/logo.svg" alt="" width="30" height="30"><span>Home Center</span></div>
+      <p>Local-first управление домашней и малой серверной инфраструктурой.</p>
+      <span>© 2026 Home Center</span>
+    </div>
+  </footer>
+</body>
+</html>
