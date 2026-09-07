@@ -22,7 +22,7 @@ The request contains:
 - bounded validated ModuleManifest v2 candidates;
 - exact requested module IDs and versions.
 
-The planner validates every candidate manifest again and then computes a deterministic dependency-first order. Required dependencies must have exactly one compatible candidate unless an already installed exact version satisfies the interval. A missing optional dependency is omitted; an optional dependency that is present but incompatible fails closed. Multiple compatible versions are ambiguous and rejected rather than resolved by an implicit preference.
+The planner validates every candidate manifest again and then computes a deterministic dependency-first order. Required dependencies must have exactly one compatible candidate unless an already installed exact version satisfies the interval. An optional dependency is included only when it is separately requested or already installed; mere presence in the candidate inventory never triggers an implicit install. A selected or installed optional dependency that is incompatible fails closed. Multiple compatible versions are ambiguous and rejected rather than resolved by an implicit preference.
 
 Every selected candidate must support the exact Home Center version, operating system and architecture, and all of its declared capabilities must exist in the supplied local snapshot. Dependency cycles, incompatible shared constraints and conflicts declared by either a selected candidate or an installed module are rejected.
 
