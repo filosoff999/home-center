@@ -77,9 +77,9 @@ def main() -> int:
     version = (ROOT / "product/control-plane/src/home_center/__init__.py").read_text(encoding="utf-8")
     project = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
     builder = (ROOT / "deploy/scripts/build-artifact.sh").read_text(encoding="utf-8")
-    require('__version__ = "0.12.0"' in version, "0.11 safeguards are not inherited by 0.12.0")
-    require('version = "0.12.0"' in project, "package version is not 0.12.0")
-    require('[ "$VERSION" = 0.12.0 ] || { echo RELEASE_VERSION_NOT_ADMITTED' in builder, "artifact gate is not 0.12.0")
+    require('__version__ = "0.13.0"' in version, "0.11 safeguards are not inherited by 0.13.0")
+    require('version = "0.13.0"' in project, "package version is not 0.13.0")
+    require('[ "$VERSION" = 0.13.0 ] || { echo RELEASE_VERSION_NOT_ADMITTED' in builder, "artifact gate is not 0.13.0")
 
     print("SECURITY_GATE_0110=PASS")
     return 0
