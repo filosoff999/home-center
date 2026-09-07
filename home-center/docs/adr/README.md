@@ -43,3 +43,9 @@ Architecture Decision Record обязателен для решений, кот�
 - protected production signing-key provisioning and P2.5 persisted update reconcile;
 
 README не принимает будущие решения автоматически; он задаёт процесс их фиксации.
+
+## Proposed decisions for 0.11.0
+
+- [ADR-0014 — ModuleManifest v2 trust boundary](0014-module-manifest-v2-trust-boundary.md).
+
+ADR-0014 remains proposed until review and CI acceptance. It does not activate module installation or a privileged Market runtime.
