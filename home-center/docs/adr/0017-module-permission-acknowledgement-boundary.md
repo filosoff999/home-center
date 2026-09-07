@@ -1,6 +1,6 @@
 # ADR-0017 — Expiring module permission acknowledgement boundary
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-09-07
 - **Related requirements:** HC-124
 - **Tracking:** #93
