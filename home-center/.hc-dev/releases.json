@@ -58,6 +58,63 @@
         {"id": "ui-expansion", "title": "UI Expansion", "weight": 1, "evidence": [{"kind": "pr", "number": 137, "state": "merged"}]},
         {"id": "acceptance-tests", "title": "Acceptance Tests", "weight": 1, "evidence": [{"kind": "pr", "number": 141, "state": "merged"}]}
       ]
+    },
+    {
+      "version": "0.15.0",
+      "branch": "release/0.15.0",
+      "state": "active",
+      "workstreams": [
+        {"id": "release-bootstrap", "title": "Release Bootstrap", "weight": 1, "evidence": [{"kind": "pr", "number": 152, "state": "merged"}]},
+        {"id": "infrastructure-inventory", "title": "Infrastructure Inventory", "weight": 1, "evidence": []},
+        {"id": "node-discovery", "title": "Node Discovery", "weight": 1, "evidence": []},
+        {"id": "deployment-profiles", "title": "Deployment Profiles", "weight": 1, "evidence": []},
+        {"id": "ansible-integration", "title": "Ansible Integration", "weight": 1, "evidence": []},
+        {"id": "ui", "title": "Infrastructure UI", "weight": 1, "evidence": []},
+        {"id": "acceptance", "title": "Acceptance / Release Qualification", "weight": 1, "evidence": []}
+      ]
+    },
+    {
+      "version": "0.16.0",
+      "branch": "release/0.16.0",
+      "state": "active",
+      "workstreams": [
+        {"id": "release-bootstrap", "title": "Release Bootstrap", "weight": 1, "evidence": []},
+        {"id": "proxmox-integration", "title": "Proxmox Integration", "weight": 1, "evidence": []},
+        {"id": "vm-lifecycle", "title": "VM Lifecycle", "weight": 1, "evidence": []},
+        {"id": "containers", "title": "Container Management", "weight": 1, "evidence": []},
+        {"id": "resource-scheduler", "title": "Resource Scheduler", "weight": 1, "evidence": []},
+        {"id": "market-adapters", "title": "Market Compute Adapters", "weight": 1, "evidence": []},
+        {"id": "acceptance", "title": "Acceptance / Release Qualification", "weight": 1, "evidence": []}
+      ]
+    },
+    {
+      "version": "0.17.0",
+      "branch": "release/0.17.0",
+      "state": "active",
+      "workstreams": [
+        {"id": "release-bootstrap", "title": "Release Bootstrap", "weight": 1, "evidence": []},
+        {"id": "device-registry", "title": "Device Registry", "weight": 1, "evidence": []},
+        {"id": "zigbee", "title": "ZigBee Gateway", "weight": 1, "evidence": []},
+        {"id": "automation-engine", "title": "Automation Engine", "weight": 1, "evidence": []},
+        {"id": "yandex-integration", "title": "Yandex Smart Home Integration", "weight": 1, "evidence": []},
+        {"id": "mqtt-webhooks", "title": "MQTT / Webhooks", "weight": 1, "evidence": []},
+        {"id": "mobile-ui", "title": "Device / Mobile UI", "weight": 1, "evidence": []},
+        {"id": "acceptance", "title": "Acceptance / Release Qualification", "weight": 1, "evidence": []}
+      ]
+    },
+    {
+      "version": "0.18.0",
+      "branch": "release/0.18.0",
+      "state": "active",
+      "workstreams": [
+        {"id": "release-bootstrap", "title": "Release Bootstrap", "weight": 1, "evidence": []},
+        {"id": "identity", "title": "Identity / RBAC", "weight": 1, "evidence": []},
+        {"id": "certificate-lifecycle", "title": "Certificate Lifecycle", "weight": 1, "evidence": []},
+        {"id": "remote-access", "title": "Remote Access", "weight": 1, "evidence": []},
+        {"id": "backup-federation", "title": "Backup Federation", "weight": 1, "evidence": []},
+        {"id": "security-hardening", "title": "Security Hardening", "weight": 1, "evidence": []},
+        {"id": "acceptance", "title": "Acceptance / Release Qualification", "weight": 1, "evidence": []}
+      ]
     }
   ]
 }
