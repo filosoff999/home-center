@@ -101,7 +101,11 @@ def valid_manifest() -> dict:
             "sha256": "a" * 64,
             "size_bytes": 4096,
             "media_type": "application/vnd.home-center.module.v1+tar+gzip",
-            "provenance": {"statement_sha256": "b" * 64, "signer_key_ids": ["market-root-2026"], "threshold": 1},
+            "provenance": {
+                "statement_sha256": "b" * 64,
+                "signer_key_ids": ["sha256:" + "c" * 64],
+                "threshold": 1,
+            },
         },
     }
 
@@ -127,6 +131,14 @@ class ModuleManifestTests(unittest.TestCase):
         with self.assertRaises(ModuleManifestError) as oversized:
             load_and_validate_manifest(b" " * (MAX_MANIFEST_BYTES + 1))
         self.assertEqual(oversized.exception.code, "manifest_size_rejected")
+
+        with self.assertRaises(ModuleManifestError) as floated:
+            load_and_validate_manifest(b'{"size":1.0}')
+        self.assertEqual(floated.exception.code, "manifest_float_rejected")
+
+        with self.assertRaises(ModuleManifestError) as constant:
+            load_and_validate_manifest(b'{"size":NaN}')
+        self.assertEqual(constant.exception.code, "manifest_constant_rejected")
 
     def test_loader_accepts_canonical_json_shape(self) -> None:
         payload = json.dumps(valid_manifest(), sort_keys=True, separators=(",", ":")).encode()
