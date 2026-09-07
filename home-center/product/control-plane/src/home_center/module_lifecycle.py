@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 import hashlib
 import hmac
 import json
@@ -12,6 +13,10 @@ from home_center.module_admission import (
     MAX_ADMISSION_REQUEST_BYTES,
     ModuleAdmissionError,
     plan_module_admission,
+)
+from home_center.module_artifact_publication import (
+    ModuleArtifactPublicationError,
+    render_module_artifact_publication,
 )
 from home_center.module_permission_acknowledgement import (
     ACKNOWLEDGEMENT_ID,
@@ -35,6 +40,11 @@ PRODUCTION_ACTIVATION_ENABLED = False
 
 BLOCKERS = (
     "artifact_publication_unverified",
+    "authorization_contract_unavailable",
+    "lifecycle_executor_unavailable",
+    "placement_unresolved",
+)
+REMAINING_BLOCKERS = (
     "authorization_contract_unavailable",
     "lifecycle_executor_unavailable",
     "placement_unresolved",
@@ -68,6 +78,72 @@ def _reject_constant(_: str) -> None:
 
 def _digest(value: Any) -> str:
     return "sha256:" + hashlib.sha256(canonical_json(value).encode("utf-8")).hexdigest()
+
+
+def _manifest_binding_sha256(manifest: dict[str, Any]) -> str:
+    normalized = copy.deepcopy(manifest)
+    try:
+        normalized["artifact"]["provenance"]["statement_sha256"] = "0" * 64
+    except (KeyError, TypeError) as exc:
+        raise ModuleLifecycleError("lifecycle_manifest_binding_rejected") from exc
+    return "sha256:" + hashlib.sha256(
+        canonical_json(normalized).encode("utf-8")
+    ).hexdigest()
+
+
+def _publications(records: list[dict[str, Any]]) -> dict[tuple[str, str, str], dict[str, Any]]:
+    if not isinstance(records, list) or len(records) > 128:
+        raise ModuleLifecycleError("lifecycle_artifact_publication_rejected")
+    result: dict[tuple[str, str, str], dict[str, Any]] = {}
+    try:
+        for record in records:
+            publication = render_module_artifact_publication(record)
+            key = (
+                publication["module"]["id"],
+                publication["module"]["version"],
+                publication["artifact"]["sha256"],
+            )
+            if key in result:
+                raise ModuleLifecycleError("lifecycle_artifact_publication_ambiguous")
+            result[key] = publication
+    except ModuleArtifactPublicationError as exc:
+        raise ModuleLifecycleError("lifecycle_artifact_publication_rejected") from exc
+    return result
+
+
+def _bind_publication(
+    manifest: dict[str, Any], publication: dict[str, Any] | None
+) -> dict[str, Any] | None:
+    if publication is None:
+        return None
+    artifact = manifest["artifact"]
+    provenance = artifact["provenance"]
+    declared_signers = set(provenance["signer_key_ids"])
+    verified_signers = publication["verification"]["signing_key_ids"]
+    exact = (
+        hmac.compare_digest(publication["module"]["publisher"], manifest["module"]["publisher"])
+        and publication["artifact"]["size_bytes"] == artifact["size_bytes"]
+        and hmac.compare_digest(
+            publication["artifact"]["content_address"],
+            f"sha256:{artifact['sha256']}",
+        )
+        and hmac.compare_digest(
+            publication["verification"]["manifest_binding_sha256"],
+            _manifest_binding_sha256(manifest),
+        )
+        and hmac.compare_digest(
+            publication["verification"]["statement_sha256"],
+            f"sha256:{provenance['statement_sha256']}",
+        )
+        and len(verified_signers) >= provenance["threshold"]
+        and set(verified_signers).issubset(declared_signers)
+        and publication["installation_authority"] is False
+        and publication["lifecycle_execution_enabled"] is False
+        and publication["production_activation_enabled"] is False
+    )
+    if not exact:
+        raise ModuleLifecycleError("lifecycle_artifact_publication_binding_rejected")
+    return publication
 
 
 def load_module_install_lifecycle_request(payload: bytes) -> dict[str, Any]:
@@ -137,11 +213,29 @@ def _postconditions(manifest: dict[str, Any]) -> list[dict[str, Any]]:
     ]
 
 
+def module_install_artifact_identities(
+    request: dict[str, Any],
+) -> list[tuple[str, str, str]]:
+    """Return only the admitted install set used for server-side publication lookup."""
+
+    if not isinstance(request, dict) or not isinstance(request.get("admission_request"), dict):
+        raise ModuleLifecycleError("lifecycle_request_rejected")
+    try:
+        admission = plan_module_admission(request["admission_request"])
+    except ModuleAdmissionError as exc:
+        raise ModuleLifecycleError("lifecycle_admission_rejected") from exc
+    return [
+        (module.module_id, module.version, module.artifact_sha256)
+        for module in admission.install_order
+    ]
+
+
 def plan_module_install_lifecycle(
     request: dict[str, Any],
     *,
     acknowledgement_record: dict[str, Any],
     actor: str,
+    publication_records: list[dict[str, Any]] | None = None,
     now: datetime | None = None,
 ) -> dict[str, Any]:
     """Build a blocked lifecycle plan; no transition can execute in this increment."""
@@ -204,6 +298,7 @@ def plan_module_install_lifecycle(
         (item["module"]["id"], item["module"]["version"]): item
         for item in admission_request["candidates"]
     }
+    publications = _publications(publication_records or [])
     install_steps: list[dict[str, Any]] = []
     recovery_steps: list[dict[str, Any]] = []
     for index, module in enumerate(admission.install_order, start=1):
@@ -211,6 +306,10 @@ def plan_module_install_lifecycle(
         if manifest is None:
             raise ModuleLifecycleError("lifecycle_manifest_binding_rejected")
         lifecycle = manifest["lifecycle"]["install"]
+        publication = _bind_publication(
+            manifest,
+            publications.get((module.module_id, module.version, module.artifact_sha256)),
+        )
         install_steps.append(
             {
                 "id": f"install-{index:03d}",
@@ -219,6 +318,7 @@ def plan_module_install_lifecycle(
                     "version": module.version,
                     "artifact_sha256": module.artifact_sha256,
                 },
+                "publication": publication,
                 "action": _action(manifest, lifecycle["action"]),
                 "state": "blocked",
                 "postconditions": _postconditions(manifest),
@@ -243,14 +343,16 @@ def plan_module_install_lifecycle(
             }
         )
 
+    publication_complete = all(step["publication"] is not None for step in install_steps)
+    blockers = list(REMAINING_BLOCKERS if publication_complete else BLOCKERS)
     preflight = [
         {"id": "admission", "status": "pass", "reason": None},
         {"id": "permission-review", "status": "pass", "reason": None},
         {"id": "permission-acknowledgement", "status": "pass", "reason": None},
         {
             "id": "artifact-publication",
-            "status": "blocked",
-            "reason": "artifact_publication_unverified",
+            "status": "pass" if publication_complete else "blocked",
+            "reason": None if publication_complete else "artifact_publication_unverified",
         },
         {
             "id": "authorization",
@@ -277,7 +379,7 @@ def plan_module_install_lifecycle(
         "review_id": review["review_id"],
         "scope_id": scope_id,
         "preflight": preflight,
-        "blockers": list(BLOCKERS),
+        "blockers": blockers,
         "steps": install_steps,
         "recovery": {
             "strategy": "reverse-order-rollback",

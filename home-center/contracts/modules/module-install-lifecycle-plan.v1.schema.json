@@ -51,7 +51,7 @@
     },
     "blockers": {
       "type": "array",
-      "minItems": 4,
+      "minItems": 3,
       "maxItems": 4,
       "uniqueItems": true,
       "items": {"$ref": "#/$defs/blocker"}
@@ -203,10 +203,16 @@
     "installStep": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "module", "action", "state", "postconditions", "backup"],
+      "required": ["id", "module", "publication", "action", "state", "postconditions", "backup"],
       "properties": {
         "id": {"type": "string", "pattern": "^install-[0-9]{3}$"},
         "module": {"$ref": "#/$defs/moduleArtifact"},
+        "publication": {
+          "oneOf": [
+            {"type": "null"},
+            {"$ref": "#/$defs/publication"}
+          ]
+        },
         "action": {"$ref": "#/$defs/action"},
         "state": {"const": "blocked"},
         "postconditions": {
@@ -216,6 +222,68 @@
           "items": {"$ref": "#/$defs/postcondition"}
         },
         "backup": {"$ref": "#/$defs/backup"}
+      }
+    },
+    "publication": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "publication_id",
+        "module",
+        "artifact",
+        "verification",
+        "status",
+        "published_at",
+        "installation_authority",
+        "lifecycle_execution_enabled",
+        "production_activation_enabled"
+      ],
+      "properties": {
+        "schema": {"const": "home-center.module-artifact-publication.v1"},
+        "publication_id": {"$ref": "#/$defs/prefixedDigest"},
+        "module": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "version", "publisher"],
+          "properties": {
+            "id": {"$ref": "#/$defs/moduleId"},
+            "version": {"$ref": "#/$defs/semver"},
+            "publisher": {"$ref": "#/$defs/moduleId"}
+          }
+        },
+        "artifact": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["sha256", "size_bytes", "media_type", "content_address"],
+          "properties": {
+            "sha256": {"$ref": "#/$defs/digest"},
+            "size_bytes": {"type": "integer", "minimum": 1, "maximum": 9223372036854775807},
+            "media_type": {"const": "application/vnd.home-center.module.v1+tar+gzip"},
+            "content_address": {"$ref": "#/$defs/prefixedDigest"}
+          }
+        },
+        "verification": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["manifest_binding_sha256", "statement_sha256", "signing_key_ids"],
+          "properties": {
+            "manifest_binding_sha256": {"$ref": "#/$defs/prefixedDigest"},
+            "statement_sha256": {"$ref": "#/$defs/prefixedDigest"},
+            "signing_key_ids": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 16,
+              "uniqueItems": true,
+              "items": {"$ref": "#/$defs/prefixedDigest"}
+            }
+          }
+        },
+        "status": {"const": "published"},
+        "published_at": {"type": "string", "format": "date-time"},
+        "installation_authority": {"const": false},
+        "lifecycle_execution_enabled": {"const": false},
+        "production_activation_enabled": {"const": false}
       }
     },
     "recoveryStep": {

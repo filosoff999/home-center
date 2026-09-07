@@ -33,6 +33,7 @@ from .module_lifecycle import (
     ModuleLifecycleError,
     empty_module_lifecycle_status,
     load_module_install_lifecycle_request,
+    module_install_artifact_identities,
     plan_module_install_lifecycle,
 )
 from .module_permission_acknowledgement import (
@@ -424,10 +425,14 @@ class RuntimeRequestHandler(BaseHTTPRequestHandler):
                 )
                 if acknowledgement is None:
                     raise ModuleLifecycleError("lifecycle_acknowledgement_rejected")
+                publications = self.runtime.store.module_artifact_publications(
+                    module_install_artifact_identities(request)
+                )
                 plan = plan_module_install_lifecycle(
                     request,
                     acknowledgement_record=acknowledgement,
                     actor=actor,
+                    publication_records=publications,
                 )
                 self.runtime.store.audit(
                     actor=actor,
@@ -441,6 +446,9 @@ class RuntimeRequestHandler(BaseHTTPRequestHandler):
                         "scope_id": plan["scope_id"],
                         "status": plan["status"],
                         "blockers": plan["blockers"],
+                        "published_artifacts": sum(
+                            step["publication"] is not None for step in plan["steps"]
+                        ),
                         "acknowledgement_consumption_enabled": False,
                         "authorization_decisions_enabled": False,
                         "artifact_mutation_enabled": False,

@@ -11,8 +11,17 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "product/control-plane/src"))
 sys.path.insert(0, str(ROOT / "tests"))
 
+from home_center.module_artifact import (  # noqa: E402
+    StagedModuleArtifact,
+    VerifiedModuleArtifact,
+    manifest_binding_sha256,
+)
+from home_center.module_artifact_publication import (  # noqa: E402
+    prepare_module_artifact_publication,
+)
 from home_center.module_lifecycle import (  # noqa: E402
     BLOCKERS,
+    REMAINING_BLOCKERS,
     ModuleLifecycleError,
     empty_module_lifecycle_status,
     load_module_install_lifecycle_request,
@@ -66,6 +75,25 @@ def lifecycle_payload(admission: dict, *, extra: dict | None = None) -> bytes:
     return json.dumps(value, sort_keys=True, separators=(",", ":")).encode()
 
 
+def publication_record(manifest: dict) -> dict:
+    artifact = manifest["artifact"]
+    digest = artifact["sha256"]
+    verified = VerifiedModuleArtifact(
+        module_id=manifest["module"]["id"],
+        version=manifest["module"]["version"],
+        publisher=manifest["module"]["publisher"],
+        manifest_binding_sha256=manifest_binding_sha256(manifest),
+        statement_sha256=artifact["provenance"]["statement_sha256"],
+        artifact_sha256=digest,
+        artifact_size_bytes=artifact["size_bytes"],
+        signing_key_ids=tuple(sorted(artifact["provenance"]["signer_key_ids"])),
+        object_key=f"sha256/{digest[:2]}/{digest}/artifact.tar.gz",
+    )
+    return prepare_module_artifact_publication(
+        StagedModuleArtifact(verified=verified, created=False), now=NOW
+    )
+
+
 class ModuleLifecycleTests(unittest.TestCase):
     def dependency_plan(self) -> dict:
         core = candidate("org.test.core")
@@ -74,12 +102,21 @@ class ModuleLifecycleTests(unittest.TestCase):
         )
         return request([root, core], [("org.test.root", "1.0.0")])
 
-    def plan(self, admission: dict, *, record: dict | None = None, actor: str = "local-admin:admin", now=NOW):
+    def plan(
+        self,
+        admission: dict,
+        *,
+        record: dict | None = None,
+        actor: str = "local-admin:admin",
+        publication_records: list[dict] | None = None,
+        now=NOW,
+    ):
         parsed = load_module_install_lifecycle_request(lifecycle_payload(admission))
         return plan_module_install_lifecycle(
             parsed,
             acknowledgement_record=record or acknowledgement_record(admission),
             actor=actor,
+            publication_records=publication_records,
             now=now,
         )
 
@@ -100,6 +137,53 @@ class ModuleLifecycleTests(unittest.TestCase):
         ):
             self.assertFalse(plan[field])
         self.assertRegex(plan["plan_id"], r"^sha256:[0-9a-f]{64}$")
+
+    def test_exact_publications_pass_only_the_artifact_preflight(self) -> None:
+        admission = self.dependency_plan()
+        publications = [publication_record(item) for item in admission["candidates"]]
+        plan = self.plan(admission, publication_records=publications)
+        self.assertEqual(plan["blockers"], list(REMAINING_BLOCKERS))
+        artifact_preflight = next(
+            item for item in plan["preflight"] if item["id"] == "artifact-publication"
+        )
+        self.assertEqual(
+            artifact_preflight,
+            {"id": "artifact-publication", "status": "pass", "reason": None},
+        )
+        publication_schema = json.loads(
+            (ROOT / "contracts/modules/module-artifact-publication.v1.schema.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        for step in plan["steps"]:
+            publication = step["publication"]
+            self.assertEqual(publication["status"], "published")
+            self.assertFalse(publication["installation_authority"])
+            self.assertEqual(
+                publication["artifact"]["content_address"],
+                f"sha256:{step['module']['artifact_sha256']}",
+            )
+            validate(publication_schema, publication)
+        self.assertEqual(plan["status"], "blocked")
+        self.assertFalse(plan["lifecycle_execution_enabled"])
+
+    def test_missing_or_mismatched_publication_fails_closed(self) -> None:
+        admission = self.dependency_plan()
+        partial = [publication_record(admission["candidates"][0])]
+        plan = self.plan(admission, publication_records=partial)
+        self.assertEqual(plan["blockers"], list(BLOCKERS))
+        self.assertEqual(
+            sum(step["publication"] is None for step in plan["steps"]), 1
+        )
+
+        wrong = copy.deepcopy(admission["candidates"][0])
+        wrong["module"]["publisher"] = "org.test.other-publisher"
+        with self.assertRaises(ModuleLifecycleError) as mismatch:
+            self.plan(admission, publication_records=[publication_record(wrong)])
+        self.assertEqual(
+            mismatch.exception.code,
+            "lifecycle_artifact_publication_binding_rejected",
+        )
 
     def test_install_is_dependency_first_and_recovery_is_exact_reverse(self) -> None:
         plan = self.plan(self.dependency_plan())
@@ -190,6 +274,13 @@ class ModuleLifecycleTests(unittest.TestCase):
                 lifecycle_payload(admission, extra={"execute": True})
             )
         self.assertEqual(unknown.exception.code, "lifecycle_request_fields_rejected")
+        with self.assertRaises(ModuleLifecycleError) as caller_publication:
+            load_module_install_lifecycle_request(
+                lifecycle_payload(admission, extra={"publication_records": []})
+            )
+        self.assertEqual(
+            caller_publication.exception.code, "lifecycle_request_fields_rejected"
+        )
         value = json.loads(lifecycle_payload(admission))
         value["operation"] = "remove"
         with self.assertRaises(ModuleLifecycleError) as operation:
