@@ -1,0 +1,135 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://home-center.local/contracts/modules/module-permission-review.v1.schema.json",
+  "title": "Home Center read-only module permission review v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "status",
+    "review_id",
+    "requested_modules",
+    "modules",
+    "permissions",
+    "summary",
+    "acknowledgement_required",
+    "decision_persistence_enabled",
+    "permission_grants_applied",
+    "production_activation_enabled"
+  ],
+  "properties": {
+    "schema": {"const": "home-center.module-permission-review.v1"},
+    "status": {"const": "review-required"},
+    "review_id": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "requested_modules": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 32,
+      "items": {"$ref": "#/$defs/moduleVersion"}
+    },
+    "modules": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 128,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "version", "artifact_sha256", "permissions"],
+        "properties": {
+          "id": {"$ref": "#/$defs/moduleId"},
+          "version": {"$ref": "#/$defs/semver"},
+          "artifact_sha256": {"$ref": "#/$defs/digest"},
+          "permissions": {
+            "type": "array",
+            "maxItems": 128,
+            "uniqueItems": true,
+            "items": {"$ref": "#/$defs/permission"}
+          }
+        }
+      }
+    },
+    "permissions": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 128,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "risk", "modules", "actions"],
+        "properties": {
+          "id": {"$ref": "#/$defs/permission"},
+          "risk": {"enum": ["read-only", "mutation", "destructive", "unclassified"]},
+          "modules": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 128,
+            "uniqueItems": true,
+            "items": {"$ref": "#/$defs/moduleId"}
+          },
+          "actions": {
+            "type": "array",
+            "maxItems": 2048,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["module_id", "action_id", "risk"],
+              "properties": {
+                "module_id": {"$ref": "#/$defs/moduleId"},
+                "action_id": {"$ref": "#/$defs/symbolicId"},
+                "risk": {"enum": ["read-only", "mutation", "destructive"]}
+              }
+            }
+          }
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["total", "read_only", "mutation", "destructive", "unclassified"],
+      "properties": {
+        "total": {"type": "integer", "minimum": 1, "maximum": 128},
+        "read_only": {"type": "integer", "minimum": 0, "maximum": 128},
+        "mutation": {"type": "integer", "minimum": 0, "maximum": 128},
+        "destructive": {"type": "integer", "minimum": 0, "maximum": 128},
+        "unclassified": {"type": "integer", "minimum": 0, "maximum": 128}
+      }
+    },
+    "acknowledgement_required": {"const": true},
+    "decision_persistence_enabled": {"const": false},
+    "permission_grants_applied": {"const": false},
+    "production_activation_enabled": {"const": false}
+  },
+  "$defs": {
+    "moduleId": {
+      "type": "string",
+      "maxLength": 128,
+      "pattern": "^[a-z0-9](?:[a-z0-9.-]{0,126}[a-z0-9])?$"
+    },
+    "semver": {
+      "type": "string",
+      "maxLength": 64,
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"
+    },
+    "symbolicId": {
+      "type": "string",
+      "maxLength": 128,
+      "pattern": "^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$"
+    },
+    "permission": {
+      "type": "string",
+      "maxLength": 128,
+      "pattern": "^[a-z][a-z0-9.-]*\\.[a-z][a-z0-9.-]*$"
+    },
+    "digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "moduleVersion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "version"],
+      "properties": {
+        "id": {"$ref": "#/$defs/moduleId"},
+        "version": {"$ref": "#/$defs/semver"}
+      }
+    }
+  }
+}

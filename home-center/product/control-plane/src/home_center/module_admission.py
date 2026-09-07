@@ -15,6 +15,7 @@ MAX_CANDIDATES = 128
 MAX_INSTALLED_MODULES = 128
 MAX_REQUESTED_MODULES = 32
 MAX_CAPABILITIES = 256
+MAX_REQUESTED_PERMISSIONS = 128
 PRODUCTION_ACTIVATION_ENABLED = False
 
 SEMVER = re.compile(r"^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$")
@@ -421,6 +422,8 @@ def plan_module_admission(request: dict[str, Any]) -> ModuleAdmissionPlan:
     requested_permissions = tuple(
         sorted({permission for manifest in selected.values() for permission in manifest["permissions"]})
     )
+    if len(requested_permissions) > MAX_REQUESTED_PERMISSIONS:
+        raise ModuleAdmissionError("planner_permissions_rejected")
     install_order = tuple(
         ModuleInstallStep(
             module_id,

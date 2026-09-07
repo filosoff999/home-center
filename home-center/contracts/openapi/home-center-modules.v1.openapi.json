@@ -1,0 +1,62 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Home Center module review API",
+    "version": "0.11.0"
+  },
+  "paths": {
+    "/api/v1/modules/permission-review": {
+      "get": {
+        "summary": "Read the current permission-review status",
+        "security": [{"sessionCookie": []}],
+        "responses": {
+          "200": {
+            "description": "No persisted review exists in this increment",
+            "content": {
+              "application/json": {
+                "schema": {"$ref": "../modules/module-permission-review-status.v1.schema.json"}
+              }
+            }
+          },
+          "401": {"description": "Authentication required"}
+        }
+      }
+    },
+    "/api/v1/modules/permission-review/preview": {
+      "post": {
+        "summary": "Build a side-effect-free permission preview",
+        "security": [{"sessionCookie": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {"$ref": "../modules/module-admission-request.v1.schema.json"}
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Deterministic permission review; no grant or decision is persisted",
+            "content": {
+              "application/json": {
+                "schema": {"$ref": "../modules/module-permission-review.v1.schema.json"}
+              }
+            }
+          },
+          "400": {"description": "Admission or review rejected"},
+          "401": {"description": "Authentication required"},
+          "403": {"description": "Cross-origin request rejected"}
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "sessionCookie": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "__Host-home_center_session"
+      }
+    }
+  }
+}

@@ -9,6 +9,10 @@ ROOT = Path(__file__).resolve().parents[1]
 MODULE = ROOT / "product/control-plane/src/home_center/module_artifact.py"
 MANIFEST = ROOT / "product/control-plane/src/home_center/module_manifest.py"
 PLANNER = ROOT / "product/control-plane/src/home_center/module_admission.py"
+REVIEW = ROOT / "product/control-plane/src/home_center/module_permission_review.py"
+API = ROOT / "product/control-plane/src/home_center/api.py"
+WEB_INDEX = ROOT / "product/web/static/index.html"
+WEB_SCRIPT = ROOT / "product/web/static/app.js"
 
 
 def require(condition: bool, message: str) -> None:
@@ -29,8 +33,13 @@ def main() -> int:
     source = MODULE.read_text(encoding="utf-8")
     manifest = MANIFEST.read_text(encoding="utf-8")
     planner = PLANNER.read_text(encoding="utf-8")
+    review = REVIEW.read_text(encoding="utf-8")
+    api = API.read_text(encoding="utf-8")
+    web_index = WEB_INDEX.read_text(encoding="utf-8")
+    web_script = WEB_SCRIPT.read_text(encoding="utf-8")
     tree = ast.parse(source, filename=str(MODULE))
     planner_tree = ast.parse(planner, filename=str(PLANNER))
+    review_tree = ast.parse(review, filename=str(REVIEW))
 
     imports: set[str] = set()
     calls: set[str] = set()
@@ -51,6 +60,16 @@ def main() -> int:
             planner_imports.add((node.module or "").split(".", 1)[0])
         elif isinstance(node, ast.Call):
             planner_calls.add(dotted(node.func))
+
+    review_imports: set[str] = set()
+    review_calls: set[str] = set()
+    for node in ast.walk(review_tree):
+        if isinstance(node, ast.Import):
+            review_imports.update(alias.name.split(".", 1)[0] for alias in node.names)
+        elif isinstance(node, ast.ImportFrom):
+            review_imports.add((node.module or "").split(".", 1)[0])
+        elif isinstance(node, ast.Call):
+            review_calls.add(dotted(node.func))
 
     require(not imports.intersection({"http", "requests", "socket", "urllib"}), "network client imported")
     require(not calls.intersection({"eval", "exec", "os.system", "subprocess.Popen"}), "unsafe execution primitive")
@@ -93,6 +112,7 @@ def main() -> int:
     for marker in (
         "PRODUCTION_ACTIVATION_ENABLED = False",
         "MAX_ADMISSION_REQUEST_BYTES = 1024 * 1024",
+        "MAX_REQUESTED_PERMISSIONS = 128",
         "planner_candidate_ambiguous",
         "planner_dependency_cycle",
         "planner_module_conflict",
@@ -104,6 +124,37 @@ def main() -> int:
     for forbidden_field in ('"nodes"', '"placement"', '"rollout"', '"execute"', '"granted_permissions"'):
         require(forbidden_field not in planner, f"planner authority field enabled: {forbidden_field}")
 
+    require(
+        not review_imports.intersection(
+            {"http", "os", "pathlib", "requests", "shutil", "socket", "subprocess", "tempfile", "urllib"}
+        ),
+        "permission review I/O or execution module imported",
+    )
+    require(
+        not review_calls.intersection(
+            {"eval", "exec", "open", "io.open", "os.system", "subprocess.Popen", "subprocess.run"}
+        ),
+        "permission review I/O or execution primitive enabled",
+    )
+    for marker in (
+        "PERMISSION_GRANTS_APPLIED = False",
+        "DECISION_PERSISTENCE_ENABLED = False",
+        "PRODUCTION_ACTIVATION_ENABLED = False",
+        "MAX_REVIEW_PERMISSIONS = 128",
+        "MAX_REVIEW_ACTIONS = 2048",
+        'risk = "unclassified"',
+        "load_and_build_module_permission_review",
+    ):
+        require(marker in review, f"permission review guard missing: {marker}")
+    require('path == "/api/v1/modules/permission-review/preview"' in api, "permission preview API missing")
+    require('path == "/api/v1/modules/permission-review"' in api, "permission status API missing")
+    require("MAX_ADMISSION_REQUEST_BYTES" in api, "permission preview body is not bounded")
+    require('data-panel="modules"' in web_index, "permission review UI missing")
+    require("function renderModulePermissionReview()" in web_script, "permission review renderer missing")
+    require("innerHTML" not in web_script, "permission review UI enables HTML injection surface")
+    for forbidden_route in ("permission-review/approve", "permission-review/grant", "permission-review/install"):
+        require(forbidden_route not in api + web_index + web_script, f"permission authority route enabled: {forbidden_route}")
+
     contracts = {
         "module-manifest.v2.schema.json",
         "module-provenance.v1.schema.json",
@@ -111,9 +162,15 @@ def main() -> int:
         "module-trust-policy.v1.schema.json",
         "module-admission-request.v1.schema.json",
         "module-admission-result.v1.schema.json",
+        "module-permission-review.v1.schema.json",
+        "module-permission-review-status.v1.schema.json",
     }
     present = {path.name for path in (ROOT / "contracts/modules").glob("*.json")}
     require(contracts <= present, "module supply-chain contract missing")
+    require(
+        (ROOT / "contracts/openapi/home-center-modules.v1.openapi.json").is_file(),
+        "module review OpenAPI contract missing",
+    )
 
     version = (ROOT / "product/control-plane/src/home_center/__init__.py").read_text(encoding="utf-8")
     project = (ROOT / "pyproject.toml").read_text(encoding="utf-8")

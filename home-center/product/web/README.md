@@ -2,6 +2,8 @@
 
 Web UI — действующий пользовательский интерфейс Home Center и клиент versioned Control Plane API. Текущая production-часть показывает topology/health, TLS trust/renewal status и безопасные bounded action results; расширенные mutation workflows остаются плановыми.
 
+В 0.11 интерфейс `Модули` может безопасно показать детерминированный preview разрешений точного admission-плана. Этот экран не сохраняет решение, не выдаёт полномочия и не запускает установку или активацию.
+
 ## UX invariants
 
 Для изменяющей операции UI обязан показывать:

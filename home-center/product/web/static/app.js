@@ -1,6 +1,6 @@
 "use strict";
 
-const state = { overview: null, profile: null, backups: [], audit: [], tls: null, authProviders: null, currentView: "overview" };
+const state = { overview: null, profile: null, backups: [], audit: [], tls: null, modulePermissionReview: null, authProviders: null, currentView: "overview" };
 const LOGIN_ERROR_MESSAGES = Object.freeze({
   invalid_credentials: "Неверное имя пользователя или пароль.",
   too_many_requests: "Слишком много попыток входа. Повторите позже.",
@@ -141,6 +141,7 @@ function switchView(view) {
     overview: ["Управляемая инфраструктура", "Обзор"],
     nodes: ["Фактическое состояние", "Узлы"],
     cluster: ["Отказоустойчивость", "Кластер"],
+    modules: ["Market / least privilege", "Разрешения модулей"],
     tls: ["HTTPS / trust / renewal", "Сертификаты"],
     backups: ["Восстановление", "Резервные копии"],
     jobs: ["Оркестрация", "Задания"],
@@ -175,6 +176,7 @@ function render() {
   renderOverviewNodes(nodes);
   renderNodeCards(nodes);
   renderTopology(nodes);
+  renderModulePermissionReview();
   renderBackups();
   renderJobs();
   renderAudit();
@@ -312,17 +314,94 @@ function renderAudit() {
   root.append(table(["№","Время","Действие","Цель","Результат","Correlation"],state.audit.map((a)=>[{text:String(a.seq)},{text:formatTime(a.occurred_at)},{text:a.action},{text:a.target},{text:a.outcome},{text:a.correlation_id,className:"mono"}])));
 }
 
+function permissionReviewEmpty(title, message, icon = "▦") {
+  const article = node("article", "panel");
+  const empty = node("div", "empty-state");
+  empty.append(node("span", "", icon));
+  empty.append(node("h3", "", title));
+  empty.append(node("p", "", message));
+  article.append(empty);
+  return article;
+}
+
+function renderModulePermissionReview() {
+  const root = $("#modulePermissionReview");
+  if (!root) return;
+  root.replaceChildren();
+  const review = state.modulePermissionReview;
+  if (!review) {
+    root.append(permissionReviewEmpty("Статус недоступен", "Не удалось получить безопасный статус проверки разрешений.", "!"));
+    return;
+  }
+  const inert = review.decision_persistence_enabled === false
+    && review.permission_grants_applied === false
+    && review.production_activation_enabled === false;
+  if (!inert) {
+    root.append(permissionReviewEmpty("Ответ отклонён", "Сервер вернул недопустимое состояние полномочий.", "!"));
+    return;
+  }
+  if (review.schema === "home-center.module-permission-review-status.v1" && review.status === "no-pending-review" && review.review === null) {
+    root.append(permissionReviewEmpty("Нет плана на рассмотрении", "Проверка появится здесь после выбора точной версии модуля в Market. Никакие права сейчас не запрошены."));
+    return;
+  }
+  if (review.schema !== "home-center.module-permission-review.v1" || review.status !== "review-required" || !Array.isArray(review.permissions) || !Array.isArray(review.modules)) {
+    root.append(permissionReviewEmpty("Ответ отклонён", "Формат проверки разрешений не соответствует закрытому контракту.", "!"));
+    return;
+  }
+
+  const summary = node("div", "permission-summary");
+  [
+    ["Модули", review.modules.length],
+    ["Только чтение", review.summary?.read_only ?? 0],
+    ["Изменения", review.summary?.mutation ?? 0],
+    ["Опасные / неизвестные", (review.summary?.destructive ?? 0) + (review.summary?.unclassified ?? 0)],
+  ].forEach(([label, value]) => {
+    const item = node("article", "permission-metric");
+    item.append(node("span", "", label));
+    item.append(node("strong", "", String(value)));
+    summary.append(item);
+  });
+  root.append(summary);
+
+  const panel = node("article", "panel");
+  const heading = node("div", "panel-head");
+  const title = node("div");
+  title.append(node("span", "panel-kicker", "Точный план"));
+  title.append(node("h3", "", "Запрошенные разрешения"));
+  heading.append(title);
+  heading.append(node("span", "tag warning", "Требуется ознакомление"));
+  panel.append(heading);
+  const list = node("div", "permission-list");
+  const riskLabels = { "read-only": "Только чтение", mutation: "Изменение", destructive: "Разрушительное", unclassified: "Не классифицировано" };
+  review.permissions.forEach((permission) => {
+    const risk = Object.prototype.hasOwnProperty.call(riskLabels, permission.risk) ? permission.risk : "unclassified";
+    const card = node("div", `permission-card risk-${risk}`);
+    const cardHead = node("div", "permission-card-head");
+    cardHead.append(node("strong", "mono", typeof permission.id === "string" ? permission.id : "invalid.permission"));
+    cardHead.append(node("span", "permission-risk", riskLabels[risk]));
+    card.append(cardHead);
+    const modules = Array.isArray(permission.modules) ? permission.modules.join(", ") : "—";
+    const actionCount = Array.isArray(permission.actions) ? permission.actions.length : 0;
+    card.append(node("p", "", `${modules} · ${actionCount ? `типизированных действий: ${actionCount}` : "нет связанного типизированного действия"}`));
+    list.append(card);
+  });
+  panel.append(list);
+  panel.append(node("div", "review-identity mono", `Review ID: ${shortHash(review.review_id)}`));
+  root.append(panel);
+}
+
 async function refresh() {
   $("#refreshButton").disabled=true; $("#notice").classList.add("hidden");
   try {
-    const [overview, profile, backups, audit, tls] = await Promise.all([
+    const [overview, profile, backups, audit, tls, modulePermissionReview] = await Promise.all([
       api("/api/v1/overview"),
       api("/api/v1/deployment-profile"),
       api("/api/v1/backups"),
       api("/api/v1/audit?limit=100"),
       optionalApi("/api/v1/tls"),
+      api("/api/v1/modules/permission-review"),
     ]);
-    state.overview=overview; state.profile=profile; state.backups=backups.items || []; state.audit=audit.items || []; state.tls=tls; render();
+    state.overview=overview; state.profile=profile; state.backups=backups.items || []; state.audit=audit.items || []; state.tls=tls; state.modulePermissionReview=modulePermissionReview; render();
   } catch (error) {
     if (error.message !== "authentication_required") { $("#notice").textContent=`Не удалось обновить данные: ${error.message}`; $("#notice").classList.remove("hidden"); }
   } finally { $("#refreshButton").disabled=false; }

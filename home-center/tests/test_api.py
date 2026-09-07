@@ -16,6 +16,7 @@ from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "product/control-plane/src"))
+sys.path.insert(0, str(ROOT / "tests"))
 
 from home_center.ad_auth import AdAuthError  # noqa: E402
 from home_center.api_v2 import RuntimeRequestHandlerV2  # noqa: E402
@@ -32,6 +33,7 @@ from home_center.local_admin_auth import (  # noqa: E402
 )
 from home_center.runtime import Runtime  # noqa: E402
 from home_center.server import HomeCenterServer  # noqa: E402
+from test_module_admission import candidate, request as module_admission_request  # noqa: E402
 
 
 USERNAME = "admin"
@@ -242,6 +244,62 @@ class ApiTests(unittest.TestCase):
         with self.assertRaises(urllib.error.HTTPError) as caught:
             self.request("/api/v1/nodes")
         self.assertEqual(caught.exception.code, 401)
+
+    def test_module_permission_review_status_and_preview_are_authenticated_and_inert(self) -> None:
+        with self.assertRaises(urllib.error.HTTPError) as caught:
+            self.request("/api/v1/modules/permission-review")
+        self.assertEqual(caught.exception.code, 401)
+
+        with self.request(
+            "/api/v1/modules/permission-review", authenticated=True
+        ) as response:
+            status = json.load(response)
+        self.assertEqual(status["status"], "no-pending-review")
+        self.assertIs(status["review"], None)
+        self.assertIs(status["decision_persistence_enabled"], False)
+        self.assertIs(status["permission_grants_applied"], False)
+        self.assertIs(status["production_activation_enabled"], False)
+
+        manifest = candidate(
+            "org.test.preview", extra_permissions=["modules.ambient.access"]
+        )
+        body = module_admission_request(
+            [manifest], [("org.test.preview", "1.0.0")]
+        )
+        with self.request(
+            "/api/v1/modules/permission-review/preview",
+            authenticated=True,
+            method="POST",
+            body=body,
+        ) as response:
+            preview = json.load(response)
+        self.assertEqual(preview["status"], "review-required")
+        self.assertEqual(preview["modules"][0]["id"], "org.test.preview")
+        ambient = next(
+            item for item in preview["permissions"] if item["id"] == "modules.ambient.access"
+        )
+        self.assertEqual(ambient["risk"], "unclassified")
+        self.assertIs(preview["permission_grants_applied"], False)
+
+    def test_invalid_module_permission_preview_is_generic_and_side_effect_free(self) -> None:
+        manifest = candidate("org.test.preview")
+        body = module_admission_request(
+            [manifest], [("org.test.missing", "1.0.0")]
+        )
+        before_jobs = self.runtime.store.jobs(100)
+        with self.assertRaises(urllib.error.HTTPError) as caught:
+            self.request(
+                "/api/v1/modules/permission-review/preview",
+                authenticated=True,
+                method="POST",
+                body=body,
+            )
+        self.assertEqual(caught.exception.code, 400)
+        payload = caught.exception.read().decode("utf-8")
+        self.assertIn("module_permission_review_rejected", payload)
+        self.assertNotIn("org.test.missing", payload)
+        self.assertEqual(self.runtime.store.jobs(100), before_jobs)
+        self.assertEqual(self.action_calls, 0)
 
     def test_bearer_bootstrap_token_cannot_bypass_local_login(self) -> None:
         with self.assertRaises(urllib.error.HTTPError) as caught:
