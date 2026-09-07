@@ -39,8 +39,8 @@ def pki(seed: str) -> dict[str, str]:
 
 
 def evidence() -> dict:
-    candidate = identity("0.9.1", CANDIDATE_REVISION, CANDIDATE_ARTIFACT)
-    predecessor = identity("0.9.0", PREDECESSOR_REVISION, PREDECESSOR_ARTIFACT)
+    candidate = identity("0.9.2", CANDIDATE_REVISION, CANDIDATE_ARTIFACT)
+    predecessor = identity("0.7.0", PREDECESSOR_REVISION, PREDECESSOR_ARTIFACT)
     rollout = []
     for sequence, node, seed in ((1, "dc02", "1"), (2, "dc01", "4")):
         web = pki(seed)
@@ -119,6 +119,7 @@ def verify(value: dict):
         value,
         expected_candidate_revision=CANDIDATE_REVISION,
         expected_candidate_artifact_sha256=CANDIDATE_ARTIFACT,
+        expected_predecessor_version="0.7.0",
         expected_predecessor_revision=PREDECESSOR_REVISION,
         expected_predecessor_artifact_sha256=PREDECESSOR_ARTIFACT,
     )
@@ -138,7 +139,7 @@ class ReleaseCandidateAcceptanceTests(unittest.TestCase):
         cases = (
             ("candidate.revision", lambda value: value["candidate"].__setitem__("revision", "7" * 40), "acceptance_candidate_identity_rejected"),
             ("candidate.artifact", lambda value: value["candidate"].__setitem__("artifact_sha256", "7" * 64), "acceptance_candidate_identity_rejected"),
-            ("predecessor.version", lambda value: value["predecessor"].__setitem__("version", "0.7.0"), "acceptance_predecessor_identity_rejected"),
+            ("predecessor.version", lambda value: value["predecessor"].__setitem__("version", "0.8.0"), "acceptance_predecessor_identity_rejected"),
             ("predecessor.revision", lambda value: value["predecessor"].__setitem__("revision", "7" * 40), "acceptance_predecessor_identity_rejected"),
         )
         for name, mutate, code in cases:
@@ -214,6 +215,8 @@ class ReleaseCandidateAcceptanceTests(unittest.TestCase):
                 CANDIDATE_REVISION,
                 "--candidate-artifact-sha256",
                 CANDIDATE_ARTIFACT,
+                "--predecessor-version",
+                "0.7.0",
                 "--predecessor-revision",
                 PREDECESSOR_REVISION,
                 "--predecessor-artifact-sha256",

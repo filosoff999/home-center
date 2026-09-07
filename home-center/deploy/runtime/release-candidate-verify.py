@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Verify bounded 0.9 release-candidate evidence without deploying it."""
+"""Verify bounded 0.9.2 release-candidate evidence without deploying it."""
 
 from __future__ import annotations
 
@@ -54,6 +54,7 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument("--evidence", type=Path, required=True)
     result.add_argument("--candidate-revision", required=True)
     result.add_argument("--candidate-artifact-sha256", required=True)
+    result.add_argument("--predecessor-version", required=True)
     result.add_argument("--predecessor-revision", required=True)
     result.add_argument("--predecessor-artifact-sha256", required=True)
     return result
@@ -67,6 +68,7 @@ def main(argv: list[str] | None = None) -> int:
             document,
             expected_candidate_revision=args.candidate_revision,
             expected_candidate_artifact_sha256=args.candidate_artifact_sha256,
+            expected_predecessor_version=args.predecessor_version,
             expected_predecessor_revision=args.predecessor_revision,
             expected_predecessor_artifact_sha256=args.predecessor_artifact_sha256,
         )

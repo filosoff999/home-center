@@ -1,42 +1,39 @@
 #!/usr/bin/env python3
-"""Render exact release target/predecessor policy into staged deployment scripts.
-
-Large deployment scripts remain review-stable in source. A release cut changes
-only explicitly allowlisted literals in the staged immutable artifact and
-fails closed if the reviewed source shape differs from expectations.
-"""
+# Render the exact 0.9.2 release cut into staged deployment scripts.
+#
+# This first renderer retains immediate-predecessor provenance. The final
+# staged source admission is generalized by render-upgrade-policy-v2.py.
 
 from __future__ import annotations
 
 import sys
 from pathlib import Path
 
-
-TARGET_VERSION = "0.9.1"
-SOURCE_VERSION = "0.9.0"
-SOURCE_REVISION = "29b2f61071067028c14febbbaf0103c5600380e9"
-SOURCE_ARTIFACT_SHA256 = "66531867f806c6665f41d2bb82dccfb5670403acd0c9988271714da09172f668"
-SOURCE_RELEASE = "/opt/home-center/releases/0.9.0-29b2f6107106-66531867f806"
+TARGET_VERSION = "0.9.2"
+SOURCE_VERSION = "0.9.1"
+SOURCE_REVISION = "b6d486a8808b47f67e0072349172d44ee0169bef"
+SOURCE_ARTIFACT_SHA256 = "bb8e99328c319fb2c2b82769dfaa0eecb441e7d780f52f5aed0bcdb21aee83ae"
+SOURCE_RELEASE = "/opt/home-center/releases/0.9.1-b6d486a8808b-bb8e99328c31"
 
 BOOTSTRAP_REPLACEMENTS = {
     '[ "$TARGET_VERSION" = 0.5.0 ] || { echo RELEASE_VERSION_NOT_ADMITTED >&2; exit 66; }':
-        '[ "$TARGET_VERSION" = 0.9.1 ] || { echo RELEASE_VERSION_NOT_ADMITTED >&2; exit 66; }',
-    "ADMITTED_SOURCE_V043_VERSION=0.4.3": "ADMITTED_SOURCE_V090_VERSION=0.9.0",
+        '[ "$TARGET_VERSION" = 0.9.2 ] || { echo RELEASE_VERSION_NOT_ADMITTED >&2; exit 66; }',
+    "ADMITTED_SOURCE_V043_VERSION=0.4.3": "ADMITTED_SOURCE_V091_VERSION=0.9.1",
     "ADMITTED_SOURCE_V043_REVISION=64f798ceae0b669cbac01b452c3cf4fd96070136":
-        f"ADMITTED_SOURCE_V090_REVISION={SOURCE_REVISION}",
+        f"ADMITTED_SOURCE_V091_REVISION={SOURCE_REVISION}",
     "ADMITTED_SOURCE_V043_RELEASE=/opt/home-center/releases/0.4.3-64f798ceae0b-b2dde6a51ec9":
-        f"ADMITTED_SOURCE_V090_RELEASE={SOURCE_RELEASE}",
+        f"ADMITTED_SOURCE_V091_RELEASE={SOURCE_RELEASE}",
     '  [ "$version" = "$ADMITTED_SOURCE_V043_VERSION" ] \\':
-        '  [ "$version" = "$ADMITTED_SOURCE_V090_VERSION" ] \\',
+        '  [ "$version" = "$ADMITTED_SOURCE_V091_VERSION" ] \\',
     '    && [ "$revision" = "$ADMITTED_SOURCE_V043_REVISION" ] \\':
-        '    && [ "$revision" = "$ADMITTED_SOURCE_V090_REVISION" ] \\',
+        '    && [ "$revision" = "$ADMITTED_SOURCE_V091_REVISION" ] \\',
     '    && [ "$release" = "$ADMITTED_SOURCE_V043_RELEASE" ]':
-        '    && [ "$release" = "$ADMITTED_SOURCE_V090_RELEASE" ]',
+        '    && [ "$release" = "$ADMITTED_SOURCE_V091_RELEASE" ]',
 }
 
 INSTALL_REPLACEMENTS = {
     '[ "$VERSION" = 0.6.0 ] || { echo RELEASE_VERSION_NOT_ADMITTED >&2; exit 66; }':
-        '[ "$VERSION" = 0.9.1 ] || { echo RELEASE_VERSION_NOT_ADMITTED >&2; exit 66; }',
+        '[ "$VERSION" = 0.9.2 ] || { echo RELEASE_VERSION_NOT_ADMITTED >&2; exit 66; }',
 }
 
 
@@ -65,25 +62,16 @@ def render(bootstrap_path: Path, install_path: Path) -> None:
 
     bootstrap = _replace_exact(bootstrap, BOOTSTRAP_REPLACEMENTS, "bootstrap")
     installer = _replace_exact(installer, INSTALL_REPLACEMENTS, "installer")
-
-    forbidden_bootstrap = (
-        "ADMITTED_SOURCE_V043_",
-        '[ "$TARGET_VERSION" = 0.5.0 ]',
+    required = (
+        '[ "$TARGET_VERSION" = 0.9.2 ]',
+        "ADMITTED_SOURCE_V091_VERSION=0.9.1",
+        f"ADMITTED_SOURCE_V091_REVISION={SOURCE_REVISION}",
+        f"ADMITTED_SOURCE_V091_RELEASE={SOURCE_RELEASE}",
     )
-    if any(value in bootstrap for value in forbidden_bootstrap):
-        raise SystemExit("release_policy_bootstrap_stale_admission")
-    required_bootstrap = (
-        '[ "$TARGET_VERSION" = 0.9.1 ]',
-        "ADMITTED_SOURCE_V090_VERSION=0.9.0",
-        f"ADMITTED_SOURCE_V090_REVISION={SOURCE_REVISION}",
-        f"ADMITTED_SOURCE_V090_RELEASE={SOURCE_RELEASE}",
-    )
-    if any(value not in bootstrap for value in required_bootstrap):
+    if any(value not in bootstrap for value in required):
         raise SystemExit("release_policy_bootstrap_render_rejected")
-
-    if '[ "$VERSION" = 0.9.1 ]' not in installer or '[ "$VERSION" = 0.6.0 ]' in installer:
+    if '[ "$VERSION" = 0.9.2 ]' not in installer:
         raise SystemExit("release_policy_installer_render_rejected")
-
     _write_atomic(bootstrap_path, bootstrap)
     _write_atomic(install_path, installer)
 

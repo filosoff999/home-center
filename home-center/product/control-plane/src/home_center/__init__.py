@@ -8,4 +8,4 @@ __all__ = ["__version__"]
 # Accepted predecessor baseline: __version__ = "0.6.0"
 # Immediate predecessor candidate: __version__ = "0.7.0"
 # Published predecessor: __version__ = "0.8.0"
-__version__ = "0.9.1"
+__version__ = "0.9.2"

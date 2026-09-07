@@ -6,12 +6,12 @@ test:
 	PYTHONPATH=product/control-plane/src $(PYTHON) -m unittest discover -s tests -p 'test_*.py' -v
 
 e2e:
-	PYTHONPATH=product/control-plane/src $(PYTHON) tests/e2e_091.py
+	PYTHONPATH=product/control-plane/src $(PYTHON) tests/e2e_092.py
 
 security:
 	$(PYTHON) tests/security_gate.py
 	$(PYTHON) tests/security_gate_080.py
-	$(PYTHON) tests/security_gate_091.py
+	$(PYTHON) tests/security_gate_092.py
 
 contracts:
 	$(PYTHON) -m json.tool deploy/profiles/hm-dm-two-node.v1.json >/dev/null

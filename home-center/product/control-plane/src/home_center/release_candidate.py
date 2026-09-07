@@ -1,4 +1,4 @@
-"""Fail-closed verification of Home Center 0.9.1 release-candidate evidence.
+"""Fail-closed verification of Home Center 0.9.2 release-candidate evidence.
 
 The evidence document records observations; it is deliberately not release
 authority.  A separately signed stable-channel record is still required before
@@ -12,13 +12,13 @@ import re
 from dataclasses import dataclass
 from typing import Any
 
+from .upgrade_policy import is_upgrade_allowed
 from .util import canonical_json, sha256_bytes
 
 
 ACCEPTANCE_SCHEMA = "home-center.release-candidate-acceptance.v1"
 VERIFICATION_SCHEMA = "home-center.release-candidate-verification.v1"
-TARGET_VERSION = "0.9.1"
-PREDECESSOR_VERSION = "0.9.0"
+TARGET_VERSION = "0.9.2"
 EXPECTED_NODES = ("dc02", "dc01")
 ROLLBACK_ORDER = ("dc01", "dc02")
 EXPECTED_DOMAIN = "hm.dm"
@@ -289,6 +289,7 @@ def verify_release_candidate(
     *,
     expected_candidate_revision: str,
     expected_candidate_artifact_sha256: str,
+    expected_predecessor_version: str,
     expected_predecessor_revision: str,
     expected_predecessor_artifact_sha256: str,
 ) -> VerifiedReleaseCandidate:
@@ -320,8 +321,12 @@ def verify_release_candidate(
         _digest(expected_candidate_revision, _HEX40, "expected_candidate_revision_rejected"),
         _digest(expected_candidate_artifact_sha256, _HEX64, "expected_candidate_artifact_rejected"),
     )
+    if not isinstance(expected_predecessor_version, str) or not is_upgrade_allowed(
+        expected_predecessor_version, TARGET_VERSION
+    ):
+        raise ReleaseCandidateAcceptanceError("expected_predecessor_version_rejected")
     expected_predecessor = CandidateIdentity(
-        PREDECESSOR_VERSION,
+        expected_predecessor_version,
         _digest(expected_predecessor_revision, _HEX40, "expected_predecessor_revision_rejected"),
         _digest(expected_predecessor_artifact_sha256, _HEX64, "expected_predecessor_artifact_rejected"),
     )

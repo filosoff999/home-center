@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Real-Chrome acceptance for an immutable Home Center 0.9.1 candidate.
+"""Real-Chrome acceptance for an immutable Home Center candidate.
 
 The harness intentionally does not import Home Center source code. It serves
 the extracted release artifact over local TLS, supplies a bounded mock API, and
@@ -32,7 +32,7 @@ from typing import Any, Callable, Iterator
 
 VALID_USERNAME = "admin"
 VALID_PASSWORD = "candidate-browser-fixture-password"
-COOKIE_VALUE = "candidate-091-browser-session"
+COOKIE_VALUE = "candidate-browser-session"
 ELEMENT_KEY = "element-6066-11e4-a52e-4f735466cecf"
 
 
@@ -642,8 +642,11 @@ def arguments() -> argparse.Namespace:
 
 def main() -> int:
     args = arguments()
-    if args.expected_version != "0.9.1":
-        raise RuntimeError("browser gate only admits Home Center 0.9.1")
+    parts = args.expected_version.split(".")
+    if len(parts) != 3 or any(
+        not part.isdigit() or (len(part) > 1 and part.startswith("0")) for part in parts
+    ):
+        raise RuntimeError("expected version must be a strict semantic version")
     if len(args.expected_revision) != 40 or any(
         character not in "0123456789abcdef" for character in args.expected_revision
     ):
