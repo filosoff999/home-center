@@ -29,7 +29,8 @@ class ReleaseSuccessor0110Tests(unittest.TestCase):
 
     def test_builder_orders_release_auth_and_upgrade_renderers(self) -> None:
         builder = (ROOT / "deploy/scripts/build-artifact.sh").read_text(encoding="utf-8")
-        self.assertIn('# Published 0.10 source artifact gate: [ "$VERSION" = 0.10.0 ]', builder)\n        self.assertIn('[ "$VERSION" = 0.11.0 ] || { echo RELEASE_VERSION_NOT_ADMITTED', builder)
+        self.assertIn('# Published 0.10 source artifact gate: [ "$VERSION" = 0.10.0 ]', builder)
+        self.assertIn('[ "$VERSION" = 0.11.0 ] || { echo RELEASE_VERSION_NOT_ADMITTED', builder)
         self.assertIn("HOME_CENTER_0100_CONFIG_SCHEMA_NOT_ADMITTED", builder)
         release_index = builder.index('render-release-policy.py"')
         auth_index = builder.index('render-auth-deployment-v2.py"')
