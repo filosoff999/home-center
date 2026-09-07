@@ -8,7 +8,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 INTENT = ROOT / "product/control-plane/src/home_center/core/intent_engine.py"
 INTENT_SERVICE = ROOT / "product/control-plane/src/home_center/intent_service.py"
+INTENT_PREFLIGHT = ROOT / "product/control-plane/src/home_center/intent_preflight.py"
 RESOURCE_SNAPSHOT = ROOT / "product/control-plane/src/home_center/resource_snapshot.py"
+RUNTIME = ROOT / "product/control-plane/src/home_center/runtime.py"
 API_V2 = ROOT / "product/control-plane/src/home_center/api_v2.py"
 CORE_INIT = ROOT / "product/control-plane/src/home_center/core/__init__.py"
 
@@ -106,8 +108,45 @@ def main() -> int:
         'module="intent-engine"',
         "mode=AccessMode.PLAN",
         "if request.actor != actor:",
+        "RESOURCE_AWARE_KINDS",
+        "resource_snapshot_provider",
+        "plan = self._engine.compile(request, permissions={permission})",
+        "provider = self._resource_snapshot_provider",
+        '"resource_snapshot_unavailable"',
+        '"resource_snapshot_invalid"',
+        "blockers = resource_preflight(request, snapshot)",
     ):
         require(marker in service, f"authenticated intent service guard missing: {marker}")
+    require(
+        service.index("plan = self._engine.compile(request, permissions={permission})")
+        < service.index("provider = self._resource_snapshot_provider"),
+        "resource preflight can run before core policy/contract planning",
+    )
+
+    preflight = INTENT_PREFLIGHT.read_text(encoding="utf-8")
+    preflight_tree = ast.parse(preflight, filename=str(INTENT_PREFLIGHT))
+    preflight_calls = {dotted(node.func) for node in ast.walk(preflight_tree) if isinstance(node, ast.Call)}
+    require(
+        not imported_roots(INTENT_PREFLIGHT).intersection(
+            {"http", "os", "pathlib", "requests", "socket", "sqlite3", "subprocess", "urllib"}
+        ),
+        "intent resource preflight gained I/O, persistence, process, or network surface",
+    )
+    require(
+        not preflight_calls.intersection({"eval", "exec", "open", "os.system", "subprocess.Popen", "subprocess.run"}),
+        "intent resource preflight gained execution or file-write primitive",
+    )
+    for marker in (
+        'snapshot.get("schema") != "home-center.resource-snapshot.v1"',
+        'snapshot.get("production_mutation_enabled") is not False',
+        'return ("cluster_resources_not_ready",)',
+        "required_nodes = 2 if high_availability else 1",
+        '"insufficient_cpu_capacity"',
+        '"insufficient_memory_capacity"',
+        '"insufficient_storage_capacity"',
+        'return ("insufficient_combined_capacity",)',
+    ):
+        require(marker in preflight, f"resource-aware preflight guard missing: {marker}")
 
     resources = RESOURCE_SNAPSHOT.read_text(encoding="utf-8")
     resource_tree = ast.parse(resources, filename=str(RESOURCE_SNAPSHOT))
@@ -132,6 +171,13 @@ def main() -> int:
         '"capabilities": sorted(capabilities)',
     ):
         require(marker in resources, f"resource snapshot safety marker missing: {marker}")
+
+    runtime = RUNTIME.read_text(encoding="utf-8")
+    require(
+        "IntentPlanningService(resource_snapshot_provider=self.resource_snapshot)" in runtime,
+        "runtime intent service is not bound to trusted resource snapshot provider",
+    )
+    require("def resource_snapshot(self)" in runtime, "runtime trusted resource snapshot method missing")
 
     api = API_V2.read_text(encoding="utf-8")
     post_calls = function_calls(API_V2, "do_POST")
