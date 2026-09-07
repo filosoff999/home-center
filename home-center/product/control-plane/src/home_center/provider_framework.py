@@ -2,7 +2,7 @@
 
 The framework binds an exact active reservation to one typed provider operation.
 It deliberately exposes no provider execution method and performs no network,
-filesystem, subprocess, hypervisor, or storage mutation.
+filesystem, child-process, hypervisor, or storage mutation.
 """
 
 from __future__ import annotations
