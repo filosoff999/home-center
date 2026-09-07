@@ -6,7 +6,7 @@
     {
       "version": "0.11.0",
       "branch": "release/0.11.0",
-      "state": "active",
+      "state": "released",
       "workstreams": [
         {"id": "module-supply-chain", "title": "Module Supply Chain", "weight": 1, "evidence": [{"kind": "pr", "number": 77, "state": "merged"}]},
         {"id": "admission-planner", "title": "Dependency / Capability Admission", "weight": 1, "evidence": [{"kind": "pr", "number": 87, "state": "merged"}]},
@@ -21,7 +21,7 @@
     {
       "version": "0.12.0",
       "branch": "release/0.12.0",
-      "state": "active",
+      "state": "released",
       "workstreams": [
         {"id": "password-rotation", "title": "Local Admin Password Rotation", "weight": 1, "evidence": [{"kind": "pr", "number": 89, "state": "merged"}]},
         {"id": "console-recovery", "title": "Protected Console Recovery", "weight": 1, "evidence": [{"kind": "pr", "number": 94, "state": "merged"}]},
@@ -33,7 +33,7 @@
     {
       "version": "0.13.0",
       "branch": "release/0.13.0",
-      "state": "active",
+      "state": "released",
       "workstreams": [
         {"id": "intent-core", "title": "Intent Planning Core", "weight": 1, "evidence": [{"kind": "pr", "number": 98, "state": "merged"}]},
         {"id": "intent-api", "title": "Authenticated Intent API", "weight": 1, "evidence": [{"kind": "pr", "number": 101, "state": "merged"}]},
@@ -48,7 +48,7 @@
     {
       "version": "0.14.0",
       "branch": "release/0.14.0",
-      "state": "active",
+      "state": "released",
       "workstreams": [
         {"id": "product-boundary-cleanup", "title": "Product Boundary Cleanup", "weight": 1, "evidence": [{"kind": "pr", "number": 114, "state": "merged"}]},
         {"id": "core-lifecycle-v2", "title": "Core Lifecycle v2", "weight": 1, "evidence": [{"kind": "pr", "number": 114, "state": "merged"}]},
@@ -76,7 +76,7 @@
     {
       "version": "0.16.0",
       "branch": "release/0.16.0",
-      "state": "active",
+      "state": "planned",
       "workstreams": [
         {"id": "release-bootstrap", "title": "Release Bootstrap", "weight": 1, "evidence": []},
         {"id": "proxmox-integration", "title": "Proxmox Integration", "weight": 1, "evidence": []},
@@ -90,7 +90,7 @@
     {
       "version": "0.17.0",
       "branch": "release/0.17.0",
-      "state": "active",
+      "state": "planned",
       "workstreams": [
         {"id": "release-bootstrap", "title": "Release Bootstrap", "weight": 1, "evidence": []},
         {"id": "device-registry", "title": "Device Registry", "weight": 1, "evidence": []},
@@ -105,7 +105,7 @@
     {
       "version": "0.18.0",
       "branch": "release/0.18.0",
-      "state": "active",
+      "state": "planned",
       "workstreams": [
         {"id": "release-bootstrap", "title": "Release Bootstrap", "weight": 1, "evidence": []},
         {"id": "identity", "title": "Identity / RBAC", "weight": 1, "evidence": []},
