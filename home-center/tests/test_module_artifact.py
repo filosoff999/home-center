@@ -79,7 +79,7 @@ class ModuleArtifactTests(unittest.TestCase):
         }
 
     @staticmethod
-    def archive(*, unsafe_name: str | None = None, symlink: bool = False) -> bytes:
+    def archive(*, unsafe_name: str | None = None, symlink: bool = False, mode: int = 0o644) -> bytes:
         output = io.BytesIO()
         with gzip.GzipFile(fileobj=output, mode="wb", filename="", mtime=0) as compressed:
             with tarfile.open(fileobj=compressed, mode="w") as bundle:
@@ -90,7 +90,7 @@ class ModuleArtifactTests(unittest.TestCase):
                 info.uname = ""
                 info.gname = ""
                 info.mtime = 0
-                info.mode = 0o644
+                info.mode = mode
                 if symlink:
                     info.type = tarfile.SYMTYPE
                     info.linkname = "../target"
@@ -272,10 +272,20 @@ class ModuleArtifactTests(unittest.TestCase):
         wrong_curve = list(self.material(policy_keys=[self.policy_key(self.p384_public, self.p384_keyid)]))
         self.assert_rejected("trust_key_algorithm_rejected", tuple(wrong_curve))
 
+        revoked = self.material(
+            signer_keys=[(self.key, self.keyid), (self.second_key, self.second_keyid)],
+            policy_keys=[
+                self.policy_key(self.public, self.keyid, state="revoked"),
+                self.policy_key(self.second_public, self.second_keyid),
+            ],
+        )
+        self.assert_rejected("signature_revoked_key", revoked)
+
     def test_non_archive_traversal_and_link_are_rejected(self) -> None:
         self.assert_rejected("archive_format_rejected", self.material(artifact=b"not-an-archive"))
         self.assert_rejected("archive_member_name_rejected", self.material(artifact=self.archive(unsafe_name="../escape")))
         self.assert_rejected("archive_member_type_rejected", self.material(artifact=self.archive(symlink=True)))
+        self.assert_rejected("archive_member_mode_rejected", self.material(artifact=self.archive(mode=0o4755)))
 
     def test_bad_signature_has_no_store_effect_and_collision_is_rejected(self) -> None:
         material = list(self.material())
