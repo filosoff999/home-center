@@ -31,6 +31,9 @@ Callers cross the boundary through closed v1 command/result/error contracts.
 Commands are limited to `mode=plan`. The policy engine is default-deny and
 uses exact module/action/mode rules. Upgrade plans bind exact version,
 40-character source revision, and 64-character artifact SHA-256 identities.
+Each admitted action has a separate closed input schema and each planner
+returns a closed module-specific output schema. Dispatch uses the exact
+module/action pair; unknown actions and fields fail closed.
 
 No Core module may invoke a shell or subprocess, download content, control a
 service, write production state, or activate a deployment. Production

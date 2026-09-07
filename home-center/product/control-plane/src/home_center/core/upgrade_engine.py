@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 
 HEX40 = re.compile(r"^[0-9a-f]{40}$")
@@ -33,6 +33,13 @@ class ReleaseIdentity:
         if HEX40.fullmatch(self.revision) is None or HEX64.fullmatch(self.artifact_sha256) is None:
             raise UpgradeEngineError("invalid_release_identity")
 
+    def to_dict(self) -> dict[str, str]:
+        return {
+            "version": self.version,
+            "revision": self.revision,
+            "artifact_sha256": self.artifact_sha256,
+        }
+
 
 @dataclass(frozen=True, slots=True)
 class UpgradePlan:
@@ -41,6 +48,17 @@ class UpgradePlan:
     state: str
     steps: tuple[str, ...]
     production_activation_enabled: bool = False
+    schema: str = field(default="home-center.upgrade-plan.v1", init=False)
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "schema": self.schema,
+            "current": self.current.to_dict(),
+            "target": self.target.to_dict(),
+            "state": self.state,
+            "steps": list(self.steps),
+            "production_activation_enabled": self.production_activation_enabled,
+        }
 
 
 class UpgradeEngine:

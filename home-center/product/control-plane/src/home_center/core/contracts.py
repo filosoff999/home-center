@@ -6,6 +6,7 @@ import re
 import uuid
 from dataclasses import dataclass, field
 from enum import StrEnum
+from types import MappingProxyType
 from typing import Any, Mapping
 
 
@@ -51,6 +52,40 @@ def _operation_id(value: object) -> str:
         raise CoreContractError("invalid_operation_id") from exc
 
 
+def _freeze_json(value: object, *, depth: int = 0) -> Any:
+    if depth > 5:
+        raise CoreContractError("input_too_deep")
+    if value is None or isinstance(value, bool):
+        return value
+    if isinstance(value, int) and not isinstance(value, bool):
+        if not -(2**53) < value < 2**53:
+            raise CoreContractError("input_integer_out_of_range")
+        return value
+    if isinstance(value, str):
+        return _bounded(value, minimum=0, maximum=500)
+    if isinstance(value, Mapping):
+        if len(value) > 32:
+            raise CoreContractError("input_too_many_properties")
+        frozen: dict[str, Any] = {}
+        for key, item in value.items():
+            normalized_key = _bounded(key, minimum=1, maximum=128, pattern=IDENTIFIER)
+            frozen[normalized_key] = _freeze_json(item, depth=depth + 1)
+        return MappingProxyType(frozen)
+    if isinstance(value, (list, tuple)):
+        if len(value) > 64:
+            raise CoreContractError("input_too_many_items")
+        return tuple(_freeze_json(item, depth=depth + 1) for item in value)
+    raise CoreContractError("input_value_rejected")
+
+
+def _thaw_json(value: Any) -> Any:
+    if isinstance(value, Mapping):
+        return {key: _thaw_json(item) for key, item in value.items()}
+    if isinstance(value, tuple):
+        return [_thaw_json(item) for item in value]
+    return value
+
+
 @dataclass(frozen=True, slots=True)
 class CoreCommand:
     """Validated plan-only command envelope for the stable ``/api/v1`` surface."""
@@ -63,6 +98,7 @@ class CoreCommand:
     module: CoreModule
     action: str
     target_id: str
+    input: Mapping[str, Any]
     mode: str = "plan"
     schema: str = field(default="home-center.core-command.v1", init=False)
 
@@ -79,6 +115,9 @@ class CoreCommand:
         _bounded(self.reason, minimum=3, maximum=500)
         _bounded(self.action, minimum=4, maximum=96, pattern=ACTION)
         _bounded(self.target_id, minimum=2, maximum=128, pattern=IDENTIFIER)
+        if not isinstance(self.input, Mapping):
+            raise CoreContractError("invalid_action_input")
+        object.__setattr__(self, "input", _freeze_json(self.input))
 
     @classmethod
     def from_mapping(cls, value: Mapping[str, Any]) -> "CoreCommand":
@@ -92,6 +131,7 @@ class CoreCommand:
             "module",
             "action",
             "target_id",
+            "input",
             "mode",
         }
         if set(value) != required or value.get("schema") != "home-center.core-command.v1":
@@ -112,6 +152,7 @@ class CoreCommand:
             module=module,
             action=_bounded(value["action"], minimum=4, maximum=96, pattern=ACTION),
             target_id=_bounded(value["target_id"], minimum=2, maximum=128, pattern=IDENTIFIER),
+            input=value["input"],
         )
 
     def to_dict(self) -> dict[str, Any]:
@@ -125,6 +166,7 @@ class CoreCommand:
             "module": self.module.value,
             "action": self.action,
             "target_id": self.target_id,
+            "input": _thaw_json(self.input),
             "mode": self.mode,
         }
 

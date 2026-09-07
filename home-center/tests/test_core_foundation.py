@@ -3,7 +3,11 @@ from __future__ import annotations
 import unittest
 import uuid
 
-from home_center.core.configuration_engine import ConfigurationEngine, ConfigurationLock
+from home_center.core.configuration_engine import (
+    ConfigurationEngine,
+    ConfigurationEngineError,
+    ConfigurationLock,
+)
 from home_center.core.contracts import (
     CoreCommand,
     CoreContractError,
@@ -30,6 +34,11 @@ class CoreFoundationTests(unittest.TestCase):
             "module": "node-manager",
             "action": "node.drain.plan.v1",
             "target_id": "test-node",
+            "input": {
+                "schema": "home-center.node-drain-plan-input.v1",
+                "quorum_safe": True,
+                "mandatory_services_safe": True,
+            },
             "mode": "plan",
         }
         value.update(overrides)
@@ -52,6 +61,7 @@ class CoreFoundationTests(unittest.TestCase):
                 module=CoreModule.NODE_MANAGER,
                 action="node.drain.plan.v1",
                 target_id="test-node",
+                input={},
                 mode="execute",
             )
 
@@ -116,6 +126,10 @@ class CoreFoundationTests(unittest.TestCase):
         plan = engine.plan_change("network.hostname")
         self.assertEqual(plan.state, "blocked")
         self.assertEqual(plan.blockers, ("locked_by:domain-services",))
+        with self.assertRaises(ConfigurationEngineError):
+            ConfigurationEngine(
+                [ConfigurationLock("network.hostname", "invalid owner", "identity is protected")]
+            )
 
     def test_service_plan_is_deterministic_and_rejects_cycles(self) -> None:
         engine = ServiceManager(

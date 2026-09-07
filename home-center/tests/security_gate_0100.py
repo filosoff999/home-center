@@ -28,6 +28,7 @@ def main() -> int:
         "service_manager.py",
         "policy_engine.py",
         "contracts.py",
+        "action_contracts.py",
     }
     present = {path.name for path in CORE.glob("*.py")}
     if not required <= present:

@@ -5,6 +5,7 @@ does not download artifacts, execute commands, control services, or mutate
 production nodes.
 """
 
+from .action_contracts import parse_action_input
 from .configuration_engine import ConfigurationEngine
 from .contracts import CoreCommand, CoreContractError, CoreError, CoreResult
 from .node_manager import NodeManager
@@ -19,6 +20,7 @@ __all__ = [
     "CoreError",
     "CoreResult",
     "NodeManager",
+    "parse_action_input",
     "PolicyEngine",
     "ServiceManager",
     "UpgradeEngine",

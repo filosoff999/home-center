@@ -29,6 +29,11 @@ class CoreContractTests0100(unittest.TestCase):
             "module": "node-manager",
             "action": "node.drain.plan.v1",
             "target_id": "test-node",
+            "input": {
+                "schema": "home-center.node-drain-plan-input.v1",
+                "quorum_safe": True,
+                "mandatory_services_safe": True,
+            },
             "mode": "plan",
         }
         validate(schema, value)

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import Iterable
 
@@ -51,6 +51,17 @@ class NodeLifecyclePlan:
     state: str
     blockers: tuple[str, ...]
     production_activation_enabled: bool = False
+    schema: str = field(default="home-center.node-lifecycle-plan.v1", init=False)
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "schema": self.schema,
+            "node_id": self.node_id,
+            "action": self.action,
+            "state": self.state,
+            "blockers": list(self.blockers),
+            "production_activation_enabled": self.production_activation_enabled,
+        }
 
 
 class NodeManager:

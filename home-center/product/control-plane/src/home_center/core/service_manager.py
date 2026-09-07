@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Iterable
 
 
@@ -26,6 +26,16 @@ class ServicePlan:
     action: str
     ordered_services: tuple[str, ...]
     production_activation_enabled: bool = False
+    schema: str = field(default="home-center.service-plan.v1", init=False)
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "schema": self.schema,
+            "service_id": self.service_id,
+            "action": self.action,
+            "ordered_services": list(self.ordered_services),
+            "production_activation_enabled": self.production_activation_enabled,
+        }
 
 
 class ServiceManager:

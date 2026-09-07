@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import Iterable
 
@@ -28,6 +28,10 @@ class PolicyRule:
 class PolicyDecision:
     allowed: bool
     code: str
+    schema: str = field(default="home-center.policy-decision.v1", init=False)
+
+    def to_dict(self) -> dict[str, object]:
+        return {"schema": self.schema, "allowed": self.allowed, "code": self.code}
 
 
 class PolicyEngine:
