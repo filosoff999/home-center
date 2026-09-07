@@ -28,6 +28,13 @@ from .auth import SessionManager
 from .external_access import ExternalAccessRejected, ExternalRequestContext
 from .local_admin_auth import LocalAdminAuthError
 from .module_admission import MAX_ADMISSION_REQUEST_BYTES
+from .module_lifecycle import (
+    MAX_MODULE_LIFECYCLE_REQUEST_BYTES,
+    ModuleLifecycleError,
+    empty_module_lifecycle_status,
+    load_module_install_lifecycle_request,
+    plan_module_install_lifecycle,
+)
 from .module_permission_acknowledgement import (
     ACKNOWLEDGEMENT_ID,
     MAX_PERMISSION_ACKNOWLEDGEMENT_REQUEST_BYTES,
@@ -249,6 +256,8 @@ class RuntimeRequestHandler(BaseHTTPRequestHandler):
             self._json(200, self.runtime.actions.catalog())
         elif path == "/api/v1/modules/permission-review":
             self._json(200, empty_permission_review())
+        elif path == "/api/v1/modules/lifecycle":
+            self._json(HTTPStatus.OK, empty_module_lifecycle_status())
         elif path == "/api/v1/modules/permission-review/acknowledgements":
             params = parse_qs(parsed.query)
             try:
@@ -405,6 +414,67 @@ class RuntimeRequestHandler(BaseHTTPRequestHandler):
                 )
                 return
             self._json(HTTPStatus.OK, review.to_dict())
+            return
+        if path == "/api/v1/modules/lifecycle/preview":
+            try:
+                payload = self._read_body(max_bytes=MAX_MODULE_LIFECYCLE_REQUEST_BYTES)
+                request = load_module_install_lifecycle_request(payload)
+                acknowledgement = self.runtime.store.module_permission_acknowledgement(
+                    request["acknowledgement_id"], actor=actor
+                )
+                if acknowledgement is None:
+                    raise ModuleLifecycleError("lifecycle_acknowledgement_rejected")
+                plan = plan_module_install_lifecycle(
+                    request,
+                    acknowledgement_record=acknowledgement,
+                    actor=actor,
+                )
+                self.runtime.store.audit(
+                    actor=actor,
+                    action="module.lifecycle.preview",
+                    target=plan["plan_id"],
+                    outcome="accepted",
+                    correlation_id=correlation_id,
+                    details={
+                        "operation": plan["operation"],
+                        "review_id": plan["review_id"],
+                        "scope_id": plan["scope_id"],
+                        "status": plan["status"],
+                        "blockers": plan["blockers"],
+                        "acknowledgement_consumption_enabled": False,
+                        "authorization_decisions_enabled": False,
+                        "artifact_mutation_enabled": False,
+                        "lifecycle_persistence_enabled": False,
+                        "lifecycle_execution_enabled": False,
+                        "production_activation_enabled": False,
+                    },
+                )
+            except ValueError:
+                self.runtime.store.audit(
+                    actor=actor,
+                    action="module.lifecycle.preview",
+                    target=self.runtime.config.node_id,
+                    outcome="denied",
+                    correlation_id=correlation_id,
+                    details={"reason": "request_rejected"},
+                )
+                self._error(
+                    HTTPStatus.BAD_REQUEST,
+                    "module_lifecycle_preview_rejected",
+                    "Запрос плана жизненного цикла отклонён",
+                    correlation_id,
+                )
+                return
+            except Exception:
+                LOG.exception("module lifecycle preview failed")
+                self._error(
+                    HTTPStatus.INTERNAL_SERVER_ERROR,
+                    "module_lifecycle_preview_internal_error",
+                    "Внутренняя ошибка плана жизненного цикла",
+                    correlation_id,
+                )
+                return
+            self._json(HTTPStatus.OK, plan)
             return
         if path == "/api/v1/modules/permission-review/acknowledgements":
             try:

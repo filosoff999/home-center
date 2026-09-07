@@ -1,7 +1,7 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "Home Center module review API",
+    "title": "Home Center module supply-chain planning API",
     "version": "0.11.0"
   },
   "paths": {
@@ -131,6 +131,50 @@
           },
           "401": {"description": "Authentication required"},
           "404": {"description": "Missing, invalid or owned by another actor"}
+        }
+      }
+    },
+    "/api/v1/modules/lifecycle": {
+      "get": {
+        "summary": "Read the current module lifecycle status",
+        "security": [{"sessionCookie": []}],
+        "responses": {
+          "200": {
+            "description": "No persisted lifecycle exists in this increment",
+            "content": {
+              "application/json": {
+                "schema": {"$ref": "../modules/module-lifecycle-status.v1.schema.json"}
+              }
+            }
+          },
+          "401": {"description": "Authentication required"}
+        }
+      }
+    },
+    "/api/v1/modules/lifecycle/preview": {
+      "post": {
+        "summary": "Build a blocked, side-effect-free module install lifecycle plan",
+        "security": [{"sessionCookie": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {"$ref": "../modules/module-install-lifecycle-request.v1.schema.json"}
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Deterministic blocked plan with preflight and reverse recovery",
+            "content": {
+              "application/json": {
+                "schema": {"$ref": "../modules/module-install-lifecycle-plan.v1.schema.json"}
+              }
+            }
+          },
+          "400": {"description": "Request, acknowledgement or exact binding rejected"},
+          "401": {"description": "Authentication required"},
+          "403": {"description": "Cross-origin request rejected"}
         }
       }
     }

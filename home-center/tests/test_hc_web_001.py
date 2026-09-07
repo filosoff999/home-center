@@ -67,6 +67,23 @@ class HCWeb001RegressionTests(unittest.TestCase):
         self.assertNotIn("permission-review/acknowledgements/install", javascript)
         self.assertNotIn("innerHTML", javascript)
 
+    def test_module_lifecycle_plan_is_blocked_and_has_no_execution_control(self) -> None:
+        html = (ROOT / "product/web/static/index.html").read_text(encoding="utf-8")
+        javascript = (ROOT / "product/web/static/app.js").read_text(encoding="utf-8")
+        css = (ROOT / "product/web/static/app.css").read_text(encoding="utf-8")
+        self.assertIn('id="moduleLifecyclePlan"', html)
+        self.assertIn('api("/api/v1/modules/lifecycle")', javascript)
+        self.assertIn("function renderModuleLifecycle()", javascript)
+        self.assertIn("lifecycle.acknowledgement_consumption_enabled === false", javascript)
+        self.assertIn("lifecycle.lifecycle_execution_enabled === false", javascript)
+        self.assertIn("lifecycle.production_activation_enabled === false", javascript)
+        self.assertIn("lifecycle.recovery?.strategy === \"reverse-order-rollback\"", javascript)
+        self.assertNotIn("/api/v1/modules/lifecycle/start", javascript)
+        self.assertNotIn("/api/v1/modules/lifecycle/execute", javascript)
+        self.assertNotIn("/api/v1/modules/lifecycle/resume", javascript)
+        self.assertNotIn("innerHTML", javascript)
+        self.assertIn(".lifecycle-blockers { grid-template-columns: 1fr; }", css)
+
 
 if __name__ == "__main__":
     unittest.main()

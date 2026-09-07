@@ -1,0 +1,234 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://home-center.local/contracts/modules/module-install-lifecycle-plan.v1.schema.json",
+  "title": "Home Center blocked module install lifecycle plan v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "status",
+    "operation",
+    "acknowledgement",
+    "review_id",
+    "scope_id",
+    "preflight",
+    "blockers",
+    "steps",
+    "recovery",
+    "acknowledgement_consumption_enabled",
+    "authorization_decisions_enabled",
+    "artifact_mutation_enabled",
+    "lifecycle_persistence_enabled",
+    "lifecycle_execution_enabled",
+    "production_activation_enabled",
+    "plan_id"
+  ],
+  "properties": {
+    "schema": {"const": "home-center.module-install-lifecycle-plan.v1"},
+    "status": {"const": "blocked"},
+    "operation": {"const": "install"},
+    "acknowledgement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "reference", "status", "consumable"],
+      "properties": {
+        "id": {"$ref": "#/$defs/uuidV4"},
+        "reference": {
+          "type": "string",
+          "pattern": "^module-acknowledgement:[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        },
+        "status": {"const": "evidence-validated"},
+        "consumable": {"const": false}
+      }
+    },
+    "review_id": {"$ref": "#/$defs/prefixedDigest"},
+    "scope_id": {"$ref": "#/$defs/prefixedDigest"},
+    "preflight": {
+      "type": "array",
+      "minItems": 7,
+      "maxItems": 7,
+      "items": {"$ref": "#/$defs/preflight"}
+    },
+    "blockers": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/blocker"}
+    },
+    "steps": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 128,
+      "items": {"$ref": "#/$defs/installStep"}
+    },
+    "recovery": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["strategy", "state", "data_policy", "steps"],
+      "properties": {
+        "strategy": {"const": "reverse-order-rollback"},
+        "state": {"const": "planned"},
+        "data_policy": {"const": "preserve"},
+        "steps": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 128,
+          "items": {"$ref": "#/$defs/recoveryStep"}
+        }
+      }
+    },
+    "acknowledgement_consumption_enabled": {"const": false},
+    "authorization_decisions_enabled": {"const": false},
+    "artifact_mutation_enabled": {"const": false},
+    "lifecycle_persistence_enabled": {"const": false},
+    "lifecycle_execution_enabled": {"const": false},
+    "production_activation_enabled": {"const": false},
+    "plan_id": {"$ref": "#/$defs/prefixedDigest"}
+  },
+  "$defs": {
+    "uuidV4": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "prefixedDigest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "moduleId": {
+      "type": "string",
+      "maxLength": 128,
+      "pattern": "^[a-z0-9](?:[a-z0-9.-]{0,126}[a-z0-9])?$"
+    },
+    "semver": {
+      "type": "string",
+      "maxLength": 64,
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"
+    },
+    "symbolicId": {
+      "type": "string",
+      "maxLength": 128,
+      "pattern": "^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$"
+    },
+    "permission": {
+      "type": "string",
+      "maxLength": 128,
+      "pattern": "^[a-z][a-z0-9.-]*\\.[a-z][a-z0-9.-]*$"
+    },
+    "blocker": {
+      "enum": [
+        "artifact_publication_unverified",
+        "authorization_contract_unavailable",
+        "lifecycle_executor_unavailable",
+        "placement_unresolved"
+      ]
+    },
+    "preflight": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "status", "reason"],
+      "properties": {
+        "id": {
+          "enum": [
+            "admission",
+            "permission-review",
+            "permission-acknowledgement",
+            "artifact-publication",
+            "authorization",
+            "executor",
+            "placement"
+          ]
+        },
+        "status": {"enum": ["pass", "blocked"]},
+        "reason": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/blocker"}]}
+      }
+    },
+    "moduleVersion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "version"],
+      "properties": {
+        "id": {"$ref": "#/$defs/moduleId"},
+        "version": {"$ref": "#/$defs/semver"}
+      }
+    },
+    "moduleArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "version", "artifact_sha256"],
+      "properties": {
+        "id": {"$ref": "#/$defs/moduleId"},
+        "version": {"$ref": "#/$defs/semver"},
+        "artifact_sha256": {"$ref": "#/$defs/digest"}
+      }
+    },
+    "action": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "permission", "risk", "timeout_seconds", "idempotent"],
+      "properties": {
+        "id": {"$ref": "#/$defs/symbolicId"},
+        "permission": {"$ref": "#/$defs/permission"},
+        "risk": {"const": "mutation"},
+        "timeout_seconds": {"type": "integer", "minimum": 1, "maximum": 3600},
+        "idempotent": {"const": true}
+      }
+    },
+    "postcondition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "interval_seconds", "timeout_seconds", "status"],
+      "properties": {
+        "id": {"$ref": "#/$defs/symbolicId"},
+        "kind": {"enum": ["readiness", "liveness"]},
+        "interval_seconds": {"type": "integer", "minimum": 5, "maximum": 3600},
+        "timeout_seconds": {"type": "integer", "minimum": 1, "maximum": 300},
+        "status": {"const": "pending"}
+      }
+    },
+    "backup": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "data_ids", "restore_required"],
+      "properties": {
+        "mode": {"enum": ["required", "not-required"]},
+        "data_ids": {
+          "type": "array",
+          "maxItems": 128,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/symbolicId"}
+        },
+        "restore_required": {"type": "boolean"}
+      }
+    },
+    "installStep": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "module", "action", "state", "postconditions", "backup"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^install-[0-9]{3}$"},
+        "module": {"$ref": "#/$defs/moduleArtifact"},
+        "action": {"$ref": "#/$defs/action"},
+        "state": {"const": "blocked"},
+        "postconditions": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 64,
+          "items": {"$ref": "#/$defs/postcondition"}
+        },
+        "backup": {"$ref": "#/$defs/backup"}
+      }
+    },
+    "recoveryStep": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "module", "action", "state", "data_policy"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^rollback-[0-9]{3}$"},
+        "module": {"$ref": "#/$defs/moduleVersion"},
+        "action": {"$ref": "#/$defs/action"},
+        "state": {"const": "planned"},
+        "data_policy": {"const": "preserve"}
+      }
+    }
+  }
+}

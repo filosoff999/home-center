@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://home-center.local/contracts/modules/module-lifecycle-status.v1.schema.json",
+  "title": "Home Center module lifecycle status v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "status",
+    "plan",
+    "acknowledgement_consumption_enabled",
+    "authorization_decisions_enabled",
+    "artifact_mutation_enabled",
+    "lifecycle_persistence_enabled",
+    "lifecycle_execution_enabled",
+    "production_activation_enabled"
+  ],
+  "properties": {
+    "schema": {"const": "home-center.module-lifecycle-status.v1"},
+    "status": {"const": "no-pending-lifecycle"},
+    "plan": {"type": "null"},
+    "acknowledgement_consumption_enabled": {"const": false},
+    "authorization_decisions_enabled": {"const": false},
+    "artifact_mutation_enabled": {"const": false},
+    "lifecycle_persistence_enabled": {"const": false},
+    "lifecycle_execution_enabled": {"const": false},
+    "production_activation_enabled": {"const": false}
+  }
+}

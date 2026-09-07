@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import base64
+import copy
 import hashlib
 import json
 import os
@@ -432,6 +433,96 @@ class ApiTests(unittest.TestCase):
             ready, reasons = self.runtime.ready()
         self.assertFalse(ready)
         self.assertIn("module_acknowledgement_integrity", reasons)
+
+    def test_module_lifecycle_preview_is_exact_blocked_and_non_executing(self) -> None:
+        status_path = "/api/v1/modules/lifecycle"
+        with self.assertRaises(urllib.error.HTTPError) as caught:
+            self.request(status_path)
+        self.assertEqual(caught.exception.code, 401)
+        with self.request(status_path, authenticated=True) as response:
+            status = json.load(response)
+        self.assertEqual(status["status"], "no-pending-lifecycle")
+        self.assertIsNone(status["plan"])
+        self.assertFalse(status["lifecycle_execution_enabled"])
+
+        manifest = candidate("org.test.api-lifecycle")
+        acknowledgement_body = module_permission_acknowledgement_body(manifest)
+        acknowledgement_path = "/api/v1/modules/permission-review/acknowledgements"
+        with self.request(
+            acknowledgement_path,
+            authenticated=True,
+            method="POST",
+            body=acknowledgement_body,
+        ) as response:
+            acknowledgement = json.load(response)["acknowledgement"]
+        preview_body = {
+            "schema": "home-center.module-install-lifecycle-request.v1",
+            "operation": "install",
+            "acknowledgement_id": acknowledgement["acknowledgement_id"],
+            "admission_request": acknowledgement_body["admission_request"],
+        }
+        with self.request(
+            "/api/v1/modules/lifecycle/preview",
+            authenticated=True,
+            method="POST",
+            body=preview_body,
+        ) as response:
+            plan = json.load(response)
+        self.assertEqual(plan["status"], "blocked")
+        self.assertEqual(len(plan["steps"]), 1)
+        self.assertEqual(plan["steps"][0]["state"], "blocked")
+        self.assertEqual(plan["recovery"]["strategy"], "reverse-order-rollback")
+        self.assertFalse(plan["acknowledgement"]["consumable"])
+        self.assertFalse(plan["authorization_decisions_enabled"])
+        self.assertFalse(plan["artifact_mutation_enabled"])
+        self.assertFalse(plan["lifecycle_persistence_enabled"])
+        self.assertFalse(plan["lifecycle_execution_enabled"])
+        self.assertFalse(plan["production_activation_enabled"])
+        self.assertEqual(self.action_calls, 0)
+
+    def test_module_lifecycle_preview_mismatch_and_cross_origin_fail_closed(self) -> None:
+        manifest = candidate("org.test.api-lifecycle-reject")
+        acknowledgement_body = module_permission_acknowledgement_body(manifest)
+        acknowledgement_path = "/api/v1/modules/permission-review/acknowledgements"
+        with self.request(
+            acknowledgement_path,
+            authenticated=True,
+            method="POST",
+            body=acknowledgement_body,
+        ) as response:
+            acknowledgement_id = json.load(response)["acknowledgement"][
+                "acknowledgement_id"
+            ]
+        changed_admission = copy.deepcopy(acknowledgement_body["admission_request"])
+        changed_admission["candidates"][0]["artifact"]["sha256"] = "e" * 64
+        preview_body = {
+            "schema": "home-center.module-install-lifecycle-request.v1",
+            "operation": "install",
+            "acknowledgement_id": acknowledgement_id,
+            "admission_request": changed_admission,
+        }
+        path = "/api/v1/modules/lifecycle/preview"
+        with self.assertRaises(urllib.error.HTTPError) as mismatch:
+            self.request(path, authenticated=True, method="POST", body=preview_body)
+        self.assertEqual(mismatch.exception.code, 400)
+        payload = mismatch.exception.read().decode()
+        self.assertIn("module_lifecycle_preview_rejected", payload)
+        self.assertNotIn("org.test.api-lifecycle-reject", payload)
+
+        preview_body["admission_request"] = acknowledgement_body["admission_request"]
+        with self.assertRaises(urllib.error.HTTPError) as cross_origin:
+            self.request(
+                path,
+                authenticated=True,
+                method="POST",
+                body=preview_body,
+                extra_headers={
+                    "Origin": "https://attacker.invalid",
+                    "Sec-Fetch-Site": "cross-site",
+                },
+            )
+        self.assertEqual(cross_origin.exception.code, 403)
+        self.assertEqual(self.action_calls, 0)
 
     def test_bearer_bootstrap_token_cannot_bypass_local_login(self) -> None:
         with self.assertRaises(urllib.error.HTTPError) as caught:

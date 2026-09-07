@@ -1,6 +1,6 @@
 "use strict";
 
-const state = { overview: null, profile: null, backups: [], audit: [], tls: null, modulePermissionReview: null, modulePermissionAcknowledgements: null, authProviders: null, currentView: "overview" };
+const state = { overview: null, profile: null, backups: [], audit: [], tls: null, modulePermissionReview: null, modulePermissionAcknowledgements: null, moduleLifecycle: null, authProviders: null, currentView: "overview" };
 const LOGIN_ERROR_MESSAGES = Object.freeze({
   invalid_credentials: "Неверное имя пользователя или пароль.",
   too_many_requests: "Слишком много попыток входа. Повторите позже.",
@@ -178,6 +178,7 @@ function render() {
   renderTopology(nodes);
   renderModulePermissionReview();
   renderModulePermissionAcknowledgements();
+  renderModuleLifecycle();
   renderBackups();
   renderJobs();
   renderAudit();
@@ -451,10 +452,93 @@ function renderModulePermissionAcknowledgements() {
   root.append(panel);
 }
 
+function renderModuleLifecycle() {
+  const root = $("#moduleLifecyclePlan");
+  if (!root) return;
+  root.replaceChildren();
+  const lifecycle = state.moduleLifecycle;
+  if (!lifecycle) {
+    root.append(permissionReviewEmpty("Статус недоступен", "Не удалось получить границу жизненного цикла.", "!"));
+    return;
+  }
+  const inert = lifecycle.acknowledgement_consumption_enabled === false
+    && lifecycle.authorization_decisions_enabled === false
+    && lifecycle.artifact_mutation_enabled === false
+    && lifecycle.lifecycle_persistence_enabled === false
+    && lifecycle.lifecycle_execution_enabled === false
+    && lifecycle.production_activation_enabled === false;
+  if (!inert) {
+    root.append(permissionReviewEmpty("План отклонён", "Сервер вернул недопустимое состояние выполнения.", "!"));
+    return;
+  }
+  if (lifecycle.schema === "home-center.module-lifecycle-status.v1"
+      && lifecycle.status === "no-pending-lifecycle"
+      && lifecycle.plan === null) {
+    root.append(permissionReviewEmpty("Нет плана жизненного цикла", "Точный заблокированный план появится после выбора модуля и действующего ознакомления. Выполнение сейчас отключено."));
+    return;
+  }
+  const blockerLabels = {
+    artifact_publication_unverified: "Артефакт не связан с доверенным хранилищем",
+    authorization_contract_unavailable: "Контракт авторизации ещё не доступен",
+    lifecycle_executor_unavailable: "Исполнитель жизненного цикла отключён",
+    placement_unresolved: "Размещение по узлам не определено",
+  };
+  const safePlan = lifecycle.schema === "home-center.module-install-lifecycle-plan.v1"
+    && lifecycle.status === "blocked"
+    && lifecycle.operation === "install"
+    && lifecycle.acknowledgement?.consumable === false
+    && Array.isArray(lifecycle.blockers)
+    && lifecycle.blockers.length === 4
+    && lifecycle.blockers.every((item) => Object.prototype.hasOwnProperty.call(blockerLabels, item))
+    && Array.isArray(lifecycle.steps)
+    && lifecycle.steps.length > 0
+    && lifecycle.steps.length <= 128
+    && lifecycle.steps.every((step) => step?.state === "blocked"
+      && typeof step.module?.id === "string"
+      && typeof step.module?.version === "string"
+      && typeof step.action?.id === "string"
+      && step.action?.risk === "mutation"
+      && step.action?.idempotent === true)
+    && lifecycle.recovery?.strategy === "reverse-order-rollback"
+    && lifecycle.recovery?.state === "planned"
+    && lifecycle.recovery?.data_policy === "preserve"
+    && Array.isArray(lifecycle.recovery?.steps)
+    && lifecycle.recovery.steps.length === lifecycle.steps.length;
+  if (!safePlan) {
+    root.append(permissionReviewEmpty("План отклонён", "Формат preflight или recovery не соответствует закрытому контракту.", "!"));
+    return;
+  }
+  const panel = node("article", "panel");
+  const heading = node("div", "panel-head");
+  const title = node("div");
+  title.append(node("span", "panel-kicker", "Только предварительный просмотр"));
+  title.append(node("h3", "", `${lifecycle.steps.length} шагов установки`));
+  heading.append(title);
+  heading.append(node("span", "tag warning", "BLOCKED"));
+  panel.append(heading);
+  const blockers = node("div", "lifecycle-blockers");
+  lifecycle.blockers.forEach((item) => blockers.append(node("div", "lifecycle-blocker", blockerLabels[item])));
+  panel.append(blockers);
+  const steps = node("div", "acknowledgement-list");
+  lifecycle.steps.forEach((step) => {
+    const card = node("div", "acknowledgement-card status-superseded");
+    const head = node("div", "permission-card-head");
+    head.append(node("strong", "", `${step.module.id}@${step.module.version}`));
+    head.append(node("span", "permission-risk", "Заблокировано"));
+    card.append(head);
+    card.append(node("p", "mono", step.action.id));
+    card.append(node("small", "", `${step.postconditions?.length || 0} health postconditions`));
+    steps.append(card);
+  });
+  panel.append(steps);
+  panel.append(node("div", "review-identity mono", `Recovery: ${lifecycle.recovery.steps.length} шагов в обратном порядке · данные сохраняются`));
+  root.append(panel);
+}
+
 async function refresh() {
   $("#refreshButton").disabled=true; $("#notice").classList.add("hidden");
   try {
-    const [overview, profile, backups, audit, tls, modulePermissionReview, modulePermissionAcknowledgements] = await Promise.all([
+    const [overview, profile, backups, audit, tls, modulePermissionReview, modulePermissionAcknowledgements, moduleLifecycle] = await Promise.all([
       api("/api/v1/overview"),
       api("/api/v1/deployment-profile"),
       api("/api/v1/backups"),
@@ -462,8 +546,9 @@ async function refresh() {
       optionalApi("/api/v1/tls"),
       api("/api/v1/modules/permission-review"),
       api("/api/v1/modules/permission-review/acknowledgements?limit=20"),
+      api("/api/v1/modules/lifecycle"),
     ]);
-    state.overview=overview; state.profile=profile; state.backups=backups.items || []; state.audit=audit.items || []; state.tls=tls; state.modulePermissionReview=modulePermissionReview; state.modulePermissionAcknowledgements=modulePermissionAcknowledgements; render();
+    state.overview=overview; state.profile=profile; state.backups=backups.items || []; state.audit=audit.items || []; state.tls=tls; state.modulePermissionReview=modulePermissionReview; state.modulePermissionAcknowledgements=modulePermissionAcknowledgements; state.moduleLifecycle=moduleLifecycle; render();
   } catch (error) {
     if (error.message !== "authentication_required") { $("#notice").textContent=`Не удалось обновить данные: ${error.message}`; $("#notice").classList.remove("hidden"); }
   } finally { $("#refreshButton").disabled=false; }
