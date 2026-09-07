@@ -5,7 +5,7 @@ import os
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from home_center.local_admin_auth import LocalAdminCredentialStore
 from home_center.local_admin_provision import provision_credential_file
@@ -103,6 +103,38 @@ class LocalAdminRotationTests(unittest.TestCase):
         recovered = self.rotator.recover()
         self.assertTrue(recovered.verify("admin", CURRENT_PASSWORD))
         self.assertFalse(rollback.exists())
+
+    def test_authorized_reset_uses_fresh_salt_without_current_password(self) -> None:
+        before = json.loads(self.path.read_text(encoding="utf-8"))
+        committed = self.rotator.reset(NEW_PASSWORD)
+        after = json.loads(self.path.read_text(encoding="utf-8"))
+        self.assertNotEqual(before["salt_b64"], after["salt_b64"])
+        self.assertTrue(committed.verify("admin", NEW_PASSWORD))
+        self.assertFalse(committed.verify("admin", CURRENT_PASSWORD))
+
+    def test_reset_commit_evidence_failure_rolls_back_old_credential(self) -> None:
+        def fail_evidence() -> None:
+            raise OSError("fixture")
+
+        with self.assertRaisesRegex(LocalAdminRotationError, "credential_commit_hook_failed"):
+            self.rotator.reset(NEW_PASSWORD, commit_hook=fail_evidence)
+        self.assertTrue(self.store().verify("admin", CURRENT_PASSWORD))
+        self.assertFalse(self.store().verify("admin", NEW_PASSWORD))
+
+    def test_postcommit_cleanup_failure_keeps_new_authoritative_credential(self) -> None:
+        evidence = Mock()
+        original = self.rotator._unlink_regular
+
+        def fail_rollback_cleanup(directory_fd: int, name: str) -> None:
+            if name == ROLLBACK_NAME:
+                raise OSError("fixture")
+            original(directory_fd, name)
+
+        with patch.object(self.rotator, "_unlink_regular", side_effect=fail_rollback_cleanup):
+            committed = self.rotator.reset(NEW_PASSWORD, commit_hook=evidence)
+        evidence.assert_called_once_with()
+        self.assertTrue(committed.verify("admin", NEW_PASSWORD))
+        self.assertTrue(self.store().verify("admin", NEW_PASSWORD))
 
 
 if __name__ == "__main__":

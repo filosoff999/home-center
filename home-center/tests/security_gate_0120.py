@@ -36,10 +36,14 @@ def main() -> int:
     helper_path = package / "privileged_helper.py"
     client_path = package / "helper_client.py"
     api_path = package / "api.py"
+    recovery_path = package / "local_admin_recovery.py"
+    recovery_cli_path = ROOT / "deploy/runtime/recover-local-admin.py"
     rotation = rotation_path.read_text(encoding="utf-8")
     helper = helper_path.read_text(encoding="utf-8")
     client = client_path.read_text(encoding="utf-8")
     api = api_path.read_text(encoding="utf-8")
+    recovery = recovery_path.read_text(encoding="utf-8")
+    recovery_cli = recovery_cli_path.read_text(encoding="utf-8")
 
     imports = {
         alias.name.split(".", 1)[0]
@@ -57,6 +61,8 @@ def main() -> int:
         "credential_rotation_rollback_failed",
         "ROLLBACK_NAME",
         "NEXT_NAME",
+        "def reset(",
+        "commit_hook",
     ):
         require(marker in rotation, f"rotation guard missing: {marker}")
 
@@ -72,6 +78,56 @@ def main() -> int:
     require('actor != f"local-admin:{self.runtime.local_admin.username}"' in api, "local-admin actor gate missing")
     require('/api/v1/auth/local-admin/password/change' in api, "password API missing")
     require('details={"policy": "local-admin-password-v1"' in api, "secret-free success audit missing")
+    require("authenticate_local_admin" in api, "local login does not reload an offline recovery credential")
+
+    recovery_cli_imports = {
+        alias.name.split(".", 1)[0]
+        for node in ast.walk(ast.parse(recovery_cli))
+        if isinstance(node, ast.Import)
+        for alias in node.names
+    }
+    require(
+        not recovery_cli_imports.intersection({"http", "requests", "socket", "subprocess", "urllib"}),
+        "recovery CLI has remote or process execution surface",
+    )
+    for marker in (
+        "os.geteuid() != 0",
+        "LOCAL_CONSOLE.fullmatch",
+        "sys.stdin, sys.stdout, sys.stderr",
+        "getpass.getpass",
+        'phrase = f"RESET admin {challenge}"',
+        "LocalAdminCredentialRotator",
+        "rotator.reset(password, commit_hook=commit_evidence)",
+        'CONFIG_PATH = Path("/etc/home-center/config.json")',
+        'CREDENTIAL_PATH = Path("/etc/home-center/secrets/local-admin.json")',
+        'EVIDENCE_PATH = Path("/var/lib/home-center-recovery/events.jsonl")',
+    ):
+        require(marker in recovery_cli, f"local-console recovery guard missing: {marker}")
+    for forbidden in (
+        'add_argument("--password"',
+        "--password-stdin",
+        "os.environ",
+        "shell=True",
+        "subprocess.",
+        "/dev/pts",
+        "ssh",
+    ):
+        require(forbidden not in recovery_cli.lower(), f"recovery CLI forbidden surface present: {forbidden}")
+
+    for marker in (
+        "fcntl.flock",
+        "os.O_APPEND",
+        "os.O_EXCL",
+        'getattr(os, "O_NOFOLLOW"',
+        "os.fsync",
+        "MAX_EVIDENCE_BYTES",
+        "SAFE_REASONS",
+        'material.pop("entry_hash", None)',
+        'previous_hash = "0" * 64',
+    ):
+        require(marker in recovery, f"recovery evidence guard missing: {marker}")
+    for forbidden in ("current_password", "new_password", "salt_b64", "verifier_b64"):
+        require(forbidden not in recovery, f"recovery evidence can name secret material: {forbidden}")
 
     service = (ROOT / "deploy/systemd/home-center-helper.service").read_text(encoding="utf-8")
     web_service = (ROOT / "deploy/systemd/home-center.service").read_text(encoding="utf-8")
@@ -84,15 +140,19 @@ def main() -> int:
         "contracts/helper/helper-secret-request.v1.schema.json",
         "contracts/helper/helper-secret-result.v1.schema.json",
         "contracts/openapi/home-center-auth.v3.openapi.json",
+        "contracts/auth/local-admin-recovery-evidence.v1.schema.json",
     )
     require(all((ROOT / path).is_file() for path in required_contracts), "0.12 credential contract missing")
 
     version = (package / "__init__.py").read_text(encoding="utf-8")
     project = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
     builder = (ROOT / "deploy/scripts/build-artifact.sh").read_text(encoding="utf-8")
+    installer = (ROOT / "deploy/scripts/install-node.sh").read_text(encoding="utf-8")
     require('__version__ = "0.12.0"' in version, "runtime version is not 0.12.0")
     require('version = "0.12.0"' in project, "package version is not 0.12.0")
     require('[ "$VERSION" = 0.12.0 ] || { echo RELEASE_VERSION_NOT_ADMITTED' in builder, "artifact gate is not 0.12.0")
+    require('"$ROOT/deploy/runtime/recover-local-admin.py"' in builder, "recovery CLI is absent from artifact")
+    require("RECOVERY_EVIDENCE_DIRECTORY=/var/lib/home-center-recovery" in installer, "recovery evidence directory is not provisioned")
 
     print("SECURITY_GATE_0120=PASS")
     return 0

@@ -388,6 +388,28 @@ class ApiTests(unittest.TestCase):
         self.assertEqual(caught.exception.code, 403)
         self.runtime.local_admin_password_rotator.assert_not_called()
 
+    def test_local_login_reloads_an_offline_recovery_credential(self) -> None:
+        recovered_password = "offline recovery password 51"
+        rotator = LocalAdminCredentialRotator(
+            self.runtime.config.local_admin_credentials_file,
+            expected_uid=os.geteuid(),
+            expected_gid=os.getegid(),
+            expected_mode=0o640,
+            expected_directory_uid=os.geteuid(),
+            expected_directory_gid=os.getegid(),
+            expected_directory_mode=0o750,
+        )
+        rotator.reset(recovered_password)
+        # Runtime still holds the pre-recovery object until the next login.
+        self.assertTrue(self.runtime.local_admin.verify(USERNAME, PASSWORD))
+        with self.request(
+            "/api/v1/session",
+            method="POST",
+            body={"provider": "local", "username": USERNAME, "password": recovered_password},
+        ) as response:
+            self.assertEqual(json.load(response)["actor"], "local-admin:admin")
+        self.assertFalse(self.runtime.local_admin.verify(USERNAME, PASSWORD))
+
 
     def test_optional_ad_login_success_and_failure_are_generic(self) -> None:
         class FixtureAd:
@@ -650,4 +672,3 @@ class ApiTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

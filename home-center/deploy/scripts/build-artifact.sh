@@ -65,6 +65,7 @@ cp "$ROOT/deploy/runtime/run.py" \
    "$ROOT/deploy/runtime/release-channel-verify.py" \
    "$ROOT/deploy/runtime/release-candidate-verify.py" \
    "$ROOT/deploy/runtime/provision-local-admin.py" \
+   "$ROOT/deploy/runtime/recover-local-admin.py" \
    "$STAGE/"
 cp "$ROOT/deploy/scripts/install-node.sh" \
    "$ROOT/deploy/scripts/rollback-node.sh" \
@@ -103,5 +104,4 @@ tar --sort=name --mtime="@$SOURCE_DATE_EPOCH" --owner=0 --group=0 --numeric-owne
 printf 'ARTIFACT=%s\n' "$ARCHIVE"
 printf 'SHA256=%s\n' "$(sha256sum "$ARCHIVE" | awk '{print $1}')"
 printf 'BYTES=%s\n' "$(stat -c %s "$ARCHIVE")"
-
 

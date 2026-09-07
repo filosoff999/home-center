@@ -552,7 +552,7 @@ class RuntimeRequestHandler(BaseHTTPRequestHandler):
 
         try:
             if provider == "local":
-                canonical_username = self.runtime.local_admin.authenticate(username, password)
+                canonical_username = self.runtime.authenticate_local_admin(username, password)
                 actor_prefix = "local-admin"
             else:
                 canonical_username = self.runtime.ad_auth.authenticate(username, password)

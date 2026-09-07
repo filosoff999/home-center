@@ -14,6 +14,7 @@ import os
 import stat
 import threading
 from pathlib import Path
+from typing import Callable
 
 from .local_admin_auth import LocalAdminAuthError, LocalAdminCredentialStore
 from .local_admin_provision import LocalAdminProvisionError, credential_document
@@ -232,18 +233,26 @@ class LocalAdminCredentialRotator:
                     os.close(lock_fd)
                 os.close(directory_fd)
 
-    def rotate(self, username: str, current_password: str, new_password: str) -> LocalAdminCredentialStore:
-        """Atomically replace one verifier and return the validated new store."""
-
+    def _change(
+        self,
+        new_password: str,
+        *,
+        username: str | None,
+        current_password: str | None,
+        commit_hook: Callable[[], None] | None,
+    ) -> LocalAdminCredentialStore:
         with self._thread_lock:
             directory_fd = self._open_directory()
             lock_fd: int | None = None
             replaced = False
+            committed = False
             try:
                 lock_fd = self._open_lock(directory_fd)
                 self._recover_locked(directory_fd)
                 current_store = self._store()
-                if current_store.authenticate(username, current_password) is None:
+                if current_password is not None and (
+                    username is None or current_store.authenticate(username, current_password) is None
+                ):
                     raise LocalAdminRotationError("current_password_invalid")
                 try:
                     document = credential_document(current_store.username, new_password)
@@ -265,18 +274,26 @@ class LocalAdminCredentialRotator:
                 committed_store = self._store()
                 if committed_store.authenticate(current_store.username, new_password) is None:
                     raise LocalAdminRotationError("credential_rotation_validation_failed")
-                self._unlink_regular(directory_fd, ROLLBACK_NAME)
-                # The credential switch itself was durably committed above.
-                # A cleanup fsync failure must not report failure after the
-                # caller's password has already changed; recovery safely
-                # removes a resurrected rollback entry on the next operation.
+                if commit_hook is not None:
+                    try:
+                        commit_hook()
+                    except LocalAdminRotationError:
+                        raise
+                    except Exception as exc:
+                        raise LocalAdminRotationError("credential_commit_hook_failed") from exc
+                committed = True
+                # The credential switch and optional external evidence are now
+                # committed. Cleanup failure cannot be reported as rotation
+                # failure because the new password is already authoritative;
+                # the next recovery pass safely removes a retained rollback.
                 try:
+                    self._unlink_regular(directory_fd, ROLLBACK_NAME)
                     os.fsync(directory_fd)
-                except OSError:
+                except (LocalAdminRotationError, OSError):
                     pass
                 return committed_store
             except LocalAdminRotationError:
-                if replaced and self._exists(directory_fd, ROLLBACK_NAME):
+                if replaced and not committed and self._exists(directory_fd, ROLLBACK_NAME):
                     try:
                         os.replace(ROLLBACK_NAME, self.path.name, src_dir_fd=directory_fd, dst_dir_fd=directory_fd)
                         os.fsync(directory_fd)
@@ -291,7 +308,7 @@ class LocalAdminCredentialRotator:
                     pass
                 raise
             except (LocalAdminAuthError, LocalAdminProvisionError, OSError) as exc:
-                if replaced and self._exists(directory_fd, ROLLBACK_NAME):
+                if replaced and not committed and self._exists(directory_fd, ROLLBACK_NAME):
                     try:
                         os.replace(ROLLBACK_NAME, self.path.name, src_dir_fd=directory_fd, dst_dir_fd=directory_fd)
                         os.fsync(directory_fd)
@@ -308,3 +325,32 @@ class LocalAdminCredentialRotator:
                 if lock_fd is not None:
                     os.close(lock_fd)
                 os.close(directory_fd)
+
+    def rotate(self, username: str, current_password: str, new_password: str) -> LocalAdminCredentialStore:
+        """Atomically replace a verifier after checking the current password."""
+
+        return self._change(
+            new_password,
+            username=username,
+            current_password=current_password,
+            commit_hook=None,
+        )
+
+    def reset(
+        self,
+        new_password: str,
+        *,
+        commit_hook: Callable[[], None] | None = None,
+    ) -> LocalAdminCredentialStore:
+        """Reset a verifier for an already authorized local-console recovery.
+
+        This primitive deliberately implements no authorization surface. Only
+        the packaged root/local-console recovery entry point may invoke it.
+        """
+
+        return self._change(
+            new_password,
+            username=None,
+            current_password=None,
+            commit_hook=commit_hook,
+        )

@@ -360,6 +360,13 @@ for runtime_directory in /var/lib/home-center /var/backups/home-center; do
   [ ! -L "$runtime_directory" ] && [ "$(stat -c '%F:%U:%G:%a' "$runtime_directory")" = directory:home-center:home-center:750 ] \
     || { echo "RUNTIME_DIRECTORY_METADATA_REJECTED=$runtime_directory" >&2; false; }
 done
+RECOVERY_EVIDENCE_DIRECTORY=/var/lib/home-center-recovery
+if [ ! -e "$RECOVERY_EVIDENCE_DIRECTORY" ] && [ ! -L "$RECOVERY_EVIDENCE_DIRECTORY" ]; then
+  install -d -m 0700 -o root -g root "$RECOVERY_EVIDENCE_DIRECTORY"
+fi
+[ ! -L "$RECOVERY_EVIDENCE_DIRECTORY" ] \
+  && [ "$(stat -c '%F:%u:%g:%a' "$RECOVERY_EVIDENCE_DIRECTORY")" = directory:0:0:700 ] \
+  || { echo RECOVERY_EVIDENCE_DIRECTORY_METADATA_REJECTED >&2; false; }
 if [ ! -e /var/lib/home-center-deploy ] && [ ! -L /var/lib/home-center-deploy ]; then
   install -d -m 0700 -o root -g root /var/lib/home-center-deploy
 fi
