@@ -1,6 +1,6 @@
 # ADR-0019 — Trusted module artifact publication binding
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-09-07
 - **Related requirements:** HC-MOD-002, HC-MOD-003, HC-CORE-002, HC-TEST-002
 - **Tracking:** #102
