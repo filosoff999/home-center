@@ -129,7 +129,7 @@ def main() -> int:
         "plan.to_dict()",
     ):
         require(marker in api, f"Intent API boundary guard missing: {marker}")
-    require("request.actor" not in api[api.index("details={\"intent_id\""):], "audit must not trust client actor")
+    require('"actor": request.actor' not in api, "audit must not persist client-supplied actor")
 
     required_contracts = (
         "contracts/intents/intent-request.v1.schema.json",
