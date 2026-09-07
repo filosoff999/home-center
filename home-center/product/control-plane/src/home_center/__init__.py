@@ -11,4 +11,5 @@ __all__ = ["__version__"]
 # Immediate published predecessor: __version__ = "0.9.2"
 # Published 0.10 source baseline: __version__ = "0.10.0"
 # Immediate development predecessor: __version__ = "0.11.0"
-__version__ = "0.12.0"
+# Immediate development predecessor: __version__ = "0.12.0"
+__version__ = "0.13.0"
