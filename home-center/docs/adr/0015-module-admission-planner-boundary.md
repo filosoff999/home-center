@@ -1,6 +1,6 @@
 # ADR-0015 — Deterministic module admission planner boundary
 
-- **Status:** Proposed
+- **Status:** Accepted for 0.11 development
 - **Date:** 2026-09-07
 - **Related requirements:** HC-124
 - **Tracking:** #85
