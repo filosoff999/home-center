@@ -49,7 +49,7 @@ class Runtime:
         )
         self.external_request_limiter = ExternalRequestRateLimiter()
         self.actions = ActionRegistry(config.node_id, self.store)
-        self.intents = IntentPlanningService()
+        self.intents = IntentPlanningService(resource_snapshot_provider=self.resource_snapshot)
         self.reconciler = Reconciler(config, self.store)
 
     def change_local_admin_password(self, current_password: str, new_password: str) -> None:
