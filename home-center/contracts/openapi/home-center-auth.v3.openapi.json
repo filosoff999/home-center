@@ -1,8 +1,8 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "Home Center 0.12 Authentication API",
-    "version": "0.12.0-development",
+    "title": "Home Center 0.13 Authentication API",
+    "version": "0.13.0-development",
     "description": "Local and optional AD login plus authenticated node-local administrator password rotation. Secret helper requests are never durable evidence."
   },
   "paths": {

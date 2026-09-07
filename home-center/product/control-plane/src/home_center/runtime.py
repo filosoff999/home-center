@@ -15,6 +15,7 @@ from .auth import LoginRateLimiter, SessionManager
 from .config import Config
 from .external_access import ExternalAccessPolicy, ExternalRequestRateLimiter
 from .helper_client import HelperClientError, rotate_local_admin_password
+from .intent_service import IntentPlanningService
 from .local_admin_auth import LocalAdminCredentialStore
 from .reconcile import Reconciler
 from .store import StateStore
@@ -47,6 +48,7 @@ class Runtime:
         )
         self.external_request_limiter = ExternalRequestRateLimiter()
         self.actions = ActionRegistry(config.node_id, self.store)
+        self.intents = IntentPlanningService()
         self.reconciler = Reconciler(config, self.store)
 
     def change_local_admin_password(self, current_password: str, new_password: str) -> None:
