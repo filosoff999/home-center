@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://home-center.local/contracts/intents/reservation-release.v1.schema.json",
+  "title": "Home Center reservation release v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "reservation_id", "state", "provider_execution_enabled", "production_mutation_enabled"],
+  "properties": {
+    "schema": {"const": "home-center.reservation-release.v1"},
+    "reservation_id": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "state": {"const": "released"},
+    "provider_execution_enabled": {"const": false},
+    "production_mutation_enabled": {"const": false}
+  }
+}
