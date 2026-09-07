@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://home-center.local/contracts/modules/module-install-lifecycle-request.v1.schema.json",
+  "title": "Home Center module install lifecycle preview request v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "operation", "acknowledgement_id", "admission_request"],
+  "properties": {
+    "schema": {"const": "home-center.module-install-lifecycle-request.v1"},
+    "operation": {"const": "install"},
+    "acknowledgement_id": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "admission_request": {"$ref": "module-admission-request.v1.schema.json"}
+  }
+}

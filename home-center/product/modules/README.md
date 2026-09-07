@@ -6,6 +6,8 @@
 
 `Discovered/Available → CompatibilityChecked → Planned → Installed → Healthy → Upgrading → Healthy` либо контролируемый `Rollback/Recovery`; удаление проходит отдельный dependency-aware workflow.
 
+В текущей 0.11 линии lifecycle planner может сформировать только заблокированный install preview: dependency-first typed steps, health/backup postconditions и reverse-order recovery. Подтверждение ознакомления остаётся non-consumable evidence; artifact publication, placement, authorization, persistence и execution ещё не допускаются.
+
 ## Manifest contract
 
 Модуль обязан декларировать минимум:

@@ -11,6 +11,7 @@ MANIFEST = ROOT / "product/control-plane/src/home_center/module_manifest.py"
 PLANNER = ROOT / "product/control-plane/src/home_center/module_admission.py"
 REVIEW = ROOT / "product/control-plane/src/home_center/module_permission_review.py"
 ACKNOWLEDGEMENT = ROOT / "product/control-plane/src/home_center/module_permission_acknowledgement.py"
+LIFECYCLE = ROOT / "product/control-plane/src/home_center/module_lifecycle.py"
 API = ROOT / "product/control-plane/src/home_center/api.py"
 STORE = ROOT / "product/control-plane/src/home_center/store.py"
 RUNTIME = ROOT / "product/control-plane/src/home_center/runtime.py"
@@ -38,6 +39,7 @@ def main() -> int:
     planner = PLANNER.read_text(encoding="utf-8")
     review = REVIEW.read_text(encoding="utf-8")
     acknowledgement = ACKNOWLEDGEMENT.read_text(encoding="utf-8")
+    lifecycle = LIFECYCLE.read_text(encoding="utf-8")
     api = API.read_text(encoding="utf-8")
     store = STORE.read_text(encoding="utf-8")
     runtime = RUNTIME.read_text(encoding="utf-8")
@@ -47,6 +49,7 @@ def main() -> int:
     planner_tree = ast.parse(planner, filename=str(PLANNER))
     review_tree = ast.parse(review, filename=str(REVIEW))
     acknowledgement_tree = ast.parse(acknowledgement, filename=str(ACKNOWLEDGEMENT))
+    lifecycle_tree = ast.parse(lifecycle, filename=str(LIFECYCLE))
 
     imports: set[str] = set()
     calls: set[str] = set()
@@ -87,6 +90,16 @@ def main() -> int:
             acknowledgement_imports.add((node.module or "").split(".", 1)[0])
         elif isinstance(node, ast.Call):
             acknowledgement_calls.add(dotted(node.func))
+
+    lifecycle_imports: set[str] = set()
+    lifecycle_calls: set[str] = set()
+    for node in ast.walk(lifecycle_tree):
+        if isinstance(node, ast.Import):
+            lifecycle_imports.update(alias.name.split(".", 1)[0] for alias in node.names)
+        elif isinstance(node, ast.ImportFrom):
+            lifecycle_imports.add((node.module or "").split(".", 1)[0])
+        elif isinstance(node, ast.Call):
+            lifecycle_calls.add(dotted(node.func))
 
     require(not imports.intersection({"http", "requests", "socket", "urllib"}), "network client imported")
     require(not calls.intersection({"eval", "exec", "os.system", "subprocess.Popen"}), "unsafe execution primitive")
@@ -235,6 +248,56 @@ def main() -> int:
             f"module acknowledgement authority route enabled: {forbidden_route}",
         )
 
+    require(
+        not lifecycle_imports.intersection(
+            {"http", "os", "pathlib", "requests", "shutil", "socket", "sqlite3", "subprocess", "tempfile", "urllib"}
+        ),
+        "module lifecycle I/O, persistence or execution module imported",
+    )
+    require(
+        not lifecycle_calls.intersection(
+            {"eval", "exec", "open", "io.open", "os.system", "subprocess.Popen", "subprocess.run"}
+        ),
+        "module lifecycle I/O or execution primitive enabled",
+    )
+    for marker in (
+        "ACKNOWLEDGEMENT_CONSUMPTION_ENABLED = False",
+        "AUTHORIZATION_DECISIONS_ENABLED = False",
+        "ARTIFACT_MUTATION_ENABLED = False",
+        "LIFECYCLE_PERSISTENCE_ENABLED = False",
+        "LIFECYCLE_EXECUTION_ENABLED = False",
+        "PRODUCTION_ACTIVATION_ENABLED = False",
+        '"status": "blocked"',
+        '"state": "blocked"',
+        '"strategy": "reverse-order-rollback"',
+        '"data_policy": "preserve"',
+        "acknowledgement_request_hash",
+        "lifecycle_admission_binding_rejected",
+        "plan_module_install_lifecycle",
+    ):
+        require(marker in lifecycle, f"module lifecycle boundary missing: {marker}")
+    for forbidden_field in ('"command"', '"argv"', '"path"', '"execute"', '"granted_permissions"'):
+        require(forbidden_field not in lifecycle, f"module lifecycle authority field enabled: {forbidden_field}")
+    require('path == "/api/v1/modules/lifecycle"' in api, "module lifecycle status API missing")
+    require(
+        'path == "/api/v1/modules/lifecycle/preview"' in api,
+        "module lifecycle preview API missing",
+    )
+    require("MAX_MODULE_LIFECYCLE_REQUEST_BYTES" in api, "module lifecycle body is not bounded")
+    require("moduleLifecyclePlan" in web_index, "module lifecycle UI missing")
+    require("function renderModuleLifecycle()" in web_script, "module lifecycle renderer missing")
+    for forbidden_route in (
+        "modules/lifecycle/start",
+        "modules/lifecycle/execute",
+        "modules/lifecycle/resume",
+        "modules/lifecycle/authorize",
+        "modules/lifecycle/consume",
+    ):
+        require(
+            forbidden_route not in api + web_index + web_script,
+            f"module lifecycle execution route enabled: {forbidden_route}",
+        )
+
     contracts = {
         "module-manifest.v2.schema.json",
         "module-provenance.v1.schema.json",
@@ -248,6 +311,9 @@ def main() -> int:
         "module-permission-acknowledgement.v1.schema.json",
         "module-permission-acknowledgement-result.v1.schema.json",
         "module-permission-acknowledgement-list.v1.schema.json",
+        "module-install-lifecycle-request.v1.schema.json",
+        "module-install-lifecycle-plan.v1.schema.json",
+        "module-lifecycle-status.v1.schema.json",
     }
     present = {path.name for path in (ROOT / "contracts/modules").glob("*.json")}
     require(contracts <= present, "module supply-chain contract missing")
