@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://home-center.local/contracts/modules/module-admission-result.v1.schema.json",
+  "title": "Home Center admitted module plan v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "status",
+    "requested_modules",
+    "install_order",
+    "satisfied_by_installed",
+    "required_capabilities",
+    "requested_permissions",
+    "production_activation_enabled"
+  ],
+  "properties": {
+    "schema": {"const": "home-center.module-admission-result.v1"},
+    "status": {"const": "admitted"},
+    "requested_modules": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 32,
+      "items": {"$ref": "#/$defs/moduleVersion"}
+    },
+    "install_order": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 128,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "version", "artifact_sha256"],
+        "properties": {
+          "id": {"$ref": "#/$defs/moduleId"},
+          "version": {"$ref": "#/$defs/semver"},
+          "artifact_sha256": {"$ref": "#/$defs/digest"}
+        }
+      }
+    },
+    "satisfied_by_installed": {
+      "type": "array",
+      "maxItems": 128,
+      "items": {"$ref": "#/$defs/moduleVersion"}
+    },
+    "required_capabilities": {
+      "type": "array",
+      "maxItems": 256,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/symbolicId"}
+    },
+    "requested_permissions": {
+      "type": "array",
+      "maxItems": 128,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/permission"}
+    },
+    "production_activation_enabled": {"const": false}
+  },
+  "$defs": {
+    "moduleId": {
+      "type": "string",
+      "maxLength": 128,
+      "pattern": "^[a-z0-9](?:[a-z0-9.-]{0,126}[a-z0-9])?$"
+    },
+    "semver": {
+      "type": "string",
+      "maxLength": 64,
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"
+    },
+    "symbolicId": {
+      "type": "string",
+      "maxLength": 128,
+      "pattern": "^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$"
+    },
+    "permission": {
+      "type": "string",
+      "maxLength": 128,
+      "pattern": "^[a-z][a-z0-9.-]*\\.[a-z][a-z0-9.-]*$"
+    },
+    "digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "moduleVersion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "version"],
+      "properties": {
+        "id": {"$ref": "#/$defs/moduleId"},
+        "version": {"$ref": "#/$defs/semver"}
+      }
+    }
+  }
+}
