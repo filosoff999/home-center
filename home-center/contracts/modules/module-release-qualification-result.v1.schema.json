@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://home-center.local/contracts/modules/module-release-qualification-result.v1.schema.json",
+  "title": "Home Center module release qualification result v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "status", "release_version", "workstream_set_sha256", "evidence_sha256", "remaining_blockers", "acknowledgement_consumed", "lifecycle_persistence_enabled", "lifecycle_execution_enabled", "production_activation_enabled"],
+  "properties": {
+    "schema": {"const": "home-center.module-release-qualification-result.v1"},
+    "status": {"const": "qualified"},
+    "release_version": {"const": "0.11.0"},
+    "workstream_set_sha256": {"$ref": "#/$defs/digest"},
+    "evidence_sha256": {"$ref": "#/$defs/digest"},
+    "remaining_blockers": {
+      "type": "array", "minItems": 2, "maxItems": 2,
+      "prefixItems": [{"const": "lifecycle_executor_unavailable"}, {"const": "placement_unresolved"}],
+      "items": false
+    },
+    "acknowledgement_consumed": {"const": false},
+    "lifecycle_persistence_enabled": {"const": false},
+    "lifecycle_execution_enabled": {"const": false},
+    "production_activation_enabled": {"const": false}
+  },
+  "$defs": {"digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}}
+}
