@@ -240,7 +240,7 @@ class _Node:
 
 class ReleaseCandidateE2E(unittest.TestCase):
     def test_current_runtime_and_frozen_acceptance_regressions(self) -> None:
-        self.assertEqual(__version__, "0.12.0")
+        self.assertEqual(__version__, "0.13.0")
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             artifact_digest = ACCEPTANCE_FIXTURE_ARTIFACT
@@ -361,12 +361,11 @@ class ReleaseCandidateE2E(unittest.TestCase):
                     expected_candidate_revision=CANDIDATE_REVISION,
                     expected_candidate_artifact_sha256=artifact_digest,
                     expected_predecessor_version="0.9.2",
-                expected_predecessor_revision=PREDECESSOR_REVISION,
+                    expected_predecessor_revision=PREDECESSOR_REVISION,
                     expected_predecessor_artifact_sha256=PREDECESSOR_ARTIFACT,
                 )
 
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
-
 
