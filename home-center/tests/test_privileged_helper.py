@@ -95,6 +95,29 @@ class HelperTests(unittest.TestCase):
         self.assertNotIn("new password", serialized)
         self.assertNotIn("request_sha256", result)
 
+    def test_secret_prepare_validates_without_rotating(self) -> None:
+        request = self.secret_req()
+        request["action"] = "local-admin.password.validate.v1"
+        policy = {
+            "schema": "home-center.helper.policy.v1",
+            "callers": {"home-center": ["local-admin.password.validate"]},
+            "enabled_actions": ["local-admin.password.validate.v1"],
+        }
+        group = mock.Mock(pw_gid=1234)
+        with (
+            mock.patch("home_center.privileged_helper.os.geteuid", return_value=0),
+            mock.patch("home_center.privileged_helper.pwd.getpwnam", return_value=group),
+            mock.patch("home_center.privileged_helper.LocalAdminCredentialRotator") as rotator,
+            mock.patch("home_center.privileged_helper._sha256") as request_hash,
+        ):
+            result = _execute_secret_request(request, caller_uid=1234, caller_name="home-center", policy=policy)
+        request_hash.assert_not_called()
+        rotator.return_value.validate.assert_called_once_with(
+            "admin", "current password 17", "new password 42"
+        )
+        rotator.return_value.rotate.assert_not_called()
+        self.assertEqual(result["status"], "succeeded")
+
     def test_secret_request_rejects_generic_path_and_command_fields(self) -> None:
         for field, value in (("path", "/tmp/file"), ("command", ["/bin/sh"])):
             request = self.secret_req()
@@ -389,4 +412,3 @@ class HelperTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

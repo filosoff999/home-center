@@ -3,7 +3,7 @@
   "info": {
     "title": "Home Center 0.12 Authentication API",
     "version": "0.12.0-development",
-    "description": "Local and optional AD login plus authenticated node-local administrator password rotation. Secret helper requests are never durable evidence."
+    "description": "Local and optional AD login plus authenticated standby-first two-node administrator password rotation. Secret helper and peer requests are never durable evidence."
   },
   "paths": {
     "/api/v1/session": {
@@ -39,11 +39,12 @@
         "security": [{"sessionCookie": []}],
         "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "../auth/local-admin-password-change.v1.schema.json"}}}},
         "responses": {
-          "200": {"description": "Node-local verifier atomically changed", "content": {"application/json": {"schema": {"$ref": "../auth/local-admin-password-change-result.v1.schema.json"}}}},
+          "200": {"description": "Both node-local verifiers changed in standby-first order", "content": {"application/json": {"schema": {"$ref": "../auth/local-admin-password-change-result.v2.schema.json"}}}},
           "400": {"description": "Invalid request or new-password policy rejection"},
           "401": {"description": "Authentication required"},
           "403": {"description": "Local-admin session/current-password/origin requirement failed"},
-          "503": {"description": "Privileged credential rotation unavailable"}
+          "409": {"description": "Leader or transaction-state requirement failed"},
+          "503": {"description": "Transaction rolled back or requires protected recovery"}
         }
       }
     }

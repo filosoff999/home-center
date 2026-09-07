@@ -183,7 +183,10 @@ def _validate_secret_request(request: dict[str, Any]) -> None:
     nonce = request.get("nonce")
     if not isinstance(nonce, str) or len(nonce) != 32 or any(ch not in "0123456789abcdef" for ch in nonce):
         raise HelperError("invalid_secret_request_nonce")
-    if request.get("action") != "local-admin.password.rotate.v1":
+    if request.get("action") not in {
+        "local-admin.password.rotate.v1",
+        "local-admin.password.validate.v1",
+    }:
         raise HelperError("unknown_secret_action")
     params = request.get("params")
     if not isinstance(params, dict) or set(params) != {"username", "current_password", "new_password"}:
@@ -249,7 +252,10 @@ def _execute_secret_request(
             expected_directory_gid=group,
             expected_directory_mode=0o750,
         )
-        rotator.rotate(params["username"], params["current_password"], params["new_password"])
+        if action == "local-admin.password.validate.v1":
+            rotator.validate(params["username"], params["current_password"], params["new_password"])
+        else:
+            rotator.rotate(params["username"], params["current_password"], params["new_password"])
     except LocalAdminRotationError as exc:
         policy_rejections = {
             "current_password_invalid",
@@ -257,6 +263,7 @@ def _execute_secret_request(
             "password_letter_required",
             "password_digit_required",
             "password_rejected",
+            "password_unchanged",
         }
         status = "rejected" if exc.code in policy_rejections else "failed"
         return _secret_result(request, status=status, reason=exc.code)

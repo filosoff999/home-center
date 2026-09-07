@@ -68,6 +68,10 @@ class ReleaseSuccessor0110Tests(unittest.TestCase):
                 web_css = package.extractfile("./web/app.css").read().decode()
                 recovery_cli = package.extractfile("./recover-local-admin.py").read().decode()
                 recovery_module = package.extractfile("./home_center/local_admin_recovery.py").read().decode()
+                cluster_module = package.extractfile("./home_center/local_admin_cluster.py").read().decode()
+                cluster_contract = package.extractfile(
+                    "./contracts/cluster/local-admin-transaction-command.v1.schema.json"
+                ).read().decode()
         deployment = bootstrap + "\n" + installer
         for marker in (
             "UPGRADE_POLICY_SCHEMA=home-center.upgrade-policy.v2",
@@ -90,6 +94,9 @@ class ReleaseSuccessor0110Tests(unittest.TestCase):
         self.assertNotIn("os.environ", recovery_cli)
         self.assertIn("home-center.local-admin-recovery-evidence.v1", recovery_module)
         self.assertIn("RECOVERY_EVIDENCE_DIRECTORY=/var/lib/home-center-recovery", installer)
+        self.assertIn("CANARY_ATTEMPTS = 3", cluster_module)
+        self.assertIn("ssl.TLSVersion.TLSv1_3", cluster_module)
+        self.assertIn("home-center.local-admin-cluster-command.v1", cluster_contract)
 
     def test_upgrade_renderer_fails_closed_on_shape_drift(self) -> None:
         renderer = ROOT / "deploy/scripts/render-upgrade-policy-v2.py"
@@ -111,4 +118,3 @@ class ReleaseSuccessor0110Tests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

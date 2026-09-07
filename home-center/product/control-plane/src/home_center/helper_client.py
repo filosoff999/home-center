@@ -83,13 +83,24 @@ def call_helper(action: str, *, timeout_seconds: float | None = None, request_pr
     return value
 
 
-def rotate_local_admin_password(username: str, current_password: str, new_password: str) -> dict[str, Any]:
+def _local_admin_secret_action(
+    action: str,
+    username: str,
+    current_password: str,
+    new_password: str,
+) -> dict[str, Any]:
     """Send secrets only through the protected, non-persisted helper path."""
+
+    if action not in {
+        "local-admin.password.rotate.v1",
+        "local-admin.password.validate.v1",
+    }:
+        raise HelperClientError("local administrator helper action rejected")
 
     request = {
         "schema": "home-center.helper.secret-request.v1",
         "request_id": f"local-admin-{int(time.time() * 1000)}-{secrets.token_hex(4)}",
-        "action": "local-admin.password.rotate.v1",
+        "action": action,
         "params": {
             "username": username,
             "current_password": current_password,
@@ -103,3 +114,21 @@ def rotate_local_admin_password(username: str, current_password: str, new_passwo
     if value.get("request_id") != request["request_id"] or value.get("action") != request["action"]:
         raise HelperClientError("secret helper response identity mismatch")
     return value
+
+
+def rotate_local_admin_password(username: str, current_password: str, new_password: str) -> dict[str, Any]:
+    return _local_admin_secret_action(
+        "local-admin.password.rotate.v1",
+        username,
+        current_password,
+        new_password,
+    )
+
+
+def validate_local_admin_password_change(username: str, current_password: str, new_password: str) -> dict[str, Any]:
+    return _local_admin_secret_action(
+        "local-admin.password.validate.v1",
+        username,
+        current_password,
+        new_password,
+    )

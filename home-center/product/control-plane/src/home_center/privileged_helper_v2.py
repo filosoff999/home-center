@@ -23,6 +23,7 @@ base.ACTIONS["tls.web.reconcile.v1"] = base.Action(
     timeout_seconds=60,
 )
 base.SECRET_ACTIONS["local-admin.password.rotate.v1"] = "local-admin.password.rotate"
+base.SECRET_ACTIONS["local-admin.password.validate.v1"] = "local-admin.password.validate"
 base.PERMISSIONS = frozenset(
     [*(action.permission for action in base.ACTIONS.values()), *base.SECRET_ACTIONS.values()]
 )
