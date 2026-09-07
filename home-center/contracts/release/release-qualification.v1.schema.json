@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://home-center.local/contracts/release/release-qualification.v1.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "release",
+    "qualification_id",
+    "intent_id",
+    "kind",
+    "target_id",
+    "api_plan_sha256",
+    "resource_snapshot_sha256",
+    "placement_sha256",
+    "reservation_id",
+    "provider_plan_sha256",
+    "provider_id",
+    "provider_operation",
+    "node_ids",
+    "checks",
+    "state",
+    "execution_ticket_created",
+    "provider_execution_enabled",
+    "production_execution_enabled",
+    "production_mutation_enabled"
+  ],
+  "properties": {
+    "schema": {"const": "home-center.release-qualification.v1"},
+    "release": {"const": "0.13.0"},
+    "qualification_id": {"$ref": "#/$defs/digest"},
+    "intent_id": {"type": "string", "format": "uuid"},
+    "kind": {"enum": ["storage.share.create", "virtualization.workload.create"]},
+    "target_id": {"type": "string", "minLength": 2, "maxLength": 128},
+    "api_plan_sha256": {"$ref": "#/$defs/digest"},
+    "resource_snapshot_sha256": {"$ref": "#/$defs/digest"},
+    "placement_sha256": {"$ref": "#/$defs/digest"},
+    "reservation_id": {"$ref": "#/$defs/digest"},
+    "provider_plan_sha256": {"$ref": "#/$defs/digest"},
+    "provider_id": {"type": "string", "pattern": "^[a-z][a-z0-9_.:-]{1,127}$"},
+    "provider_operation": {
+      "enum": [
+        "storage.share.create.v1",
+        "virtualization.vm.create.v1",
+        "virtualization.lxc.create.v1"
+      ]
+    },
+    "node_ids": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 2,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 3, "maxLength": 64}
+    },
+    "checks": {
+      "type": "array",
+      "minItems": 7,
+      "maxItems": 7,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "intent_core_binding",
+          "api_plan_binding",
+          "resource_snapshot_preflight",
+          "deterministic_placement",
+          "active_reservation_binding",
+          "provider_boundary_binding",
+          "execution_disabled"
+        ]
+      }
+    },
+    "state": {"const": "qualified"},
+    "execution_ticket_created": {"const": false},
+    "provider_execution_enabled": {"const": false},
+    "production_execution_enabled": {"const": false},
+    "production_mutation_enabled": {"const": false}
+  },
+  "$defs": {
+    "digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
+  }
+}
