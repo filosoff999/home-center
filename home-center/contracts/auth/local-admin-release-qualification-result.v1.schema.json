@@ -1,0 +1,19 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"https://home-center.local/contracts/auth/local-admin-release-qualification-result.v1.schema.json",
+  "type":"object","additionalProperties":false,
+  "required":["schema","status","release_version","transaction_id","workstream_set_sha256","recovery_acceptance_sha256","evidence_sha256","credential_mutation_enabled","remote_recovery_enabled","production_mutation_enabled"],
+  "properties":{
+    "schema":{"const":"home-center.local-admin-release-qualification-result.v1"},
+    "status":{"const":"qualified"},
+    "release_version":{"const":"0.12.0"},
+    "transaction_id":{"type":"string","pattern":"^la-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{16}$"},
+    "workstream_set_sha256":{"$ref":"#/$defs/digest"},
+    "recovery_acceptance_sha256":{"$ref":"#/$defs/digest"},
+    "evidence_sha256":{"$ref":"#/$defs/digest"},
+    "credential_mutation_enabled":{"const":false},
+    "remote_recovery_enabled":{"const":false},
+    "production_mutation_enabled":{"const":false}
+  },
+  "$defs":{"digest":{"type":"string","pattern":"^sha256:[0-9a-f]{64}$"}}
+}
