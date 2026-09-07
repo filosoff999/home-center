@@ -1,6 +1,6 @@
 # ADR-0016 — Read-only module permission review boundary
 
-- **Status:** Proposed
+- **Status:** Accepted for 0.11 development
 - **Date:** 2026-09-07
 - **Related requirements:** HC-124
 - **Tracking:** #88

@@ -35,11 +35,8 @@ Architecture Decision Record обязателен для решений, кот�
 10. [ADR-0010 — optional bounded Active Directory authentication](0010-optional-ad-authentication.md);
 11. [ADR-0013 — 0.10 Core Planning Boundary](0013-core-planning-boundary.md);
 12. [ADR-0014 — ModuleManifest v2 and artifact trust boundary](0014-module-manifest-v2-trust-boundary.md);
-13. [ADR-0015 — Deterministic module admission planner boundary](0015-module-admission-planner-boundary.md).
-
-## Proposed decisions
-
-1. [ADR-0016 — Read-only module permission review](0016-read-only-module-permission-review.md).
+13. [ADR-0015 — Deterministic module admission planner boundary](0015-module-admission-planner-boundary.md);
+14. [ADR-0016 — Read-only module permission review](0016-read-only-module-permission-review.md).
 
 ## Следующие решения
 
@@ -55,4 +52,4 @@ ADR-0014 is accepted for the 0.11 development line only. It does not activate mo
 
 ADR-0015 is accepted for the 0.11 development line only. It adds a side-effect-free local admission decision and no topology, lifecycle, permission-grant or production authority.
 
-ADR-0016 is proposed for the 0.11 development line only. It adds an authenticated read-only review surface and no decision persistence, permission grant, lifecycle or production authority.
+ADR-0016 is accepted for the 0.11 development line only. It adds an authenticated read-only review surface and no decision persistence, permission grant, lifecycle or production authority.
