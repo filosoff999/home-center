@@ -1,6 +1,6 @@
 "use strict";
 
-const state = { overview: null, profile: null, backups: [], audit: [], tls: null, modulePermissionReview: null, authProviders: null, currentView: "overview" };
+const state = { overview: null, profile: null, backups: [], audit: [], tls: null, modulePermissionReview: null, modulePermissionAcknowledgements: null, authProviders: null, currentView: "overview" };
 const LOGIN_ERROR_MESSAGES = Object.freeze({
   invalid_credentials: "Неверное имя пользователя или пароль.",
   too_many_requests: "Слишком много попыток входа. Повторите позже.",
@@ -177,6 +177,7 @@ function render() {
   renderNodeCards(nodes);
   renderTopology(nodes);
   renderModulePermissionReview();
+  renderModulePermissionAcknowledgements();
   renderBackups();
   renderJobs();
   renderAudit();
@@ -390,18 +391,79 @@ function renderModulePermissionReview() {
   root.append(panel);
 }
 
+function renderModulePermissionAcknowledgements() {
+  const root = $("#moduleAcknowledgementHistory");
+  if (!root) return;
+  root.replaceChildren();
+  const history = state.modulePermissionAcknowledgements;
+  if (!history) {
+    root.append(permissionReviewEmpty("История недоступна", "Не удалось получить подтверждения ознакомления.", "!"));
+    return;
+  }
+  const safeList = history.schema === "home-center.module-permission-acknowledgement-list.v1"
+    && Array.isArray(history.items)
+    && history.items.length <= 100
+    && history.acknowledgement_persistence_enabled === true
+    && history.authorization_decisions_enabled === false
+    && history.permission_grants_applied === false
+    && history.lifecycle_execution_enabled === false
+    && history.production_activation_enabled === false
+    && history.items.every((item) => item
+      && ["recorded", "expired", "superseded"].includes(item.status)
+      && item.authorization_decision_persisted === false
+      && item.acknowledgement_persistence_enabled === true
+      && item.permission_grants_applied === false
+      && item.lifecycle_execution_enabled === false
+      && item.production_activation_enabled === false
+      && item.lifecycle_handoff?.consumable === false
+      && typeof item.lifecycle_handoff.reference === "string"
+      && Array.isArray(item.review?.requested_modules)
+      && item.review.requested_modules.every((module) => module
+        && typeof module.id === "string"
+        && typeof module.version === "string"));
+  if (!safeList) {
+    root.append(permissionReviewEmpty("История отклонена", "Сервер вернул недопустимое состояние полномочий.", "!"));
+    return;
+  }
+  if (!history.items.length) {
+    root.append(permissionReviewEmpty("Ознакомлений ещё нет", "Запись появится после явного ознакомления с точным review в будущем Market-процессе."));
+    return;
+  }
+
+  const panel = node("article", "panel");
+  const list = node("div", "acknowledgement-list");
+  const statusLabels = { recorded: "Действует", expired: "Истекло", superseded: "Заменено" };
+  history.items.forEach((item) => {
+    const card = node("div", `acknowledgement-card status-${item.status}`);
+    const head = node("div", "permission-card-head");
+    head.append(node("strong", "", statusLabels[item.status]));
+    head.append(node("span", "permission-risk", `до ${formatTime(item.expires_at)}`));
+    card.append(head);
+    const requested = Array.isArray(item.review?.requested_modules)
+      ? item.review.requested_modules.map((module) => `${module.id}@${module.version}`).join(", ")
+      : "—";
+    card.append(node("p", "", requested));
+    card.append(node("small", "mono", `Review: ${shortHash(item.review_id)}`));
+    card.append(node("small", "mono", `Handoff: ${item.lifecycle_handoff.reference}`));
+    list.append(card);
+  });
+  panel.append(list);
+  root.append(panel);
+}
+
 async function refresh() {
   $("#refreshButton").disabled=true; $("#notice").classList.add("hidden");
   try {
-    const [overview, profile, backups, audit, tls, modulePermissionReview] = await Promise.all([
+    const [overview, profile, backups, audit, tls, modulePermissionReview, modulePermissionAcknowledgements] = await Promise.all([
       api("/api/v1/overview"),
       api("/api/v1/deployment-profile"),
       api("/api/v1/backups"),
       api("/api/v1/audit?limit=100"),
       optionalApi("/api/v1/tls"),
       api("/api/v1/modules/permission-review"),
+      api("/api/v1/modules/permission-review/acknowledgements?limit=20"),
     ]);
-    state.overview=overview; state.profile=profile; state.backups=backups.items || []; state.audit=audit.items || []; state.tls=tls; state.modulePermissionReview=modulePermissionReview; render();
+    state.overview=overview; state.profile=profile; state.backups=backups.items || []; state.audit=audit.items || []; state.tls=tls; state.modulePermissionReview=modulePermissionReview; state.modulePermissionAcknowledgements=modulePermissionAcknowledgements; render();
   } catch (error) {
     if (error.message !== "authentication_required") { $("#notice").textContent=`Не удалось обновить данные: ${error.message}`; $("#notice").classList.remove("hidden"); }
   } finally { $("#refreshButton").disabled=false; }

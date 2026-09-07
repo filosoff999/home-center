@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://home-center.local/contracts/modules/module-permission-acknowledgement.v1.schema.json",
+  "title": "Home Center module permission acknowledgement v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "acknowledgement_id",
+    "status",
+    "review_id",
+    "scope_id",
+    "actor",
+    "created_at",
+    "expires_at",
+    "review",
+    "lifecycle_handoff",
+    "acknowledgement_persistence_enabled",
+    "authorization_decision_persisted",
+    "permission_grants_applied",
+    "lifecycle_execution_enabled",
+    "production_activation_enabled"
+  ],
+  "properties": {
+    "schema": {"const": "home-center.module-permission-acknowledgement.v1"},
+    "acknowledgement_id": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "status": {"enum": ["recorded", "expired", "superseded"]},
+    "review_id": {"$ref": "#/$defs/digest"},
+    "scope_id": {"$ref": "#/$defs/digest"},
+    "actor": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 256,
+      "pattern": "^[^\\u0000-\\u001F\\u007F]+$"
+    },
+    "created_at": {"type": "string", "format": "date-time"},
+    "expires_at": {"type": "string", "format": "date-time"},
+    "review": {"$ref": "module-permission-review.v1.schema.json"},
+    "lifecycle_handoff": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reference", "status", "consumable"],
+      "properties": {
+        "reference": {
+          "type": "string",
+          "pattern": "^module-acknowledgement:[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        },
+        "status": {"enum": ["precondition-recorded", "blocked"]},
+        "consumable": {"const": false}
+      }
+    },
+    "acknowledgement_persistence_enabled": {"const": true},
+    "authorization_decision_persisted": {"const": false},
+    "permission_grants_applied": {"const": false},
+    "lifecycle_execution_enabled": {"const": false},
+    "production_activation_enabled": {"const": false}
+  },
+  "$defs": {
+    "digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
+  }
+}

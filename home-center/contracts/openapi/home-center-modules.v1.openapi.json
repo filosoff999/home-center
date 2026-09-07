@@ -48,6 +48,91 @@
           "403": {"description": "Cross-origin request rejected"}
         }
       }
+    },
+    "/api/v1/modules/permission-review/acknowledgements": {
+      "get": {
+        "summary": "List recent permission acknowledgements for the authenticated actor",
+        "security": [{"sessionCookie": []}],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {"type": "integer", "minimum": 1, "maximum": 100, "default": 20}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Actor-scoped acknowledgement history",
+            "content": {
+              "application/json": {
+                "schema": {"$ref": "../modules/module-permission-acknowledgement-list.v1.schema.json"}
+              }
+            }
+          },
+          "401": {"description": "Authentication required"}
+        }
+      },
+      "post": {
+        "summary": "Persist an expiring acknowledgement of an exact recomputed review",
+        "security": [{"sessionCookie": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {"$ref": "../modules/module-permission-acknowledgement-request.v1.schema.json"}
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Idempotent replay",
+            "content": {
+              "application/json": {
+                "schema": {"$ref": "../modules/module-permission-acknowledgement-result.v1.schema.json"}
+              }
+            }
+          },
+          "201": {
+            "description": "Acknowledgement recorded without authorization or execution authority",
+            "content": {
+              "application/json": {
+                "schema": {"$ref": "../modules/module-permission-acknowledgement-result.v1.schema.json"}
+              }
+            }
+          },
+          "400": {"description": "Request or exact review binding rejected"},
+          "401": {"description": "Authentication required"},
+          "403": {"description": "Cross-origin request rejected"},
+          "409": {"description": "Idempotency-key conflict"}
+        }
+      }
+    },
+    "/api/v1/modules/permission-review/acknowledgements/{acknowledgement_id}": {
+      "get": {
+        "summary": "Read one acknowledgement owned by the authenticated actor",
+        "security": [{"sessionCookie": []}],
+        "parameters": [
+          {
+            "name": "acknowledgement_id",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "string", "format": "uuid"}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Exact acknowledgement record",
+            "content": {
+              "application/json": {
+                "schema": {"$ref": "../modules/module-permission-acknowledgement.v1.schema.json"}
+              }
+            }
+          },
+          "401": {"description": "Authentication required"},
+          "404": {"description": "Missing, invalid or owned by another actor"}
+        }
+      }
     }
   },
   "components": {

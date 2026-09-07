@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://home-center.local/contracts/modules/module-permission-acknowledgement-result.v1.schema.json",
+  "title": "Home Center module permission acknowledgement result v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "idempotent_replay", "acknowledgement"],
+  "properties": {
+    "schema": {"const": "home-center.module-permission-acknowledgement-result.v1"},
+    "idempotent_replay": {"type": "boolean"},
+    "acknowledgement": {"$ref": "module-permission-acknowledgement.v1.schema.json"}
+  }
+}

@@ -4,6 +4,7 @@ import base64
 import hashlib
 import json
 import os
+import sqlite3
 import subprocess
 import sys
 import tempfile
@@ -31,6 +32,7 @@ from home_center.local_admin_auth import (  # noqa: E402
     KDF_R,
     SALT_BYTES,
 )
+from home_center.module_permission_review import build_module_permission_review  # noqa: E402
 from home_center.runtime import Runtime  # noqa: E402
 from home_center.server import HomeCenterServer  # noqa: E402
 from test_module_admission import candidate, request as module_admission_request  # noqa: E402
@@ -61,6 +63,22 @@ def local_admin_document() -> dict[str, object]:
         "dklen": KDF_DKLEN,
         "salt_b64": base64.b64encode(salt).decode("ascii"),
         "verifier_b64": base64.b64encode(verifier).decode("ascii"),
+    }
+
+
+def module_permission_acknowledgement_body(
+    manifest: dict, *, idempotency_key: str = "api-ack-0001"
+) -> dict:
+    admission = module_admission_request(
+        [manifest], [(manifest["module"]["id"], manifest["module"]["version"])]
+    )
+    review_id = build_module_permission_review(admission).review_id
+    return {
+        "schema": "home-center.module-permission-acknowledgement-request.v1",
+        "review_id": review_id,
+        "acknowledgement": "permissions-reviewed",
+        "idempotency_key": idempotency_key,
+        "admission_request": admission,
     }
 
 
@@ -300,6 +318,120 @@ class ApiTests(unittest.TestCase):
         self.assertNotIn("org.test.missing", payload)
         self.assertEqual(self.runtime.store.jobs(100), before_jobs)
         self.assertEqual(self.action_calls, 0)
+
+    def test_module_permission_acknowledgement_is_persisted_and_actor_scoped(self) -> None:
+        path = "/api/v1/modules/permission-review/acknowledgements"
+        with self.assertRaises(urllib.error.HTTPError) as caught:
+            self.request(path)
+        self.assertEqual(caught.exception.code, 401)
+
+        with self.request(path, authenticated=True) as response:
+            empty = json.load(response)
+        self.assertEqual(empty["items"], [])
+        self.assertFalse(empty["authorization_decisions_enabled"])
+        self.assertFalse(empty["permission_grants_applied"])
+        self.assertFalse(empty["lifecycle_execution_enabled"])
+
+        body = module_permission_acknowledgement_body(candidate("org.test.api-ack"))
+        with self.request(
+            path, authenticated=True, method="POST", body=body
+        ) as response:
+            self.assertEqual(response.status, 201)
+            result = json.load(response)
+        acknowledgement = result["acknowledgement"]
+        self.assertFalse(result["idempotent_replay"])
+        self.assertEqual(acknowledgement["actor"], "local-admin:admin")
+        self.assertFalse(acknowledgement["authorization_decision_persisted"])
+        self.assertFalse(acknowledgement["lifecycle_handoff"]["consumable"])
+        self.assertFalse(acknowledgement["permission_grants_applied"])
+        self.assertFalse(acknowledgement["lifecycle_execution_enabled"])
+        self.assertFalse(acknowledgement["production_activation_enabled"])
+
+        item_path = f"{path}/{acknowledgement['acknowledgement_id']}"
+        with self.request(item_path, authenticated=True) as response:
+            fetched = json.load(response)
+        self.assertEqual(fetched, acknowledgement)
+        with self.request(path, authenticated=True) as response:
+            history = json.load(response)
+        self.assertEqual([item["acknowledgement_id"] for item in history["items"]], [acknowledgement["acknowledgement_id"]])
+
+    def test_module_permission_acknowledgement_replay_and_conflict_are_atomic(self) -> None:
+        path = "/api/v1/modules/permission-review/acknowledgements"
+        body = module_permission_acknowledgement_body(candidate("org.test.api-replay"))
+        with self.request(path, authenticated=True, method="POST", body=body) as response:
+            first = json.load(response)
+        with self.request(path, authenticated=True, method="POST", body=body) as response:
+            self.assertEqual(response.status, 200)
+            replay = json.load(response)
+        self.assertTrue(replay["idempotent_replay"])
+        self.assertEqual(
+            replay["acknowledgement"]["acknowledgement_id"],
+            first["acknowledgement"]["acknowledgement_id"],
+        )
+
+        changed = candidate("org.test.api-replay")
+        changed["artifact"]["sha256"] = "d" * 64
+        conflicting = module_permission_acknowledgement_body(changed)
+        with self.assertRaises(urllib.error.HTTPError) as caught:
+            self.request(
+                path, authenticated=True, method="POST", body=conflicting
+            )
+        self.assertEqual(caught.exception.code, 409)
+        with self.request(path, authenticated=True) as response:
+            history = json.load(response)
+        self.assertEqual(len(history["items"]), 1)
+        self.assertEqual(history["items"][0]["status"], "recorded")
+
+    def test_module_permission_acknowledgement_mismatch_and_cross_origin_fail_closed(self) -> None:
+        path = "/api/v1/modules/permission-review/acknowledgements"
+        body = module_permission_acknowledgement_body(candidate("org.test.api-reject"))
+        body["review_id"] = "sha256:" + "0" * 64
+        with self.assertRaises(urllib.error.HTTPError) as caught:
+            self.request(path, authenticated=True, method="POST", body=body)
+        self.assertEqual(caught.exception.code, 400)
+        payload = caught.exception.read().decode()
+        self.assertIn("module_permission_acknowledgement_rejected", payload)
+        self.assertNotIn("org.test.api-reject", payload)
+
+        valid = module_permission_acknowledgement_body(candidate("org.test.api-origin"))
+        with self.assertRaises(urllib.error.HTTPError) as cross_origin:
+            self.request(
+                path,
+                authenticated=True,
+                method="POST",
+                body=valid,
+                extra_headers={
+                    "Origin": "https://attacker.invalid",
+                    "Sec-Fetch-Site": "cross-site",
+                },
+            )
+        self.assertEqual(cross_origin.exception.code, 403)
+        self.assertEqual(
+            self.runtime.store.module_permission_acknowledgements(
+                actor="local-admin:admin"
+            ),
+            [],
+        )
+        self.assertEqual(self.action_calls, 0)
+
+    def test_module_permission_acknowledgement_tamper_fails_readiness(self) -> None:
+        path = "/api/v1/modules/permission-review/acknowledgements"
+        body = module_permission_acknowledgement_body(candidate("org.test.api-integrity"))
+        with self.request(path, authenticated=True, method="POST", body=body) as response:
+            acknowledgement_id = json.load(response)["acknowledgement"]["acknowledgement_id"]
+        connection = sqlite3.connect(self.runtime.config.state_db)
+        connection.execute(
+            """UPDATE module_permission_acknowledgements SET state='superseded'
+            WHERE acknowledgement_id=?""",
+            (acknowledgement_id,),
+        )
+        connection.commit()
+        connection.close()
+
+        with patch.object(self.runtime.reconciler, "local_capability", return_value=True):
+            ready, reasons = self.runtime.ready()
+        self.assertFalse(ready)
+        self.assertIn("module_acknowledgement_integrity", reasons)
 
     def test_bearer_bootstrap_token_cannot_bypass_local_login(self) -> None:
         with self.assertRaises(urllib.error.HTTPError) as caught:
