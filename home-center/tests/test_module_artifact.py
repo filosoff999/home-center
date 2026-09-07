@@ -27,7 +27,10 @@ from home_center.module_artifact import (  # noqa: E402
     stage_module_artifact,
     verify_module_artifact,
 )
-from tests.test_module_manifest import valid_manifest  # noqa: E402
+try:  # unittest discovery imports tests as top-level modules.
+    from test_module_manifest import valid_manifest  # type: ignore[import-not-found] # noqa: E402
+except ModuleNotFoundError:  # Direct module selection imports through the namespace package.
+    from tests.test_module_manifest import valid_manifest  # noqa: E402
 
 
 class ModuleArtifactTests(unittest.TestCase):
