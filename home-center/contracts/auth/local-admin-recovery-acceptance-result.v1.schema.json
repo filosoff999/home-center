@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://home-center.local/contracts/auth/local-admin-recovery-acceptance-result.v1.schema.json",
+  "title": "Home Center local-admin recovery acceptance result v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "status",
+    "transaction_id",
+    "credential_record_set_sha256",
+    "rollback_verified",
+    "ambiguous_recovery_verified",
+    "protected_recovery_verified",
+    "production_mutation_enabled",
+    "evidence_sha256"
+  ],
+  "properties": {
+    "schema": {"const": "home-center.local-admin-recovery-acceptance-result.v1"},
+    "status": {"const": "accepted"},
+    "transaction_id": {"type": "string", "pattern": "^la-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{16}$"},
+    "credential_record_set_sha256": {"$ref": "#/$defs/digest"},
+    "rollback_verified": {"const": true},
+    "ambiguous_recovery_verified": {"const": true},
+    "protected_recovery_verified": {"const": true},
+    "production_mutation_enabled": {"const": false},
+    "evidence_sha256": {"$ref": "#/$defs/digest"}
+  },
+  "$defs": {
+    "digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
+  }
+}
