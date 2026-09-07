@@ -103,3 +103,12 @@ These contracts grant no router, NAT, DDNS, firewall, arbitrary listener or ambi
 - `releases/release-candidate-verification.v1.schema.json` — bounded non-secret verifier decision.
 
 The acceptance document records observations and is not release authority. A separately verified threshold-signed stable-channel record remains mandatory before deployment.
+
+## Home Center 0.11 module supply-chain contract
+
+- `modules/module-manifest.v2.schema.json` — closed declaration of exact module/artifact identity, compatibility, dependencies/conflicts, capabilities, permissions, bounded action metadata, network/storage/health, backup/lifecycle and signed-provenance identity;
+- `modules/module-provenance.v1.schema.json` — canonical signed statement binding module, normalized manifest, artifact and immutable source identity;
+- `modules/module-dsse-envelope.v1.schema.json` — exact DSSE payload/signature envelope for module provenance;
+- `modules/module-trust-policy.v1.schema.json` — publisher-scoped public P-256 keys, state and threshold.
+
+`ModuleManifest v2` is descriptive and production-inert. It grants no installation, download, service-control, filesystem-path, generic command or privileged-helper authority. Schema validation is necessary but not sufficient: strict JSON, cross-field invariants, DSSE signatures, normalized manifest binding, archive safety and exact content-addressed staging are enforced by `home_center.module_manifest` and `home_center.module_artifact`. Package acquisition, extraction and lifecycle execution remain disabled.

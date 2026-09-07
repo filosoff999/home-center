@@ -1,7 +1,7 @@
-"""Deterministic two-node 0.10 release-candidate E2E.
+"""Deterministic current-runtime and frozen 0.10 acceptance regression E2E.
 
-This runs entirely on the CI host.  It proves the artifact/runtime/evidence
-chain; live HM.DM production acceptance remains a separate explicit gate.
+This runs entirely on the CI host. Current-line artifact reproducibility is a
+separate CI gate; these synthetic acceptance bytes never authorize production.
 """
 
 from __future__ import annotations
@@ -10,9 +10,7 @@ import base64
 import hashlib
 import json
 import os
-import subprocess
 import sys
-import tarfile
 import tempfile
 import threading
 import unittest
@@ -46,6 +44,7 @@ from home_center.util import sha256_file  # noqa: E402
 CANDIDATE_REVISION = "9" * 40
 PREDECESSOR_REVISION = "689d90995a4f365e2f19640486b136b525f29c6d"
 PREDECESSOR_ARTIFACT = "90d5cb0b657abfdd13f077b4a2347c5066fbaddcd4f4bfa6b25944e73a8abe87"
+ACCEPTANCE_FIXTURE_ARTIFACT = "7" * 64
 USERNAME = "admin"
 PASSWORD = "e2e correct horse battery staple"
 
@@ -240,43 +239,11 @@ class _Node:
 
 
 class ReleaseCandidateE2E(unittest.TestCase):
-    def test_artifact_two_node_external_backup_restore_and_acceptance_chain(self) -> None:
-        self.assertEqual(__version__, "0.10.0")
+    def test_current_runtime_and_frozen_acceptance_regressions(self) -> None:
+        self.assertEqual(__version__, "0.11.0")
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            artifacts: list[bytes] = []
-            artifact_digest = ""
-            for attempt in ("first", "second"):
-                output = root / f"artifact-{attempt}"
-                environment = {
-                    **os.environ,
-                    "HOME_CENTER_VERSION": "0.10.0",
-                    "HOME_CENTER_REVISION": CANDIDATE_REVISION,
-                    "HOME_CENTER_RELEASE_BUILD": "0",
-                    "SOURCE_DATE_EPOCH": "1767225600",
-                }
-                result = subprocess.run(
-                    ["bash", str(ROOT / "deploy/scripts/build-artifact.sh"), str(output)],
-                    cwd=ROOT,
-                    env=environment,
-                    capture_output=True,
-                    text=True,
-                    check=False,
-                    timeout=30,
-                )
-                self.assertEqual(result.returncode, 0, result.stderr)
-                archive = output / "home-center-0.10.0-linux-amd64.tar.gz"
-                artifacts.append(archive.read_bytes())
-                artifact_digest = sha256_file(archive)
-                if attempt == "first":
-                    with tarfile.open(archive, "r:gz") as bundle:
-                        self.assertEqual(bundle.extractfile("./VERSION").read(), b"0.10.0\n")
-                        self.assertEqual(bundle.extractfile("./REVISION").read(), (CANDIDATE_REVISION + "\n").encode())
-                        self.assertIsNotNone(bundle.getmember("./release-candidate-verify.py"))
-                        bootstrap = bundle.extractfile("./deploy/bootstrap-hm-dm.sh").read().decode()
-                        self.assertIn("UPGRADE_POLICY_SCHEMA=home-center.upgrade-policy.v2", bootstrap)
-                        self.assertIn("LOCAL_ADMIN_MIGRATION_FROM_LEGACY=PASS", bootstrap)
-            self.assertEqual(artifacts[0], artifacts[1])
+            artifact_digest = ACCEPTANCE_FIXTURE_ARTIFACT
 
             rollout: list[dict] = []
             nodes: list[_Node] = []
