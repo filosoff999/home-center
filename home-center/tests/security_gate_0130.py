@@ -83,6 +83,13 @@ def main() -> int:
     core_init = CORE_INIT.read_text(encoding="utf-8")
     require("IntentEngine" in core_init and "IntentRequest" in core_init, "intent planner is not exported by core")
 
+    version = (ROOT / "product/control-plane/src/home_center/__init__.py").read_text(encoding="utf-8")
+    project = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
+    builder = (ROOT / "deploy/scripts/build-artifact.sh").read_text(encoding="utf-8")
+    require('__version__ = "0.13.0"' in version, "runtime version is not 0.13.0")
+    require('version = "0.13.0"' in project, "package version is not 0.13.0")
+    require('[ "$VERSION" = 0.13.0 ] || { echo RELEASE_VERSION_NOT_ADMITTED' in builder, "artifact gate is not 0.13.0")
+
     print("SECURITY_GATE_0130=PASS")
     return 0
 
