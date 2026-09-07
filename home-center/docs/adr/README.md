@@ -36,6 +36,10 @@ Architecture Decision Record обязателен для решений, кот�
 11. [ADR-0013 — 0.10 Core Planning Boundary](0013-core-planning-boundary.md);
 12. [ADR-0014 — ModuleManifest v2 and artifact trust boundary](0014-module-manifest-v2-trust-boundary.md).
 
+## Proposed decisions
+
+13. [ADR-0015 — Deterministic module admission planner boundary](0015-module-admission-planner-boundary.md).
+
 ## Следующие решения
 
 - node trust/enrollment protocol beyond the accepted two-node bootstrap;
@@ -47,4 +51,5 @@ Architecture Decision Record обязателен для решений, кот�
 README не принимает будущие решения автоматически; он задаёт процесс их фиксации.
 
 ADR-0014 is accepted for the 0.11 development line only. It does not activate module acquisition, extraction, installation, lifecycle execution, production rollout or a privileged Market runtime.
-\nADR-0015 is proposed for the 0.11 development line only. It adds a side-effect-free local admission decision and no topology, lifecycle, permission-grant or production authority.\n
+
+ADR-0015 is proposed for the 0.11 development line only. It adds a side-effect-free local admission decision and no topology, lifecycle, permission-grant or production authority.
