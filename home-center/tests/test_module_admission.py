@@ -134,15 +134,46 @@ class ModuleAdmissionTests(unittest.TestCase):
         ).to_dict()
         self.assertEqual([item["id"] for item in plan["install_order"]], ["org.test.root"])
 
-    def test_present_optional_dependency_must_be_compatible(self) -> None:
+    def test_optional_candidate_is_not_installed_implicitly(self) -> None:
+        root = candidate(
+            "org.test.root",
+            dependencies=[dependency("org.test.optional", "2.0.0", "3.0.0", optional=True)],
+        )
+        optional = candidate("org.test.optional", "1.0.0")
+        plan = plan_module_admission(
+            request([root, optional], [("org.test.root", "1.0.0")])
+        ).to_dict()
+        self.assertEqual([item["id"] for item in plan["install_order"]], ["org.test.root"])
+
+    def test_selected_optional_dependency_must_be_compatible(self) -> None:
         root = candidate(
             "org.test.root",
             dependencies=[dependency("org.test.optional", "2.0.0", "3.0.0", optional=True)],
         )
         optional = candidate("org.test.optional", "1.0.0")
         self.assert_rejected(
-            request([root, optional], [("org.test.root", "1.0.0")]),
+            request(
+                [root, optional],
+                [("org.test.root", "1.0.0"), ("org.test.optional", "1.0.0")],
+            ),
             "planner_dependency_version_incompatible",
+        )
+
+    def test_selected_optional_dependency_is_ordered_first(self) -> None:
+        root = candidate(
+            "org.test.alpha",
+            dependencies=[dependency("org.test.zeta", optional=True)],
+        )
+        optional = candidate("org.test.zeta")
+        plan = plan_module_admission(
+            request(
+                [root, optional],
+                [("org.test.alpha", "1.0.0"), ("org.test.zeta", "1.0.0")],
+            )
+        ).to_dict()
+        self.assertEqual(
+            [item["id"] for item in plan["install_order"]],
+            ["org.test.zeta", "org.test.alpha"],
         )
 
     def test_missing_required_dependency_is_rejected(self) -> None:
