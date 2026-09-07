@@ -1,6 +1,8 @@
 name: Public export gate
 
 on:
+  release:
+    types: [published]
   pull_request:
     paths:
       - "tools/public_export.py"
@@ -15,17 +17,22 @@ on:
       - "deploy/runtime/**"
       - "deploy/systemd/**"
   workflow_dispatch:
+    inputs:
+      tag:
+        description: "Published stable release tag (vX.Y.Z); blank uses the verification baseline"
+        required: false
+        type: string
 
 permissions:
   contents: read
 
 env:
-  PUBLIC_VERSION: "0.9.1"
-  PUBLIC_TAG: "v0.9.1"
-  PUBLIC_SOURCE_REVISION: "b6d486a8808b47f67e0072349172d44ee0169bef"
+  PUBLIC_BASELINE_TAG: "v0.9.1"
+  PUBLIC_BASELINE_REVISION: "b6d486a8808b47f67e0072349172d44ee0169bef"
 
 jobs:
   export:
+    if: github.event_name != 'release' || github.event.release.prerelease == false
     name: Generate and verify infrastructure-neutral public tree
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -36,14 +43,57 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Verify exact public source identity
+      - name: Resolve and verify exact published stable release
         shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REQUESTED_TAG: ${{ inputs.tag || '' }}
         run: |
           set -Eeuo pipefail
-          tag_sha="$(git rev-parse "$PUBLIC_TAG^{commit}")"
-          test "$tag_sha" = "$PUBLIC_SOURCE_REVISION"
-          git worktree add --detach "$RUNNER_TEMP/home-center-public-source" "$PUBLIC_SOURCE_REVISION"
-          test "$(git -C "$RUNNER_TEMP/home-center-public-source" rev-parse HEAD)" = "$PUBLIC_SOURCE_REVISION"
+          if [ "$GITHUB_EVENT_NAME" = release ]; then
+            tag="$(python3 - "$GITHUB_EVENT_PATH" <<'PY'
+          import json, sys
+          with open(sys.argv[1], encoding="utf-8") as stream:
+              event = json.load(stream)
+          release = event["release"]
+          if release.get("draft") or release.get("prerelease") or not release.get("published_at"):
+              raise SystemExit("PUBLIC_RELEASE_EVENT_NOT_STABLE")
+          print(release["tag_name"])
+          PY
+            )"
+          elif [ "$GITHUB_EVENT_NAME" = workflow_dispatch ] && [ -n "$REQUESTED_TAG" ]; then
+            tag="$REQUESTED_TAG"
+          else
+            tag="$PUBLIC_BASELINE_TAG"
+          fi
+
+          [[ "$tag" =~ ^v([0-9]+\.[0-9]+\.[0-9]+)$ ]] || { echo PUBLIC_RELEASE_TAG_REJECTED >&2; exit 66; }
+          version="${BASH_REMATCH[1]}"
+
+          release_json="$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$tag")"
+          RELEASE_JSON="$release_json" python3 - "$tag" <<'PY'
+          import json, os, sys
+          value = json.loads(os.environ["RELEASE_JSON"])
+          if value.get("tag_name") != sys.argv[1]:
+              raise SystemExit("PUBLIC_RELEASE_TAG_IDENTITY_MISMATCH")
+          if value.get("draft") or value.get("prerelease") or not value.get("published_at"):
+              raise SystemExit("PUBLIC_RELEASE_NOT_PUBLISHED_STABLE")
+          PY
+
+          revision="$(git rev-parse "$tag^{commit}")"
+          [[ "$revision" =~ ^[0-9a-f]{40}$ ]] || { echo PUBLIC_RELEASE_REVISION_REJECTED >&2; exit 66; }
+          if [ "$tag" = "$PUBLIC_BASELINE_TAG" ]; then
+            test "$revision" = "$PUBLIC_BASELINE_REVISION" || { echo PUBLIC_BASELINE_REVISION_CHANGED >&2; exit 66; }
+          fi
+          source_version="$(git show "$revision:product/control-plane/src/home_center/__init__.py" | awk -F'\"' '/^__version__ = / {print $2}')"
+          test "$source_version" = "$version" || { echo PUBLIC_RELEASE_SOURCE_VERSION_MISMATCH >&2; exit 66; }
+
+          printf 'PUBLIC_TAG=%s\n' "$tag" >> "$GITHUB_ENV"
+          printf 'PUBLIC_VERSION=%s\n' "$version" >> "$GITHUB_ENV"
+          printf 'PUBLIC_SOURCE_REVISION=%s\n' "$revision" >> "$GITHUB_ENV"
+          git worktree add --detach "$RUNNER_TEMP/home-center-public-source" "$revision"
+          test "$(git -C "$RUNNER_TEMP/home-center-public-source" rev-parse HEAD)" = "$revision"
+          printf 'PUBLIC_RELEASE_IDENTITY=PASS tag=%s version=%s revision=%s\n' "$tag" "$version" "$revision"
 
       - name: Apply deterministic public source overlays
         shell: bash
