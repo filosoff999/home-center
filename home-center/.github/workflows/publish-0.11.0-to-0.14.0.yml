@@ -1,0 +1,147 @@
+name: Publish Home Center 0.11.0 to 0.14.0
+# Exact-source publication only; this workflow performs no production deployment.
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/publish-0.11.0-to-0.14.0.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish-home-center-0.11.0-to-0.14.0
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish Home Center ${{ matrix.version }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        include:
+          - version: 0.11.0
+            source_sha: e6c330cfa002d1bb3183507c127da40453b35afd
+            artifact_sha256: 9cf075d8ab11b076251175d2e203b33f0030aaee594135bb20934be0c3c22907
+            artifact_bytes: "196695"
+          - version: 0.12.0
+            source_sha: 0dc082c25f2fb97372651bac5bc881282e393af6
+            artifact_sha256: 3e0de9cc24c7ba69fc39d7c439109c41b1f6b5e52fd7e10aa8626fb9dee37428
+            artifact_bytes: "191841"
+          - version: 0.13.0
+            source_sha: f6f18f4686fa0988ed53e99ab0b4e7edd2caff0d
+            artifact_sha256: 792efeddd8f95f8136b763a86d1943f7efde195bdee6ec156024828a20396ce6
+            artifact_bytes: "198081"
+          - version: 0.14.0
+            source_sha: 0ddd87589f575520ac3ff977649180fee2fc53ed
+            artifact_sha256: 2dd0dc8080c7fb58a1cd281df5c4474576a24e8a1a26799b9aecfc0e50e39f30
+            artifact_bytes: "198728"
+    env:
+      VERSION: ${{ matrix.version }}
+      SOURCE_SHA: ${{ matrix.source_sha }}
+      EXPECTED_ARTIFACT_SHA256: ${{ matrix.artifact_sha256 }}
+      EXPECTED_ARTIFACT_BYTES: ${{ matrix.artifact_bytes }}
+      TAG: v${{ matrix.version }}
+      SOURCE_DATE_EPOCH: "1767225600"
+    steps:
+      - name: Checkout exact admitted source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ matrix.source_sha }}
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: "3.12"
+          cache: ""
+      - name: Re-run exact release gates and build twice
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          test "$(awk -F'"' '/^__version__ = / {print $2}' product/control-plane/src/home_center/__init__.py)" = "$VERSION"
+          make contracts test e2e security
+          first_dir="$RUNNER_TEMP/home-center-$VERSION-first"
+          second_dir="$RUNNER_TEMP/home-center-$VERSION-second"
+          HOME_CENTER_VERSION="$VERSION" HOME_CENTER_REVISION="$SOURCE_SHA" HOME_CENTER_RELEASE_BUILD=1 SOURCE_DATE_EPOCH="$SOURCE_DATE_EPOCH" \
+            bash deploy/scripts/build-artifact.sh "$first_dir"
+          HOME_CENTER_VERSION="$VERSION" HOME_CENTER_REVISION="$SOURCE_SHA" HOME_CENTER_RELEASE_BUILD=1 SOURCE_DATE_EPOCH="$SOURCE_DATE_EPOCH" \
+            bash deploy/scripts/build-artifact.sh "$second_dir"
+          first="$first_dir/home-center-$VERSION-linux-amd64.tar.gz"
+          second="$second_dir/home-center-$VERSION-linux-amd64.tar.gz"
+          cmp "$first" "$second"
+          (cd "$first_dir" && sha256sum -c "home-center-$VERSION-linux-amd64.tar.gz.sha256")
+          actual="$(sha256sum "$first" | awk '{print $1}')"
+          bytes="$(wc -c <"$first" | tr -d ' ')"
+          test "$actual" = "$EXPECTED_ARTIFACT_SHA256"
+          test "$bytes" = "$EXPECTED_ARTIFACT_BYTES"
+          test "$(tar -xOf "$first" ./VERSION)" = "$VERSION"
+          test "$(tar -xOf "$first" ./REVISION)" = "$SOURCE_SHA"
+          test -n "$(tar -xOf "$first" ./release-candidate-verify.py)"
+      - name: Prepare bounded release notes
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          notes="$RUNNER_TEMP/release-notes-$VERSION.md"
+          case "$VERSION" in
+            0.11.0)
+              summary="Market and Module supply-chain foundation: signed offline artifacts, deterministic admission, permission review and acknowledgement, lifecycle planning, exact publication binding, and an authorization/execution boundary."
+              boundary="Module lifecycle execution, placement, automatic installation and production activation remain disabled."
+              ;;
+            0.12.0)
+              summary="Credential-safety release: authenticated local-administrator password rotation, protected local-console recovery, standby-first two-node transaction planning, rollback, and failure/recovery acceptance."
+              boundary="Publishing performs no password change, credential reset, remote recovery or node mutation."
+              ;;
+            0.13.0)
+              summary="Intent planning release: authenticated Intent API, trusted resource snapshots, resource-aware preflight, deterministic placement, bounded reservations and typed provider preflight for storage, VM and LXC plans."
+              boundary="Real provider execution, durable scheduling and production infrastructure mutation remain disabled."
+              ;;
+            0.14.0)
+              summary="Product lifecycle expansion: Product Boundary cleanup, Node Lifecycle v2, Compute Framework, Home Lab Manager, Certificate Lifecycle and a read-only planning UI with visible version identity and mobile single-column cards."
+              boundary="The UI and planners remain plan-only and cannot trigger provider, module, certificate or compute mutation."
+              ;;
+            *) exit 66 ;;
+          esac
+          {
+            printf '# Home Center %s\n\n' "$VERSION"
+            printf '%s\n\n' "$summary"
+            printf '## Exact release identity\n\n'
+            printf -- '- source revision: `%s`;\n' "$SOURCE_SHA"
+            printf -- '- artifact SHA-256: `%s`;\n' "$EXPECTED_ARTIFACT_SHA256"
+            printf -- '- artifact size: `%s` bytes.\n\n' "$EXPECTED_ARTIFACT_BYTES"
+            printf '## Safety boundary\n\n%s\n\n' "$boundary"
+            printf 'Publishing `%s` is not production deployment authority. No deployment to managed nodes is performed by this release workflow.\n' "$TAG"
+          } >"$notes"
+      - name: Publish and verify exact GitHub release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -Eeuo pipefail
+          artifact="$RUNNER_TEMP/home-center-$VERSION-first/home-center-$VERSION-linux-amd64.tar.gz"
+          checksum="$artifact.sha256"
+          notes="$RUNNER_TEMP/release-notes-$VERSION.md"
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            tag_sha="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" --jq '.object.sha')"
+            test "$tag_sha" = "$SOURCE_SHA"
+          else
+            gh release create "$TAG" "$artifact" "$checksum" \
+              --repo "$GITHUB_REPOSITORY" \
+              --target "$SOURCE_SHA" \
+              --title "Home Center $VERSION" \
+              --notes-file "$notes"
+          fi
+          tag_sha="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" --jq '.object.sha')"
+          test "$tag_sha" = "$SOURCE_SHA"
+          digest="$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$TAG" --jq '.assets[] | select(.name == "home-center-'"$VERSION"'-linux-amd64.tar.gz") | .digest')"
+          test "$digest" = "sha256:$EXPECTED_ARTIFACT_SHA256"
+          size="$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$TAG" --jq '.assets[] | select(.name == "home-center-'"$VERSION"'-linux-amd64.tar.gz") | .size')"
+          test "$size" = "$EXPECTED_ARTIFACT_BYTES"
+          assets="$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json assets --jq '.assets[].name')"
+          grep -Fx "home-center-$VERSION-linux-amd64.tar.gz" <<<"$assets"
+          grep -Fx "home-center-$VERSION-linux-amd64.tar.gz.sha256" <<<"$assets"
