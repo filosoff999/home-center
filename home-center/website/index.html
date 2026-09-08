@@ -3,11 +3,11 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Home Center — управление домашним сервером</title>
-  <meta name="description" content="Home Center помогает управлять домашним сервером, видеть его состояние, ресурсы, резервные копии и постепенно объединять виртуализацию и умный дом в одной панели.">
-  <meta name="theme-color" content="#07110f">
-  <meta property="og:title" content="Home Center — всё важное о домашнем сервере в одном месте">
-  <meta property="og:description" content="Серверы, ресурсы, сервисы, резервные копии, виртуализация и умный дом — в одной понятной панели.">
+  <title>Home Center — управление домашней инфраструктурой</title>
+  <meta name="description" content="Home Center объединяет домашние компьютеры, данные, профили, медиатеку, интернет, VPN и умный дом в одной понятной системе управления.">
+  <meta name="theme-color" content="#f6fbf8">
+  <meta property="og:title" content="Home Center — весь цифровой дом под вашим управлением">
+  <meta property="og:description" content="Переносимые профили, семейные данные, детский контроль, медиатека, Lampa, торрент-клиент, ZigBee, управление интернетом и VPN — в одном Home Center.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://home.control-center.pro/">
   <link rel="canonical" href="https://home.control-center.pro/">
@@ -22,7 +22,7 @@
     <div class="shell header-inner">
       <a class="brand" href="/" aria-label="Home Center — главная"><img src="/assets/logo.svg" alt="" width="34" height="34"><span>Home Center</span></a>
       <button class="menu-button" type="button" aria-expanded="false" aria-controls="site-nav" data-menu-button><span></span><span></span><span></span><span class="sr-only">Меню</span></button>
-      <nav id="site-nav" class="site-nav" aria-label="Основная навигация" data-menu><a href="#scenarios">Для дома</a><a href="#interfaces">Как выглядит</a><a href="/docs.html">Установка</a><a href="#development">Что дальше</a><a href="/releases.html">Версии</a></nav>
+      <nav id="site-nav" class="site-nav" aria-label="Основная навигация" data-menu><a href="#scenarios">Возможности</a><a href="#interfaces">Как выглядит</a><a href="/docs.html">Установка</a><a href="#development">Развитие</a><a href="/releases.html">Версии</a></nav>
       <a class="header-release" href="/releases.html"><span>Текущая версия</span><strong>0.14.0</strong></a>
     </div>
   </header>
@@ -31,77 +31,95 @@
     <section class="hero home-hero">
       <div class="shell hero-grid">
         <div class="hero-copy reveal">
-          <div class="eyebrow"><span class="status-dot"></span> Home Center 0.14.0 · можно установить самостоятельно</div>
-          <h1>Домашний сервер.<br><em>Всё важное в одном месте.</em></h1>
-          <p class="lead">Home Center показывает простым языком, что происходит с вашим домашним сервером: всё ли работает, сколько свободно ресурсов, когда была резервная копия и что требует внимания. Дальше сюда добавятся виртуальные машины и устройства умного дома.</p>
+          <div class="eyebrow"><span class="status-dot"></span> Home Center · центр управления цифровым домом</div>
+          <h1>Весь цифровой дом.<br><em>Под вашим управлением.</em></h1>
+          <p class="lead">Home Center не ограничивается наблюдением за домашним сервером. Он объединяет пользователей, компьютеры, ваши данные, интернет, медиатеку, умный дом и домашние сервисы в одной понятной системе. Сел за другой домашний компьютер — привычные данные рядом. Нужно ограничить ребёнку интернет, включить VPN, посмотреть фильм или управлять ZigBee-устройствами — всё находится в одном месте.</p>
           <div class="hero-actions"><a class="button primary" href="#scenarios">Что умеет Home Center</a><a class="button secondary" href="/docs.html">Как установить</a></div>
-          <div class="hero-facts" aria-label="Ключевые свойства"><span>Работает дома</span><span>Открывается в браузере</span><span>Для Linux</span><span>Безопасное обновление</span></div>
+          <div class="hero-facts" aria-label="Ключевые свойства"><span>Все домашние данные в одном месте</span><span>Профиль следует за пользователем</span><span>Детский контроль</span><span>Медиатека и умный дом</span><span>VPN и правила интернета</span></div>
         </div>
 
         <div class="ui-window hero-dashboard reveal" aria-label="Пример домашней панели Home Center">
-          <div class="ui-titlebar"><div><span class="ui-dot"></span><strong>Мой дом</strong></div><span class="ui-version">0.14.0</span></div>
+          <div class="ui-titlebar"><div><span class="ui-dot"></span><strong>Мой дом</strong></div><span class="ui-version">Home Center</span></div>
           <div class="home-overview">
-            <article class="overview-primary"><span class="micro-label">Состояние</span><strong>Всё в порядке</strong><small>2 сервера доступны · резервная копия готова</small></article>
-            <article><span class="micro-label">Серверы</span><strong>2</strong><small>в сети</small></article>
-            <article><span class="micro-label">Сервисы</span><strong>8</strong><small>7 работают · 1 резервный</small></article>
+            <article class="overview-primary"><span class="micro-label">Дом</span><strong>Всё под контролем</strong><small>семья · данные · интернет · устройства</small></article>
+            <article><span class="micro-label">Пользователи</span><strong>5</strong><small>личные профили</small></article>
+            <article><span class="micro-label">Устройства</span><strong>32</strong><small>в домашней сети</small></article>
           </div>
           <div class="home-list">
-            <div class="home-row"><span class="home-icon">S1</span><div><strong>Домашний сервер</strong><small>Процессор 18% · память 41%</small></div><span class="state ok">Работает</span></div>
-            <div class="home-row"><span class="home-icon">S2</span><div><strong>Резервный сервер</strong><small>Готов к работе</small></div><span class="state ok">Работает</span></div>
-            <div class="home-row compact"><span>Сертификаты</span><strong>В порядке</strong></div>
-            <div class="home-row compact"><span>Последняя копия</span><strong>Сегодня, 01:10</strong></div>
+            <div class="home-row"><span class="home-icon">ID</span><div><strong>Семейные профили</strong><small>Документы и настройки доступны на домашних ПК</small></div><span class="state ok">Готово</span></div>
+            <div class="home-row"><span class="home-icon">TV</span><div><strong>Медиатека</strong><small>Фильмы · музыка · фото · Lampa</small></div><span class="state ok">Доступна</span></div>
+            <div class="home-row compact"><span>Детский интернет</span><strong>По расписанию</strong></div>
+            <div class="home-row compact"><span>Умный дом</span><strong>ZigBee · устройства · сценарии</strong></div>
           </div>
-          <div class="mock-note">Пример интерфейса</div>
+          <div class="mock-note">Пример единой домашней панели</div>
         </div>
       </div>
     </section>
 
     <section class="section intro-strip">
       <div class="shell intro-grid reveal">
-        <div><span class="big-number">01</span><strong>Поставьте на домашний сервер</strong><p>Подойдёт отдельный Linux-сервер, мини-ПК или компьютер, который вы используете для домашних сервисов.</p></div>
-        <div><span class="big-number">02</span><strong>Добавляйте только нужное</strong><p>По мере развития можно будет подключать виртуальные машины, домашние приложения и умные устройства.</p></div>
-        <div><span class="big-number">03</span><strong>Данные остаются под вашим контролем</strong><p>Основное управление работает внутри вашей домашней сети. Доступ из интернета включается отдельно.</p></div>
+        <div><span class="big-number">01</span><strong>Один профиль на домашних компьютерах</strong><p>Личные папки, документы и разрешённые настройки хранятся централизованно. Можно сесть за другой компьютер дома и продолжить работу с привычными данными.</p></div>
+        <div><span class="big-number">02</span><strong>Одна система вместо десятка отдельных сервисов</strong><p>Файлы, медиатека, торрент-клиент, домашние приложения, VPN, устройства и правила сети находятся в общей панели Home Center.</p></div>
+        <div><span class="big-number">03</span><strong>Дом остаётся вашим</strong><p>Основные данные и управление находятся внутри домашней инфраструктуры. Облачный сервис не нужен для того, чтобы семья пользовалась своими файлами, медиа и локальными устройствами.</p></div>
       </div>
     </section>
 
     <section class="section" id="scenarios">
       <div class="shell">
-        <div class="section-head reveal"><div class="kicker">Для дома</div><h2>Что можно делать с Home Center</h2><p>Главная цель — не заставлять вас разбираться в десятках отдельных панелей. Home Center собирает самое важное в одном месте.</p></div>
+        <div class="section-head reveal"><div class="kicker">Возможности Home Center</div><h2>Не мониторинг сервера, а управление всем цифровым домом</h2><p>Home Center строится вокруг семьи и домашних задач. Сервер остаётся технической основой, но пользователю важнее данные, устройства, интернет, медиа и автоматизация.</p></div>
         <div class="scenario-grid">
-          <article class="scenario-card reveal"><div class="scenario-icon">01</div><div class="scenario-status now">Уже сейчас</div><h3>Следить за сервером</h3><p>В одной панели видно состояние серверов, версию Home Center, резервные копии, сертификаты и основные проверки.</p><ul><li>видно, что работает;</li><li>проблемы заметны быстрее;</li><li>не нужно помнить адрес каждой панели.</li></ul></article>
-          <article class="scenario-card reveal"><div class="scenario-icon">02</div><div class="scenario-status next">0.15–0.16</div><h3>Управлять Proxmox и виртуальными машинами</h3><p>Home Center будет видеть процессор, память, диски и сеть, а затем покажет Proxmox, виртуальные машины и контейнеры в общей панели.</p><ul><li>видеть свободные ресурсы;</li><li>понимать, где запущена каждая машина;</li><li>управлять ими из одного места.</li></ul></article>
-          <article class="scenario-card reveal"><div class="scenario-icon">03</div><div class="scenario-status next">В разработке</div><h3>Устанавливать домашние сервисы</h3><p>Планируется единый каталог для файлового хранилища, медиасервисов, игровых серверов и других домашних приложений.</p><ul><li>выбрать нужный сервис;</li><li>заранее проверить, подходит ли сервер;</li><li>обновлять и обслуживать проще.</li></ul></article>
-          <article class="scenario-card reveal"><div class="scenario-icon">04</div><div class="scenario-status future">0.17</div><h3>Подключить умный дом</h3><p>Устройства, комнаты и сценарии автоматизации будут собраны в одном месте. Планируется поддержка ZigBee, MQTT и Яндекс Умного дома.</p><ul><li>видеть устройства по комнатам;</li><li>создавать общие сценарии;</li><li>управлять с телефона.</li></ul></article>
-          <article class="scenario-card reveal"><div class="scenario-icon">05</div><div class="scenario-status future">0.18</div><h3>Дать доступ семье</h3><p>Можно будет разделить права: например, один человек управляет сервером, а другой только пользуется домашними сервисами.</p><ul><li>отдельный администратор;</li><li>разные права для пользователей;</li><li>без лишнего доступа к настройкам.</li></ul></article>
-          <article class="scenario-card reveal"><div class="scenario-icon">06</div><div class="scenario-status future">0.18</div><h3>Подключаться из поездки</h3><p>Планируется защищённый удалённый доступ. Он не будет включаться сам — владелец дома решает, нужен ли доступ извне.</p><ul><li>включается вручную;</li><li>защищён сертификатами и правами;</li><li>настройки можно восстановить из копии.</li></ul></article>
+          <article class="scenario-card reveal"><div class="scenario-icon">01</div><div class="scenario-status now">Данные</div><h3>Все ваши данные в одном месте</h3><p>Документы, личные папки и общие семейные файлы хранятся централизованно и доступны только тем, кому вы дали права.</p><ul><li>личные папки каждого пользователя;</li><li>общие семейные каталоги;</li><li>доступ с разрешённых домашних устройств.</li></ul></article>
+
+          <article class="scenario-card reveal"><div class="scenario-icon">02</div><div class="scenario-status now">Профили</div><h3>За разными компьютерами — как за одним</h3><p>Переносимые профили позволяют сохранить привычную рабочую среду внутри дома. Пользователь входит под своей учётной записью и получает свои данные независимо от выбранного домашнего ПК.</p><ul><li>единая домашняя учётная запись;</li><li>документы и персональные папки рядом;</li><li>меньше привязки к одному компьютеру.</li></ul></article>
+
+          <article class="scenario-card reveal"><div class="scenario-icon">03</div><div class="scenario-status now">Семья</div><h3>Детский контроль устройств</h3><p>Родитель задаёт правила для компьютеров, телефонов и других устройств ребёнка в локальной домашней сети.</p><ul><li>доступ в интернет по расписанию;</li><li>ограничение времени использования;</li><li>индивидуальные правила для каждого ребёнка и устройства.</li></ul></article>
+
+          <article class="scenario-card reveal"><div class="scenario-icon">04</div><div class="scenario-status next">Медиа</div><h3>Единая домашняя медиатека</h3><p>Фильмы, музыка и фотографии собраны на домашнем хранилище и доступны телевизорам, компьютерам, телефонам и планшетам.</p><ul><li>одна библиотека для всей семьи;</li><li>фильмы, музыка и фото;</li><li>не нужно копировать одно и то же на разные устройства.</li></ul></article>
+
+          <article class="scenario-card reveal"><div class="scenario-icon">05</div><div class="scenario-status next">Развлечения</div><h3>Торрент-клиент и медиацентр Lampa</h3><p>Загрузки и просмотр медиа объединяются с домашней библиотекой. Торрент-клиент работает на сервере, а Lampa даёт удобный интерфейс медиатеки.</p><ul><li>загрузка без постоянно включённого ПК;</li><li>файлы сразу попадают в домашнее хранилище;</li><li>медиацентр доступен на совместимых устройствах.</li></ul></article>
+
+          <article class="scenario-card reveal"><div class="scenario-icon">06</div><div class="scenario-status future">Умный дом</div><h3>ZigBee и умные устройства</h3><p>Home Center объединяет датчики, свет, розетки и другие устройства. USB ZigBee-координатор превращается в домашний шлюз, а устройства группируются по комнатам и сценариям.</p><ul><li>ZigBee-шлюз внутри Home Center;</li><li>комнаты, устройства и состояния;</li><li>сценарии и автоматизация.</li></ul></article>
+
+          <article class="scenario-card reveal"><div class="scenario-icon">07</div><div class="scenario-status future">Интернет</div><h3>Контроль домашнего трафика</h3><p>Правила доступа задаются понятным языком для конкретного пользователя или устройства.</p><ul><li>белые и чёрные списки;</li><li>блокировка сайтов и доступа по расписанию;</li><li>лимиты времени и отдельные правила для устройств.</li></ul></article>
+
+          <article class="scenario-card reveal"><div class="scenario-icon">08</div><div class="scenario-status future">VPN</div><h3>Встроенный VPN</h3><p>Защищённое подключение к домашней инфраструктуре и управление VPN-профилями находятся рядом с остальными сетевыми настройками.</p><ul><li>доступ к домашним ресурсам из поездки;</li><li>отдельные профили доступа;</li><li>можно отключить внешний доступ полностью.</li></ul></article>
+
+          <article class="scenario-card reveal"><div class="scenario-icon">09</div><div class="scenario-status future">Ещё больше</div><h3>Домашние приложения и автоматизация</h3><p>Home Center расширяется модулями: резервные копии, игровые серверы, виртуальные машины, контейнеры, домашние сервисы и другие функции подключаются по мере необходимости.</p><ul><li>устанавливаете только нужное;</li><li>единый интерфейс обновления и состояния;</li><li>данные сервисов остаются под вашим контролем.</li></ul></article>
         </div>
       </div>
     </section>
 
     <section class="section section-dark" id="interfaces">
       <div class="shell">
-        <div class="section-head reveal"><div class="kicker">Как выглядит</div><h2>Понятная панель вместо набора технических экранов</h2><p>Примеры ниже показывают общий подход: сначала простое состояние, затем подробности и действия, если они действительно нужны.</p></div>
+        <div class="section-head reveal"><div class="kicker">Как выглядит</div><h2>Интерфейс начинается с домашних задач, а не с графиков сервера</h2><p>В Home Center сначала видно то, что нужно семье: пользователи, данные, интернет, медиатека и устройства. Технические показатели сервера доступны отдельно, когда они действительно нужны.</p></div>
         <div class="interface-gallery">
           <article class="ui-window ui-example reveal">
-            <div class="ui-titlebar"><div><span class="ui-dot"></span><strong>Обзор дома</strong></div><span class="demo-tag live">Текущий стиль</span></div>
-            <div class="mock-layout"><aside class="mock-sidebar"><b>Обзор</b><span>Серверы</span><span>Сервисы</span><span>Копии</span><span>Настройки</span></aside><div class="mock-content"><div class="mock-heading"><div><small>Добрый вечер</small><strong>Дом работает нормально</strong></div><span class="state ok">Всё хорошо</span></div><div class="mock-kpis"><div><small>Серверы</small><strong>2 / 2</strong></div><div><small>Диск занят</small><strong>38%</strong></div><div><small>Копия</small><strong>Готова</strong></div></div><div class="mock-service"><span>Файловое хранилище</span><strong>Работает</strong></div><div class="mock-service"><span>Домашние приложения</span><strong>7 работают</strong></div></div></div>
+            <div class="ui-titlebar"><div><span class="ui-dot"></span><strong>Семья и данные</strong></div><span class="demo-tag live">Домашний интерфейс</span></div>
+            <div class="mock-layout"><aside class="mock-sidebar"><b>Семья</b><span>Профили</span><span>Файлы</span><span>Устройства</span><span>Правила</span></aside><div class="mock-content"><div class="mock-heading"><div><small>Семейные профили</small><strong>Каждому — своё пространство</strong></div><span class="state ok">5 профилей</span></div><div class="mock-kpis"><div><small>Личные данные</small><strong>1.2 ТБ</strong></div><div><small>Общие файлы</small><strong>460 ГБ</strong></div><div><small>Компьютеры</small><strong>6</strong></div></div><div class="mock-service"><span>Профили на домашних ПК</span><strong>Синхронизированы</strong></div><div class="mock-service"><span>Резервная копия данных</span><strong>Сегодня</strong></div></div></div>
           </article>
+
           <article class="ui-window ui-example reveal">
-            <div class="ui-titlebar"><div><span class="ui-dot"></span><strong>Виртуализация</strong></div><span class="demo-tag dev">План 0.16</span></div>
-            <div class="mock-layout"><aside class="mock-sidebar"><span>Обзор</span><b>Proxmox</b><span>Виртуальные машины</span><span>Контейнеры</span><span>Ресурсы</span></aside><div class="mock-content"><div class="mock-heading"><div><small>Домашние серверы</small><strong>Ресурсы и нагрузка</strong></div><span class="state ok">Работает</span></div><div class="resource-bars"><div><span>Процессор <b>34%</b></span><i><em style="width:34%"></em></i></div><div><span>Память <b>30%</b></span><i><em style="width:30%"></em></i></div><div><span>Диск <b>46%</b></span><i><em style="width:46%"></em></i></div></div><div class="vm-grid"><div><span>Виртуальные машины</span><strong>4</strong><small>3 работают</small></div><div><span>Контейнеры</span><strong>7</strong><small>все работают</small></div></div></div></div>
+            <div class="ui-titlebar"><div><span class="ui-dot"></span><strong>Медиатека</strong></div><span class="demo-tag dev">Медиа</span></div>
+            <div class="mock-layout"><aside class="mock-sidebar"><b>Медиатека</b><span>Фильмы</span><span>Музыка</span><span>Фото</span><span>Загрузки</span></aside><div class="mock-content"><div class="mock-heading"><div><small>Домашнее медиа</small><strong>Вся библиотека рядом</strong></div><span class="state ok">Lampa доступна</span></div><div class="mock-kpis"><div><small>Фильмы</small><strong>428</strong></div><div><small>Музыка</small><strong>6 240</strong></div><div><small>Фото</small><strong>18 560</strong></div></div><div class="mock-service"><span>Торрент-клиент</span><strong>2 загрузки</strong></div><div class="mock-service"><span>Медиатека</span><strong>Готова для ТВ и телефонов</strong></div></div></div>
           </article>
+
           <article class="ui-window ui-example reveal">
-            <div class="ui-titlebar"><div><span class="ui-dot"></span><strong>Умный дом</strong></div><span class="demo-tag future">План 0.17</span></div>
-            <div class="mock-layout"><aside class="mock-sidebar"><span>Дом</span><b>Устройства</b><span>Комнаты</span><span>Сценарии</span><span>Подключения</span></aside><div class="mock-content"><div class="mock-heading"><div><small>Устройства</small><strong>24 дома</strong></div><span class="state ok">23 в сети</span></div><div class="device-grid"><div><span class="device-glyph">☀</span><strong>Гостиная</strong><small>Свет · 3 устройства</small></div><div><span class="device-glyph">⌁</span><strong>Климат</strong><small>22.4 °C · 46%</small></div><div><span class="device-glyph">◉</span><strong>Датчики</strong><small>8 в сети</small></div><div><span class="device-glyph">▶</span><strong>Сценарии</strong><small>6 автоматизаций</small></div></div></div></div>
+            <div class="ui-titlebar"><div><span class="ui-dot"></span><strong>Домашний интернет</strong></div><span class="demo-tag future">Семейные правила</span></div>
+            <div class="mock-layout"><aside class="mock-sidebar"><b>Интернет</b><span>Устройства</span><span>Дети</span><span>Списки</span><span>VPN</span></aside><div class="mock-content"><div class="mock-heading"><div><small>Правила доступа</small><strong>Интернет под контролем семьи</strong></div><span class="state ok">Правила включены</span></div><div class="mock-kpis"><div><small>В сети</small><strong>18</strong></div><div><small>Детские устройства</small><strong>4</strong></div><div><small>VPN</small><strong>2 профиля</strong></div></div><div class="mock-service"><span>Детский режим</span><strong>До 21:30 · лимит 3 часа</strong></div><div class="mock-service"><span>Чёрный список</span><strong>14 правил</strong></div></div></div>
+          </article>
+
+          <article class="ui-window ui-example reveal">
+            <div class="ui-titlebar"><div><span class="ui-dot"></span><strong>Умный дом</strong></div><span class="demo-tag future">ZigBee</span></div>
+            <div class="mock-layout"><aside class="mock-sidebar"><span>Дом</span><b>Устройства</b><span>Комнаты</span><span>Сценарии</span><span>ZigBee</span></aside><div class="mock-content"><div class="mock-heading"><div><small>Устройства</small><strong>24 дома</strong></div><span class="state ok">23 в сети</span></div><div class="device-grid"><div><span class="device-glyph">☀</span><strong>Гостиная</strong><small>Свет · 3 устройства</small></div><div><span class="device-glyph">⌁</span><strong>Климат</strong><small>22.4 °C · 46%</small></div><div><span class="device-glyph">◉</span><strong>Датчики</strong><small>8 в сети</small></div><div><span class="device-glyph">▶</span><strong>Сценарии</strong><small>6 автоматизаций</small></div></div></div></div>
           </article>
         </div>
-        <p class="interface-caption reveal">Это примеры будущего вида интерфейса. Возможности с пометками 0.16 и 0.17 ещё разрабатываются и не входят в текущую 0.14.0.</p>
+        <p class="interface-caption reveal">Примеры показывают единый подход Home Center. Конкретный набор функций зависит от установленной версии и подключённых модулей.</p>
       </div>
     </section>
 
     <section class="section install-preview" id="install">
       <div class="shell split install-split">
-        <div class="section-head reveal"><div class="kicker">Установка</div><h2>Скачайте, проверьте и установите</h2><p>Home Center Free 0.14.0 распространяется как архив для Linux amd64. Рядом публикуется контрольная сумма, чтобы проверить файл перед установкой. Home Center сам не меняет настройки вашего роутера или домашней сети.</p><div class="hero-actions"><a class="button primary" href="/docs.html">Пошаговая инструкция</a><a class="button secondary" href="https://github.com/ControlCenterSoft/home-center-free/releases/latest">Скачать последнюю версию</a></div></div>
+        <div class="section-head reveal"><div class="kicker">Установка</div><h2>Начните с домашнего сервера и расширяйте систему по необходимости</h2><p>Home Center Free 0.14.0 распространяется как архив для Linux amd64. После установки основная панель работает внутри домашней сети. Сетевое управление, VPN, медиа, умный дом и другие возможности подключаются отдельными модулями и применяются только после настройки владельцем.</p><div class="hero-actions"><a class="button primary" href="/docs.html">Пошаговая инструкция</a><a class="button secondary" href="https://github.com/ControlCenterSoft/home-center-free/releases/latest">Скачать последнюю версию</a></div></div>
         <div class="terminal reveal" aria-label="Краткий пример установки"><div class="terminal-top"><span></span><span></span><span></span><b>home-center</b></div><pre><code><span># 1. Проверить скачанный архив</span>
 bash deploy/scripts/home-center-release.sh verify \
   --artifact home-center-free-0.14.0-linux-amd64.tar.gz \
@@ -115,21 +133,25 @@ sudo systemctl enable --now \
 
     <section class="section development-section" id="development">
       <div class="shell">
-        <div class="section-head reveal"><div class="kicker">Что будет дальше</div><h2>Следующие версии делают Home Center полезнее дома</h2><p>Ниже — не внутренние технические названия, а результат, который увидит пользователь.</p></div>
+        <div class="section-head reveal"><div class="kicker">Развитие Home Center</div><h2>Техническая основа постепенно становится полноценной системой для дома</h2><p>Следующие версии расширяют управление железом, виртуализацией, умными устройствами, семейным доступом и защищённым подключением.</p></div>
         <div class="roadmap-grid">
-          <article class="roadmap-card reveal"><div class="roadmap-top"><span class="version">0.15</span><span class="roadmap-state">В разработке</span></div><h3>Home Center узнает ваше железо</h3><p><strong>Уже есть:</strong> определение процессора, памяти, дисков, сети и поддержки виртуализации.</p><p><strong>Дальше:</strong> автоматическое обнаружение серверов и более простое добавление их в Home Center.</p><div class="result-box"><small>Что изменится дома</small><strong>Добавили сервер — Home Center сам покажет, что в нём есть и для каких задач он подходит.</strong></div></article>
-          <article class="roadmap-card reveal"><div class="roadmap-top"><span class="version">0.16</span><span class="roadmap-state">В разработке</span></div><h3>Proxmox, виртуальные машины и контейнеры</h3><p><strong>Уже есть:</strong> первый безопасный слой для чтения данных из Proxmox и подготовки действий.</p><p><strong>Дальше:</strong> создание, запуск, остановка и размещение виртуальных машин и контейнеров.</p><div class="result-box"><small>Что изменится дома</small><strong>Proxmox и его машины будут видны и управляться из общей панели Home Center.</strong></div></article>
-          <article class="roadmap-card reveal"><div class="roadmap-top"><span class="version">0.17</span><span class="roadmap-state review">Первый этап</span></div><h3>Устройства умного дома</h3><p><strong>Сейчас:</strong> создаётся общий список устройств, комнат и их состояний.</p><p><strong>Дальше:</strong> ZigBee, автоматизации, MQTT, Яндекс Умный дом и мобильный интерфейс.</p><div class="result-box"><small>Что изменится дома</small><strong>Серверы и умные устройства будут видны как части одного дома.</strong></div></article>
-          <article class="roadmap-card reveal"><div class="roadmap-top"><span class="version">0.18</span><span class="roadmap-state review">Первый этап</span></div><h3>Доступ для семьи и из интернета</h3><p><strong>Сейчас:</strong> создаётся система ролей и прав доступа.</p><p><strong>Дальше:</strong> защищённый удалённый доступ, управление сертификатами и улучшенное восстановление из резервных копий.</p><div class="result-box"><small>Что изменится дома</small><strong>Каждому можно будет дать только нужные права, а к дому — безопасно подключаться извне.</strong></div></article>
+          <article class="roadmap-card reveal"><div class="roadmap-top"><span class="version">0.15</span><span class="roadmap-state">В разработке</span></div><h3>Home Center понимает домашнее железо</h3><p><strong>Уже есть:</strong> определение процессора, памяти, дисков, сети и поддержки виртуализации.</p><p><strong>Дальше:</strong> автоматическое обнаружение серверов и более простое добавление их в домашнюю инфраструктуру.</p><div class="result-box"><small>Что это даёт дома</small><strong>Добавили сервер или мини-ПК — Home Center сам покажет, что в нём есть и для каких домашних задач он подходит.</strong></div></article>
+
+          <article class="roadmap-card reveal"><div class="roadmap-top"><span class="version">0.16</span><span class="roadmap-state">В разработке</span></div><h3>Виртуальные машины и домашние приложения</h3><p><strong>Уже есть:</strong> первый безопасный слой для чтения данных из Proxmox и подготовки действий.</p><p><strong>Дальше:</strong> создание, запуск, остановка и размещение виртуальных машин и контейнеров.</p><div class="result-box"><small>Что это даёт дома</small><strong>Домашние приложения смогут жить в отдельных VM и контейнерах, но управляться из общей панели.</strong></div></article>
+
+          <article class="roadmap-card reveal"><div class="roadmap-top"><span class="version">0.17</span><span class="roadmap-state review">Первый этап</span></div><h3>Умный дом становится частью Home Center</h3><p><strong>Сейчас:</strong> создаётся общий список устройств, комнат и их состояний.</p><p><strong>Дальше:</strong> ZigBee, автоматизации, MQTT, интеграции и мобильный интерфейс.</p><div class="result-box"><small>Что это даёт дома</small><strong>Свет, датчики, климат и домашние сервисы будут управляться как части одной инфраструктуры.</strong></div></article>
+
+          <article class="roadmap-card reveal"><div class="roadmap-top"><span class="version">0.18</span><span class="roadmap-state review">Первый этап</span></div><h3>Семейный доступ и безопасное подключение</h3><p><strong>Сейчас:</strong> создаётся система ролей и прав доступа.</p><p><strong>Дальше:</strong> защищённый удалённый доступ, сертификаты, семейные роли, резервное восстановление и сетевые политики.</p><div class="result-box"><small>Что это даёт дома</small><strong>Каждому члену семьи — только нужные права, а доступ к дому извне можно включить безопасно и контролируемо.</strong></div></article>
         </div>
-        <div class="notice reveal"><strong>Важно:</strong><p>Версии 0.15–0.18 ещё разрабатываются. Функция считается доступной только после выпуска соответствующей версии.</p></div>
+        <div class="notice reveal"><strong>Важно:</strong><p>Текущая публичная версия — 0.14.0. Возможности следующих версий и Market-модулей становятся доступными после их выпуска и установки.</p></div>
       </div>
     </section>
 
-    <section class="section release-band"><div class="shell release-grid reveal"><div><div class="kicker">Доступно сейчас</div><h2>Home Center 0.14.0</h2><p>Это текущая публичная версия для самостоятельной установки. Она уже умеет собирать информацию о серверах и готовить безопасные планы будущих действий.</p><p><strong>Plan-only</strong> означает просто: Home Center может показать, что собирается сделать, но сам не меняет сервер, виртуальную машину или сертификат без отдельного разрешённого действия.</p></div><div class="release-status"><div><span>Версия</span><strong>0.14.0</strong></div><div><span>Можно скачать</span><strong>Да</strong></div><div><span>Изменения без подтверждения</span><strong>Нет · Plan-only</strong></div></div></div></section>
-    <section class="section"><div class="shell cta reveal"><div><div class="kicker">Начать</div><h2>Попробуйте Home Center дома</h2><p>Установите текущую версию на Linux-сервер. В инструкции все шаги собраны по порядку.</p></div><div class="cta-actions"><a class="button primary" href="/docs.html">Как установить и обновить</a><a class="button secondary" href="/releases.html">Что будет в следующих версиях</a></div></div></section>
+    <section class="section release-band"><div class="shell release-grid reveal"><div><div class="kicker">Доступно сейчас</div><h2>Home Center 0.14.0</h2><p>Это текущая публичная версия для самостоятельной установки и техническая основа будущей домашней платформы. Она уже собирает информацию об узлах, умеет работать с безопасными планами действий и создаёт основу для подключаемых домашних модулей.</p><p><strong>Plan-only</strong> означает: Home Center может показать, что собирается сделать, но не применяет потенциально опасное изменение без отдельного разрешённого действия.</p></div><div class="release-status"><div><span>Версия</span><strong>0.14.0</strong></div><div><span>Можно скачать</span><strong>Да</strong></div><div><span>Изменения без подтверждения</span><strong>Нет · Plan-only</strong></div></div></div></section>
+
+    <section class="section"><div class="shell cta reveal"><div><div class="kicker">Начать</div><h2>Соберите свою домашнюю инфраструктуру вокруг Home Center</h2><p>Начните с сервера и постепенно объединяйте данные, пользователей, медиа, сеть, устройства и домашние приложения в одной системе.</p></div><div class="cta-actions"><a class="button primary" href="/docs.html">Как установить и обновить</a><a class="button secondary" href="/releases.html">Посмотреть версии</a></div></div></section>
   </main>
 
-  <footer class="site-footer"><div class="shell footer-inner"><div class="brand footer-brand"><img src="/assets/logo.svg" alt="" width="30" height="30"><span>Home Center</span></div><p>Домашний сервер и сервисы — в одной понятной панели.</p><span>© 2026 Home Center</span></div></footer>
+  <footer class="site-footer"><div class="shell footer-inner"><div class="brand footer-brand"><img src="/assets/logo.svg" alt="" width="30" height="30"><span>Home Center</span></div><p>Данные, семья, медиа, интернет и умный дом — в одной домашней системе.</p><span>© 2026 Home Center</span></div></footer>
 </body>
 </html>

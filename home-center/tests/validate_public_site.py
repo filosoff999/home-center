@@ -34,6 +34,17 @@ FORBIDDEN = [
     r"BEGIN (?:RSA |OPENSSH |EC )?PRIVATE KEY",
 ]
 
+POSITIONING_MARKERS = [
+    "домашней инфраструктур",
+    "переносимые профили",
+    "детский контроль",
+    "медиатек",
+    "Lampa",
+    "ZigBee",
+    "VPN",
+    "белые и чёрные списки",
+]
+
 
 def fail(message: str) -> None:
     print(f"FAIL: {message}", file=sys.stderr)
@@ -50,13 +61,18 @@ text_files = [
     if p.is_file() and p.suffix in {".html", ".css", ".js", ".svg", ".xml", ".txt", ".webmanifest"}
 ]
 combined = "\n".join(p.read_text(encoding="utf-8") for p in text_files)
+homepage = (SITE / "index.html").read_text(encoding="utf-8")
 
 if "home.control-center.pro" not in combined:
     fail("public hostname is absent")
-if "0.14.0" not in (SITE / "index.html").read_text(encoding="utf-8"):
+if "0.14.0" not in homepage:
     fail("latest release identity is absent from homepage")
-if "Plan-only" not in (SITE / "index.html").read_text(encoding="utf-8"):
+if "Plan-only" not in homepage:
     fail("0.14.0 safety boundary is absent from homepage")
+
+for marker in POSITIONING_MARKERS:
+    if marker.casefold() not in homepage.casefold():
+        fail(f"home infrastructure positioning marker is absent: {marker}")
 
 for pattern in FORBIDDEN:
     if re.search(pattern, combined, flags=re.IGNORECASE):
