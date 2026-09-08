@@ -19,6 +19,7 @@ LOG = logging.getLogger("home_center.actions")
 ACTION_ID = re.compile(r"^[a-z][a-z0-9.-]+\.v[0-9]+$")
 IDEMPOTENCY_KEY = re.compile(r"^[A-Za-z0-9._:-]{8,128}$")
 SERVICE_VALUE = re.compile(r"^[A-Za-z0-9_.@:-]{1,128}$")
+NODE_ID = re.compile(r"^[a-z0-9](?:[a-z0-9.-]{0,126}[a-z0-9])?$")
 LOCAL_ADMIN_ACTOR = re.compile(r"^local-admin:[a-z][a-z0-9._-]{2,63}$")
 AD_ADMIN_ACTOR = re.compile(r"^ad-admin:[a-z0-9][a-z0-9._-]{0,63}@[A-Z0-9][A-Z0-9.-]{2,254}$")
 SYSTEMCTL = "/usr/bin/systemctl"
@@ -305,7 +306,7 @@ class ActionRegistry:
         action_input = value.get("input")
         if not isinstance(idempotency_key, str) or not IDEMPOTENCY_KEY.fullmatch(idempotency_key):
             raise ActionRequestError("invalid idempotency key")
-        if not isinstance(target_node_id, str) or not re.fullmatch(r"[a-z][a-z0-9._-]{2,63}", target_node_id):
+        if not isinstance(target_node_id, str) or NODE_ID.fullmatch(target_node_id) is None:
             raise ActionRequestError("invalid target node")
         if not isinstance(reason, str) or not 3 <= len(reason) <= 500:
             raise ActionRequestError("invalid reason")

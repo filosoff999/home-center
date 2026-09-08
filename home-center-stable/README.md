@@ -1,11 +1,11 @@
-# Home Center 0.14.0 Stable
+# Home Center 0.14.1
 
-Home Center is a home-infrastructure management platform.
+Home Center is a local-first control plane for managed home infrastructure. It
+provides authenticated administration, inventory, health, backup, resource and
+intent planning, module admission, and a bounded helper for local credential
+rotation. The default configuration is a two-node, single-writer deployment
+with explicit operator-controlled failover.
 
-**Current stable version: 0.14.0**
-
-This repository contains the current public stable source snapshot. Version 0.14.0 provides the stable foundation for node lifecycle, compute planning, Home Lab planning, certificate lifecycle, resource inventory and the Home Center control plane.
-
-Capabilities marked plan-only remain non-destructive until a later stable release explicitly promotes them.
-
-See `INSTALL.md` and `RELEASE.md`.
+Start with [INSTALL.md](INSTALL.md), then tailor the examples described in
+[CONFIGURATION.md](CONFIGURATION.md). Release identity and integrity files are
+described in [RELEASE.md](RELEASE.md).

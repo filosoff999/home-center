@@ -25,8 +25,8 @@ from .local_admin_auth import (
     SALT_BYTES,
     LocalAdminAuthError,
     _derive,
-    _password_bytes,
     normalize_username,
+    validate_new_password,
 )
 
 
@@ -40,7 +40,7 @@ def credential_document(username: str, password: str, *, salt: bytes | None = No
     """Build a verifier document without retaining plaintext password material."""
 
     canonical_username = normalize_username(username)
-    password_bytes = _password_bytes(password)
+    password_bytes = validate_new_password(password)
     credential_salt = secrets.token_bytes(SALT_BYTES) if salt is None else bytes(salt)
     if len(credential_salt) != SALT_BYTES:
         raise LocalAdminProvisionError("credential_salt_rejected")

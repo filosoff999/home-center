@@ -28,8 +28,9 @@ KDF_DKLEN = 32
 KDF_MAXMEM = 64 * 1024 * 1024
 SALT_BYTES = 32
 MAX_CREDENTIAL_FILE_BYTES = 16 * 1024
-MIN_PASSWORD_BYTES = 12
+MIN_PASSWORD_BYTES = 8
 MAX_PASSWORD_BYTES = 256
+MIN_NEW_PASSWORD_CHARACTERS = 8
 USERNAME = re.compile(r"^[a-z][a-z0-9._-]{2,63}$")
 
 
@@ -64,6 +65,26 @@ def _password_bytes(value: str) -> bytes:
         raise LocalAdminAuthError("password_rejected") from exc
     if not MIN_PASSWORD_BYTES <= len(encoded) <= MAX_PASSWORD_BYTES:
         raise LocalAdminAuthError("password_rejected")
+    return encoded
+
+
+def validate_new_password(value: str) -> bytes:
+    """Validate password material accepted for a new local credential.
+
+    Authentication deliberately keeps only the structural byte bounds so an
+    existing credential is not made unusable by a later policy change. New
+    provisioning and rotation both use this stricter policy entry point.
+    """
+
+    if not isinstance(value, str) or "\x00" in value or "\r" in value or "\n" in value:
+        raise LocalAdminAuthError("password_rejected")
+    if len(value) < MIN_NEW_PASSWORD_CHARACTERS:
+        raise LocalAdminAuthError("password_too_short")
+    encoded = _password_bytes(value)
+    if not any(character.isalpha() for character in value):
+        raise LocalAdminAuthError("password_letter_required")
+    if not any(character.isdecimal() for character in value):
+        raise LocalAdminAuthError("password_digit_required")
     return encoded
 
 

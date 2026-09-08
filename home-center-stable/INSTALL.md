@@ -1,7 +1,12 @@
-# Installation — Home Center 0.14.0
+# Installation
 
-Requirements: Linux, Python 3.12+, OpenSSL and systemd.
+Home Center 0.14.1 requires Linux, systemd, Python 3.12 or newer, SQLite, and
+operator-provided TLS identities. Verify `SHA256SUMS`, unpack the runtime, then
+run `sudo bash deploy/scripts/install.sh --config /path/to/config.json` to stage
+an immutable versioned directory. Add `--activate` only after reviewing the
+configuration, service units, certificate paths, and rollback prerequisites.
+The activation mode changes the `current` symlink atomically and restores the
+previous target if the services do not start successfully.
 
-The stable source package contains the Home Center control plane, deployment examples and systemd units. Validate the SHA-256 checksum before use. Before first start, prepare a local configuration and TLS identity suitable for the target home network.
-
-Do not copy credentials, certificates or local configuration from another installation.
+Never deploy the documentation values unchanged. Publication of a release does
+not authorize production activation.

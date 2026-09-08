@@ -1,7 +1,0 @@
-{
-  "schema": 1,
-  "product": "Home Center",
-  "version": "0.14.0",
-  "channel": "stable",
-  "plan_only_boundary": true
-}

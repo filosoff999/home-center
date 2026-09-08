@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ControlCenterSoft/home-center-stable/contracts/releases/public-release-manifest.v1.schema.json",
+  "title": "Home Center public release manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "product",
+    "version",
+    "tag",
+    "revision",
+    "source_date_epoch",
+    "status",
+    "artifacts",
+    "acceptance",
+    "publication"
+  ],
+  "properties": {
+    "schema": {"const": "home-center.public-release-manifest.v1"},
+    "product": {"const": "home-center"},
+    "version": {"const": "0.14.1"},
+    "tag": {"const": "v0.14.1"},
+    "revision": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "source_date_epoch": {"type": "integer", "minimum": 1},
+    "status": {"const": "qualified"},
+    "artifacts": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "items": {"$ref": "#/$defs/artifact"}
+    },
+    "acceptance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "qualification_id"],
+      "properties": {
+        "name": {"const": "home-center-0.14.1.acceptance.json"},
+        "qualification_id": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
+      }
+    },
+    "publication": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["annotated_tag_required", "artifact_reuse_required", "no_clobber_required"],
+      "properties": {
+        "annotated_tag_required": {"const": true},
+        "artifact_reuse_required": {"const": true},
+        "no_clobber_required": {"const": true}
+      }
+    }
+  },
+  "$defs": {
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "media_type", "sha256", "size"],
+      "properties": {
+        "name": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,159}$"},
+        "media_type": {"type": "string", "minLength": 1, "maxLength": 96},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "size": {"type": "integer", "minimum": 1}
+      }
+    }
+  }
+}
