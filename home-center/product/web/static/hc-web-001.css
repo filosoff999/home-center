@@ -1,7 +1,0 @@
-/* HC-WEB-001 — release-blocking login overlay regression guard.
- * Preserve the semantic effect of the HTML hidden attribute even though
- * .login-layer explicitly sets display:grid.
- */
-.login-layer[hidden] {
-  display: none !important;
-}

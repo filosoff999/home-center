@@ -1,3 +1,0 @@
-User-agent: *
-Allow: /
-Sitemap: https://home.control-center.pro/sitemap.xml
