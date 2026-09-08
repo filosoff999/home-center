@@ -1,9 +1,11 @@
-# Home Center Stable
+# Home Center 0.14.0 Stable
 
-Публичный стабильный канал Home Center.
+Home Center is a home-infrastructure management platform.
 
-В этом репозитории публикуются только проверенные пользовательские stable-релизы Home Center: версия, контрольные суммы, инструкции по установке и обновлению, а также release-артефакты.
+**Current stable version: 0.14.0**
 
-Текущая стабильная версия, подготавливаемая к публикации: **0.14.0**.
+This repository contains the current public stable source snapshot. Version 0.14.0 provides the stable foundation for node lifecycle, compute planning, Home Lab planning, certificate lifecycle, resource inventory and the Home Center control plane.
 
-Разработка следующих версий ведётся отдельно и не является частью этого stable-канала.
+Capabilities marked plan-only remain non-destructive until a later stable release explicitly promotes them.
+
+See `INSTALL.md` and `RELEASE.md`.
