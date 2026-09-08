@@ -1,0 +1,3 @@
+Canonical: https://home.control-center.pro/.well-known/security.txt
+Expires: 2027-09-07T00:00:00Z
+Policy: https://home.control-center.pro/docs.html

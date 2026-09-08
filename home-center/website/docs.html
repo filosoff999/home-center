@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Как установить и обновить Home Center</title>
+  <meta name="description" content="Проверенная инструкция по установке Home Center через публичный стабильный канал: релиз, контрольная сумма, установщик, обновление и откат.">
+  <meta name="theme-color" content="#f6fbf8">
+  <link rel="canonical" href="https://home.control-center.pro/docs.html">
+  <link rel="icon" href="/assets/logo.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/assets/styles.css">
+  <script defer src="/assets/app.js"></script>
+</head>
+<body>
+  <a class="skip" href="#content">К содержимому</a>
+  <header class="site-header compact" data-header><div class="shell header-inner"><a class="brand" href="/"><img src="/assets/logo.svg" alt="" width="34" height="34"><span>Home Center</span></a><button class="menu-button" type="button" aria-expanded="false" aria-controls="site-nav" data-menu-button><span></span><span></span><span></span><span class="sr-only">Меню</span></button><nav id="site-nav" class="site-nav" data-menu><a href="/">Главная</a><a href="/#scenarios">Возможности</a><a href="/#interfaces">Как выглядит</a><a class="current" href="/docs.html">Установка</a><a href="/releases.html">Версии</a></nav><a class="header-release" href="/releases.html"><span>Текущая версия</span><strong>0.14.0</strong></a></div></header>
+
+  <main id="content">
+    <section class="page-hero install-hero"><div class="shell"><div class="eyebrow"><span class="status-dot"></span> Home Center 0.14.0 · стабильный публичный канал</div><h1>Как установить Home Center дома</h1><p>Устанавливайте Home Center только из публичного стабильного канала. Архив, контрольная сумма, установщик и документация должны относиться к одному и тому же релизу.</p><div class="hero-actions"><a class="button primary" href="https://github.com/ControlCenterSoft/home-center-stable/releases">Проверить стабильные релизы</a><a class="button secondary" href="#requirements">Подготовить сервер</a></div></div></section>
+
+    <section class="section"><div class="shell install-layout">
+      <aside class="doc-nav"><strong>На этой странице</strong><a href="#status">Что доступно сейчас</a><a href="#requirements">Что понадобится</a><a href="#download">1. Скачать релиз</a><a href="#verify">2. Проверить файл</a><a href="#install">3. Установить</a><a href="#start">4. Запустить</a><a href="#update">Обновить</a><a href="#rollback">Откатить</a></aside>
+      <div class="doc-content">
+        <section class="doc-section" id="status"><div class="step-label">Перед установкой</div><h2>Сначала проверьте публичный stable-канал</h2><p>Текущая версия продукта — <strong>0.14.0</strong>. При этом публичный репозиторий стабильных пакетов сейчас не содержит опубликованного установочного релиза. Поэтому мы не предлагаем команду, которая скачивает архив из закрытого, устаревшего или неподтверждённого источника.</p><div class="callout warning"><strong>Если страница стабильных релизов пуста — остановитесь на этом шаге.</strong><p>Не используйте архив из другого репозитория и не смешивайте установщик одной версии с архивом другой. На этой странице появится обычный путь установки сразу после появления проверенного пакета в публичном stable-канале.</p></div><div class="hero-actions"><a class="button primary" href="https://github.com/ControlCenterSoft/home-center-stable/releases">Открыть stable-канал</a></div></section>
+
+        <section class="doc-section" id="requirements"><div class="step-label">Требования</div><h2>Что понадобится</h2><p>Для линии 0.14.0 нужен Linux-сервер с <strong>Python 3.12+</strong>, OpenSSL, systemd, <code>tar</code> и <code>sha256sum</code>. Сборка предназначена для 64-битной архитектуры amd64.</p><div class="callout"><strong>Установщик не должен неожиданно перенастраивать домашнюю сеть.</strong><p>Настройка маршрутизатора, NAT, DNS, DHCP, firewall, VPN и других сетевых функций выполняется отдельно и только после явного выбора владельца.</p></div></section>
+
+        <section class="doc-section" id="download"><div class="step-label">Шаг 1</div><h2>Скачайте архив и его SHA-256</h2><p>Когда stable-релиз появится, на одной странице релиза должны находиться как минимум архив Home Center и соответствующий файл <code>.sha256</code>. Скачивайте их парой из одного релиза.</p><div class="download-card"><div><small>Ожидаемый формат для 0.14.0</small><strong>home-center-0.14.0-linux-amd64.tar.gz</strong><span>+ home-center-0.14.0-linux-amd64.tar.gz.sha256</span></div><a class="button small primary" href="https://github.com/ControlCenterSoft/home-center-stable/releases">Stable releases</a></div></section>
+
+        <section class="doc-section" id="verify"><div class="step-label">Шаг 2</div><h2>Проверьте архив до распаковки</h2><p>Перейдите в каталог с двумя скачанными файлами и проверьте контрольную сумму. Для 0.14.0 команда будет выглядеть так:</p><div class="terminal code-block"><pre><code>sha256sum -c home-center-0.14.0-linux-amd64.tar.gz.sha256</code></pre></div><p>Продолжайте только если получено <code>OK</code>. Если имя архива в опубликованном stable-релизе отличается, используйте точное имя с его страницы и из соответствующего файла <code>.sha256</code>.</p></section>
+
+        <section class="doc-section" id="install"><div class="step-label">Шаг 3</div><h2>Используйте установщик из того же stable-релиза</h2><p>После проверки распакуйте архив в отдельный каталог и сначала прочитайте входящую в него инструкцию. Production-команда установки должна браться из <code>docs/INSTALL-AND-UPDATE.md</code> этого же релиза.</p><div class="terminal code-block"><pre><code>mkdir -p home-center-0.14.0
+
+tar -xzf home-center-0.14.0-linux-amd64.tar.gz \
+  -C home-center-0.14.0
+
+cd home-center-0.14.0
+
+less docs/INSTALL-AND-UPDATE.md</code></pre></div><div class="callout neutral"><strong>Почему команда установки не продублирована здесь прямо сейчас?</strong><p>Публичный stable-пакет ещё не опубликован. Сайт не должен предлагать непроверенный entrypoint или параметры, которых нет в доступном пользователю пакете. После публикации инструкция на сайте будет синхронизирована с установщиком из этого релиза.</p></div></section>
+
+        <section class="doc-section" id="start"><div class="step-label">Шаг 4</div><h2>Запустите и проверьте Home Center</h2><p>После выполнения установщика проверьте состояние сервиса по инструкции конкретного релиза. Для systemd-установки основной контроль выглядит так:</p><div class="terminal code-block"><pre><code>systemctl status home-center.service
+systemctl status home-center-backup.timer</code></pre></div><p>Не публикуйте административный интерфейс в интернет до настройки доверенного TLS, правил доступа и выбранного способа удалённого подключения.</p></section>
+
+        <section class="doc-section update-section" id="update"><div class="step-label">Обновление</div><h2>Новая версия — снова как отдельный проверенный релиз</h2><p>Для обновления скачайте новый архив и его <code>.sha256</code> из публичного stable-канала, снова проверьте SHA-256 и используйте updater, входящий именно в эту версию. Не заменяйте файлы вручную поверх работающего каталога.</p><div class="update-facts"><div><strong>Конфигурация</strong><span>сохраняется отдельно от каталога релиза</span></div><div><strong>Данные</strong><span>не должны зависеть от каталога программы</span></div><div><strong>Резервные копии</strong><span>проверяются до серьёзного обновления</span></div><div><strong>Сертификаты</strong><span>не заменяются случайными файлами из другого релиза</span></div></div></section>
+
+        <section class="doc-section" id="rollback"><div class="step-label">Восстановление</div><h2>Откат программы и восстановление данных — разные операции</h2><p>Если новый релиз не проходит readiness-проверку, используйте rollback-процедуру из его <code>docs/INSTALL-AND-UPDATE.md</code>. Перед обновлением держите независимую резервную копию важных данных и конфигурации.</p><div class="callout warning"><strong>Не удаляйте предыдущий рабочий релиз до проверки нового.</strong><p>Это позволяет вернуть программу без восстановления пользовательских данных из резервной копии.</p></div></section>
+
+        <section class="doc-section"><div class="step-label">Единый источник</div><h2>Где брать установочные файлы</h2><p>Для публичной самостоятельной установки используйте только <strong>ControlCenterSoft/home-center-stable</strong>. Другие репозитории не являются пользовательским stable-каналом.</p><div class="hero-actions"><a class="button primary" href="https://github.com/ControlCenterSoft/home-center-stable/releases">Публичные stable-релизы</a><a class="button secondary" href="/releases.html">Версии Home Center</a></div></section>
+      </div>
+    </div></section>
+  </main>
+  <footer class="site-footer"><div class="shell footer-inner"><div class="brand footer-brand"><img src="/assets/logo.svg" alt="" width="30" height="30"><span>Home Center</span></div><p>Данные, семья, медиа, интернет и умный дом — в одной домашней системе.</p><span>© 2026 Home Center</span></div></footer>
+</body>
+</html>
