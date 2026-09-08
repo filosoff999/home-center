@@ -1,0 +1,191 @@
+name: Publish Home Center 0.14.0 stable v3
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/publish-0.14.0-v3.yml'
+
+permissions:
+  contents: write
+
+env:
+  VERSION: '0.14.0'
+  SOURCE_REPO: 'ControlCenterSoft/home-center-development'
+  SOURCE_SHA: '68c9c2050a1ec9131d2649ab4117d0edc3a1c875'
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout stable repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+
+      - name: Checkout exact 0.14.0 source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          repository: ${{ env.SOURCE_REPO }}
+          ref: ${{ env.SOURCE_SHA }}
+          path: source
+          persist-credentials: false
+
+      - name: Validate exact stable source
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test "$(git -C source rev-parse HEAD)" = "$SOURCE_SHA"
+          python - <<'PY'
+          import pathlib,re
+          text=pathlib.Path('source/product/control-plane/src/home_center/__init__.py').read_text(encoding='utf-8')
+          m=re.search(r'__version__\s*=\s*["\x27]([^"\x27]+)', text)
+          assert m and m.group(1)=='0.14.0'
+          print('RELEASE_IDENTITY=0.14.0')
+          PY
+          find source -type d -name __pycache__ -prune -exec rm -rf {} +
+          find source -type f \( -name '*.pyc' -o -name '*.pyo' \) -delete
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          for p in sorted(Path('source/contracts').rglob('*.json')):
+              json.loads(p.read_text(encoding='utf-8'))
+          for p in sorted(Path('source/product/control-plane/src/home_center').glob('*.json')):
+              json.loads(p.read_text(encoding='utf-8'))
+          print('JSON_CONTRACTS=PASS')
+          PY
+          (
+            cd source
+            PYTHONPYCACHEPREFIX="$RUNNER_TEMP/pycache" \
+            PYTHONPATH=product/control-plane/src \
+              python -m unittest discover -s tests -p 'test_*.py' -v
+          )
+
+      - name: Assemble and privacy-check public stable tree
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          STAGE="$RUNNER_TEMP/stable"
+          rm -rf "$STAGE"
+          mkdir -p "$STAGE"
+          cp -a source/contracts source/deploy source/product source/tests "$STAGE/"
+          cp -a source/pyproject.toml "$STAGE/"
+          find "$STAGE" -type d -name __pycache__ -prune -exec rm -rf {} +
+          find "$STAGE" -type f \( -name '*.pyc' -o -name '*.pyo' \) -delete
+          sed -i 's#Documentation=https://github.com/ControlCenterSoft/home-center-development#Documentation=https://github.com/ControlCenterSoft/home-center-stable#' "$STAGE/deploy/systemd/home-center.service"
+
+          printf '%s\n' '0.14.0' > "$STAGE/VERSION"
+          cat > "$STAGE/RELEASE-MANIFEST.json" <<EOF
+          {
+            "schema": 1,
+            "product": "Home Center",
+            "version": "0.14.0",
+            "channel": "stable",
+            "source_revision": "$SOURCE_SHA",
+            "plan_only_boundary": true
+          }
+          EOF
+          cat > "$STAGE/README.md" <<'EOF'
+          # Home Center 0.14.0 Stable
+
+          Home Center is a home-infrastructure management platform.
+
+          **Current stable version: 0.14.0**
+
+          This repository contains the current public stable source snapshot. Version 0.14.0 provides the stable foundation for node lifecycle, compute planning, Home Lab planning, certificate lifecycle, resource inventory and the Home Center control plane.
+
+          Capabilities marked plan-only remain non-destructive until a later stable release explicitly promotes them.
+
+          See `INSTALL.md` and `RELEASE.md`.
+          EOF
+          cat > "$STAGE/RELEASE.md" <<'EOF'
+          # Home Center 0.14.0
+
+          Stable foundation release.
+
+          Included:
+          - Core lifecycle and policy contracts;
+          - Node Lifecycle v2 planning;
+          - Compute Framework planning;
+          - Home Lab planning;
+          - Certificate Lifecycle planning and status;
+          - local administrator authentication foundation;
+          - inventory and resource snapshot contracts;
+          - Home Center web/control-plane foundation.
+
+          Safety boundary: plan-only capabilities are not described as destructive production mutations.
+          EOF
+          cat > "$STAGE/INSTALL.md" <<'EOF'
+          # Installation — Home Center 0.14.0
+
+          Requirements: Linux, Python 3.12+, OpenSSL and systemd.
+
+          The stable source package contains the Home Center control plane, deployment examples and systemd units. Validate the SHA-256 checksum before use. Before first start, prepare a local configuration and TLS identity suitable for the target home network.
+
+          Do not copy credentials, certificates or local configuration from another installation.
+          EOF
+
+          python - "$STAGE" <<'PY'
+          from pathlib import Path
+          import re,sys
+          root=Path(sys.argv[1])
+          forbidden=[
+              r'\bdc0[12]\b', r'\bhm\.dm\b', r'\b192\.168\.',
+              r'\b10\.(?:\d{1,3}\.){2}\d{1,3}\b', r'AI Development',
+              r'CI Fabric', r'ChatGPT', r'Codex', r'model provider', r'bastion',
+              r'private key', r'BEGIN (?:RSA |OPENSSH |EC )?PRIVATE KEY',
+              r'home-center-development',
+          ]
+          text_ext={'.py','.json','.md','.service','.timer','.toml','.html','.js','.css','.txt'}
+          for p in root.rglob('*'):
+              rel=str(p.relative_to(root))
+              for pat in forbidden:
+                  if re.search(pat,rel,re.I): raise SystemExit(f'forbidden filename marker: {rel}')
+              if p.is_file() and (p.suffix in text_ext or p.name=='VERSION'):
+                  try: text=p.read_text(encoding='utf-8')
+                  except UnicodeDecodeError: continue
+                  for pat in forbidden:
+                      if re.search(pat,text,re.I): raise SystemExit(f'forbidden public marker in {rel}: {pat}')
+          print('PUBLIC_BOUNDARY=PASS')
+          PY
+
+          find . -mindepth 1 -maxdepth 1 ! -name .git ! -name source -exec rm -rf {} +
+          cp -a "$STAGE"/. .
+          rm -rf source
+
+      - name: Build reproducible stable archive
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p dist "$RUNNER_TEMP/bundle/home-center-$VERSION"
+          cp -a contracts deploy product VERSION RELEASE-MANIFEST.json README.md RELEASE.md INSTALL.md "$RUNNER_TEMP/bundle/home-center-$VERSION/"
+          tar --sort=name --mtime='UTC 2026-09-08' --owner=0 --group=0 --numeric-owner \
+            -C "$RUNNER_TEMP/bundle" -czf "dist/home-center-$VERSION-source.tar.gz" "home-center-$VERSION"
+          sha256sum "dist/home-center-$VERSION-source.tar.gz" | tee "dist/home-center-$VERSION-source.tar.gz.sha256"
+
+      - name: Publish stable main and release branch
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'stable: publish Home Center 0.14.0'
+          git push origin HEAD:main
+          git push origin HEAD:refs/heads/release/0.14.0
+
+      - name: Publish v0.14.0 release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          gh release create "v$VERSION" \
+            dist/home-center-$VERSION-source.tar.gz \
+            dist/home-center-$VERSION-source.tar.gz.sha256 \
+            --repo "$GITHUB_REPOSITORY" \
+            --target release/0.14.0 \
+            --title "Home Center $VERSION" \
+            --notes-file RELEASE.md \
+            --latest
