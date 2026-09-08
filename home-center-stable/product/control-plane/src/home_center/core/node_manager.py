@@ -1,4 +1,4 @@
-"""Infrastructure-neutral node identity and lifecycle planning."""
+"""Node identity registry and side-effect-free lifecycle planning."""
 
 from __future__ import annotations
 
@@ -7,11 +7,14 @@ from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import Iterable
 
+
 NODE_ID = re.compile(r"^[a-z][a-z0-9_.:-]{1,127}$")
 HOSTNAME = re.compile(r"^[a-z0-9](?:[a-z0-9.-]{0,251}[a-z0-9])?$", re.IGNORECASE)
 
+
 class NodeManagerError(ValueError):
     pass
+
 
 class NodeState(StrEnum):
     DISCOVERED = "discovered"
@@ -21,12 +24,13 @@ class NodeState(StrEnum):
     CONFIGURING = "configuring"
     READY = "ready"
     DEGRADED = "degraded"
-    ACTIVE = "active"
+    ACTIVE = "active"  # compatibility state for pre-0.14 persisted descriptors
     MAINTENANCE = "maintenance"
     DRAINING = "draining"
     DECOMMISSIONED = "decommissioned"
 
-_ALLOWED_TRANSITIONS = {
+
+_ALLOWED_TRANSITIONS: dict[NodeState, frozenset[NodeState]] = {
     NodeState.DISCOVERED: frozenset({NodeState.PREFLIGHTED}),
     NodeState.PREFLIGHTED: frozenset({NodeState.TRUSTED}),
     NodeState.TRUSTED: frozenset({NodeState.ENROLLED}),
@@ -40,6 +44,7 @@ _ALLOWED_TRANSITIONS = {
     NodeState.DECOMMISSIONED: frozenset(),
 }
 
+
 @dataclass(frozen=True, slots=True)
 class NodeDescriptor:
     node_id: str
@@ -48,7 +53,9 @@ class NodeDescriptor:
     capabilities: tuple[str, ...]
 
     @classmethod
-    def create(cls, *, node_id: str, hostname: str, state: NodeState, capabilities: Iterable[str]) -> "NodeDescriptor":
+    def create(
+        cls, *, node_id: str, hostname: str, state: NodeState, capabilities: Iterable[str]
+    ) -> "NodeDescriptor":
         if NODE_ID.fullmatch(node_id) is None or HOSTNAME.fullmatch(hostname) is None:
             raise NodeManagerError("invalid_node_identity")
         if not isinstance(state, NodeState):
@@ -57,6 +64,27 @@ class NodeDescriptor:
         if any(NODE_ID.fullmatch(item) is None for item in normalized):
             raise NodeManagerError("invalid_capability")
         return cls(node_id=node_id, hostname=hostname, state=state, capabilities=normalized)
+
+
+@dataclass(frozen=True, slots=True)
+class NodeLifecyclePlan:
+    node_id: str
+    action: str
+    state: str
+    blockers: tuple[str, ...]
+    production_activation_enabled: bool = False
+    schema: str = field(default="home-center.node-lifecycle-plan.v1", init=False)
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "schema": self.schema,
+            "node_id": self.node_id,
+            "action": self.action,
+            "state": self.state,
+            "blockers": list(self.blockers),
+            "production_activation_enabled": self.production_activation_enabled,
+        }
+
 
 @dataclass(frozen=True, slots=True)
 class NodeTransitionPlan:
@@ -67,6 +95,18 @@ class NodeTransitionPlan:
     blockers: tuple[str, ...]
     production_mutation_enabled: bool = False
     schema: str = field(default="home-center.node-transition-plan.v2", init=False)
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "schema": self.schema,
+            "node_id": self.node_id,
+            "from_state": self.from_state.value,
+            "to_state": self.to_state.value,
+            "state": self.state,
+            "blockers": list(self.blockers),
+            "production_mutation_enabled": self.production_mutation_enabled,
+        }
+
 
 class NodeManager:
     def __init__(self, nodes: Iterable[NodeDescriptor] = ()) -> None:
@@ -84,10 +124,23 @@ class NodeManager:
     def list_nodes(self) -> tuple[NodeDescriptor, ...]:
         return tuple(self._nodes[key] for key in sorted(self._nodes))
 
-    def plan_transition(self, node_id: str, target_state: NodeState, *, trust_valid: bool = True, capabilities_known: bool = True, health_ok: bool = True, quorum_safe: bool = True, mandatory_services_safe: bool = True) -> NodeTransitionPlan:
+    def plan_transition(
+        self,
+        node_id: str,
+        target_state: NodeState,
+        *,
+        trust_valid: bool = True,
+        capabilities_known: bool = True,
+        health_ok: bool = True,
+        quorum_safe: bool = True,
+        mandatory_services_safe: bool = True,
+    ) -> NodeTransitionPlan:
         node = self._nodes.get(node_id)
         if node is None:
             raise NodeManagerError("node_not_found")
+        if not isinstance(target_state, NodeState):
+            raise NodeManagerError("invalid_target_state")
+
         blockers: list[str] = []
         if target_state not in _ALLOWED_TRANSITIONS[node.state]:
             blockers.append("transition_not_allowed")
@@ -102,4 +155,29 @@ class NodeManager:
                 blockers.append("quorum_not_safe")
             if not mandatory_services_safe:
                 blockers.append("mandatory_services_not_safe")
-        return NodeTransitionPlan(node_id=node_id, from_state=node.state, to_state=target_state, state="blocked" if blockers else "planned", blockers=tuple(blockers))
+
+        return NodeTransitionPlan(
+            node_id=node_id,
+            from_state=node.state,
+            to_state=target_state,
+            state="blocked" if blockers else "planned",
+            blockers=tuple(blockers),
+        )
+
+    def plan_drain(self, node_id: str, *, quorum_safe: bool, mandatory_services_safe: bool) -> NodeLifecyclePlan:
+        node = self._nodes.get(node_id)
+        if node is None:
+            raise NodeManagerError("node_not_found")
+        blockers: list[str] = []
+        if node.state not in {NodeState.ACTIVE, NodeState.READY, NodeState.MAINTENANCE}:
+            blockers.append("node_state_not_drainable")
+        if not quorum_safe:
+            blockers.append("quorum_not_safe")
+        if not mandatory_services_safe:
+            blockers.append("mandatory_services_not_safe")
+        return NodeLifecyclePlan(
+            node_id=node_id,
+            action="drain",
+            state="blocked" if blockers else "planned",
+            blockers=tuple(blockers),
+        )

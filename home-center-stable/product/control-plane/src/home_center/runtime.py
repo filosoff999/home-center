@@ -14,8 +14,11 @@ from .ad_auth import AdAuthenticator
 from .auth import LoginRateLimiter, SessionManager
 from .config import Config
 from .external_access import ExternalAccessPolicy, ExternalRequestRateLimiter
+from .helper_client import HelperClientError, rotate_local_admin_password
+from .intent_service import IntentPlanningService
 from .local_admin_auth import LocalAdminCredentialStore
 from .reconcile import Reconciler
+from .resource_snapshot import build_resource_snapshot
 from .store import StateStore
 from .util import sha256_file, utc_now
 
@@ -34,6 +37,7 @@ class Runtime:
             expected_gid=os.getegid(),
             expected_mode=0o640,
         )
+        self.local_admin_password_rotator = rotate_local_admin_password
         self.sessions = SessionManager(config.session_key_file)
         self.login_limiter = LoginRateLimiter()
         self.ad_auth = AdAuthenticator(config.ad_auth)
@@ -45,7 +49,42 @@ class Runtime:
         )
         self.external_request_limiter = ExternalRequestRateLimiter()
         self.actions = ActionRegistry(config.node_id, self.store)
+        self.intents = IntentPlanningService(resource_snapshot_provider=self.resource_snapshot)
         self.reconciler = Reconciler(config, self.store)
+
+    def change_local_admin_password(self, current_password: str, new_password: str) -> None:
+        """Rotate through the root helper, then reload only validated local state."""
+
+        result = self.local_admin_password_rotator(
+            self.local_admin.username,
+            current_password,
+            new_password,
+        )
+        if result.get("status") != "succeeded":
+            reason = result.get("reason")
+            raise HelperClientError(reason if isinstance(reason, str) else "credential_rotation_failed")
+        self.local_admin = LocalAdminCredentialStore(
+            self.config.local_admin_credentials_file,
+            expected_uid=self.local_admin.expected_uid,
+            expected_gid=self.local_admin.expected_gid,
+            expected_mode=self.local_admin.expected_mode,
+        )
+
+    def authenticate_local_admin(self, username: str, password: str) -> str | None:
+        """Reload the atomic verifier before every local authentication.
+
+        This makes an offline, local-console recovery effective without a
+        service restart while retaining exact metadata validation.
+        """
+
+        current = LocalAdminCredentialStore(
+            self.config.local_admin_credentials_file,
+            expected_uid=self.local_admin.expected_uid,
+            expected_gid=self.local_admin.expected_gid,
+            expected_mode=self.local_admin.expected_mode,
+        )
+        self.local_admin = current
+        return current.authenticate(username, password)
 
     def start(self) -> None:
         self.store.audit(
@@ -108,6 +147,15 @@ class Runtime:
             "audit_head": self.store.verify_audit_chain(),
         }
 
+    def resource_snapshot(self) -> dict[str, Any]:
+        """Return validated capacity facts from persisted node observations only."""
+
+        return build_resource_snapshot(
+            cluster_id=self.config.cluster_id,
+            expected_nodes=len(self.profile["spec"]["nodes"]),
+            nodes=self.store.nodes(),
+        )
+
     def backup_inventory(self) -> list[dict[str, Any]]:
         items: list[dict[str, Any]] = []
         if not self.config.backup_dir.exists():
@@ -124,9 +172,9 @@ class Runtime:
     @staticmethod
     def _load_profile(path: Path) -> dict[str, Any]:
         value = json.loads(path.read_text(encoding="utf-8"))
-        if value.get("schema") not in {"home-center.deployment-profile.v1", "home-center.deployment-profile.v2"}:
+        if value.get("schema") != "home-center.deployment-profile.v1":
             raise ValueError("unsupported deployment profile")
         nodes = value.get("spec", {}).get("nodes", [])
-        if not isinstance(nodes, list) or not 1 <= len(nodes) <= 64:
-            raise ValueError("deployment profile node count must be between 1 and 64")
+        if not isinstance(nodes, list) or len(nodes) != 2:
+            raise ValueError("example.invalid profile must contain exactly two nodes")
         return value

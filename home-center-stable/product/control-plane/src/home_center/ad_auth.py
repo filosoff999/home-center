@@ -44,7 +44,7 @@ class AdAuthConfig:
     def disabled(cls) -> "AdAuthConfig":
         return cls(
             enabled=False,
-            realm="EXAMPLE.INTERNAL",
+            realm="example.invalid",
             kdc_hosts=(),
             allowed_admin_groups=(),
             timeout_seconds=5,

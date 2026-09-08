@@ -9,6 +9,8 @@ from enum import StrEnum
 from types import MappingProxyType
 from typing import Any, Iterable, Mapping
 
+from ..module_admission import ModuleAdmissionError, ModuleInstallAdmission, validate_module_admission
+from ..module_manifest import MODULE_ID
 from .policy_engine import AccessMode, PolicyEngine
 
 
@@ -455,7 +457,7 @@ class IntentEngine:
         parameters = request.parameters
         _exact_parameters(parameters, {"module_id", "version", "permissions_acknowledged"})
         module_id = _bounded(
-            parameters["module_id"], minimum=2, maximum=128, pattern=IDENTIFIER, code="invalid_module_id"
+            parameters["module_id"], minimum=2, maximum=128, pattern=MODULE_ID, code="invalid_module_id"
         )
         version = _bounded(
             parameters["version"], minimum=5, maximum=64, pattern=SEMVER, code="invalid_module_version"
@@ -463,6 +465,10 @@ class IntentEngine:
         acknowledged = _boolean(
             parameters["permissions_acknowledged"], code="invalid_permissions_acknowledgement"
         )
+        try:
+            validate_module_admission(ModuleInstallAdmission(module_id=module_id))
+        except ModuleAdmissionError as exc:
+            return self._blocked(request, exc.code)
         if not acknowledged:
             return self._blocked(request, "module_permissions_not_acknowledged")
         step = IntentStep(
