@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build and verify the Home Center 0.14.1 public release candidate."""
+"""Build and verify a versioned Home Center public release candidate."""
 
 from __future__ import annotations
 
@@ -18,14 +18,41 @@ import subprocess
 import sys
 import tarfile
 import tempfile
+import tomllib
 from pathlib import Path, PurePosixPath
 from typing import Any, Iterator, Mapping, Sequence
 
 
 PRODUCT = "home-center"
-VERSION = "0.14.1"
-TAG = "v0.14.1"
 SOURCE_MANIFEST = "SOURCE-MANIFEST.sha256"
+SEMVER = re.compile(r"^(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)$")
+HEX40 = re.compile(r"^[0-9a-f]{40}$")
+HEX64 = re.compile(r"^[0-9a-f]{64}$")
+
+
+class PublicReleaseError(RuntimeError):
+    def __init__(self, code: str) -> None:
+        super().__init__(code)
+        self.code = code
+
+
+def _tool_version() -> str:
+    path = Path(__file__).resolve().parents[2] / "VERSION"
+    try:
+        info = path.lstat()
+        if not stat.S_ISREG(info.st_mode) or stat.S_ISLNK(info.st_mode) or info.st_size > 64:
+            raise PublicReleaseError("release_version_invalid")
+        payload = path.read_bytes()
+        value = payload.decode("ascii").removesuffix("\n")
+    except (OSError, UnicodeDecodeError) as exc:
+        raise PublicReleaseError("release_version_invalid") from exc
+    if payload != (value + "\n").encode("ascii") or SEMVER.fullmatch(value) is None:
+        raise PublicReleaseError("release_version_invalid")
+    return value
+
+
+VERSION = _tool_version()
+TAG = f"v{VERSION}"
 RUNTIME_ARCHIVE = f"home-center-{VERSION}-linux-amd64.tar.gz"
 SOURCE_ARCHIVE = f"home-center-{VERSION}-source.tar.gz"
 SBOM_NAME = f"home-center-{VERSION}.spdx.json"
@@ -34,20 +61,12 @@ RELEASE_MANIFEST_NAME = f"home-center-{VERSION}.release-manifest.json"
 CHECKSUMS_NAME = "SHA256SUMS"
 PAYLOAD_NAMES = (RUNTIME_ARCHIVE, SOURCE_ARCHIVE, SBOM_NAME, ACCEPTANCE_NAME, RELEASE_MANIFEST_NAME)
 RELEASE_NAMES = (*PAYLOAD_NAMES, CHECKSUMS_NAME)
-HEX40 = re.compile(r"^[0-9a-f]{40}$")
-HEX64 = re.compile(r"^[0-9a-f]{64}$")
 MAX_JSON_BYTES = 16 * 1024 * 1024
 MAX_ARCHIVE_MEMBERS = 20_000
 MAX_ARCHIVE_MEMBER_BYTES = 64 * 1024 * 1024
 MAX_ARCHIVE_EXPANDED_BYTES = 256 * 1024 * 1024
 EXCLUDED_TREE_PARTS = frozenset({".git", "__pycache__"})
 FORBIDDEN_TREE_PARTS = frozenset({".hc-dev", ".idea", ".vscode", "dist", "docs", "ops", "secrets"})
-
-
-class PublicReleaseError(RuntimeError):
-    def __init__(self, code: str) -> None:
-        super().__init__(code)
-        self.code = code
 
 
 def _fail(code: str) -> None:
@@ -200,7 +219,10 @@ def create_source_manifest(root: Path) -> Path:
 
 
 def verify_source_manifest(root: Path) -> None:
+    _require(strict_release_version(root) == VERSION, "release_version_mismatch")
     target = root / SOURCE_MANIFEST
+    info = _regular(target, "source_manifest_rejected")
+    _require(info.st_size <= MAX_JSON_BYTES, "source_manifest_too_large")
     sums = _parse_sums(target.read_text(encoding="ascii"), "source_manifest_invalid")
     expected = {
         relative: sha256_file(path)
@@ -240,8 +262,38 @@ def strict_source_version(root: Path) -> str:
             if isinstance(node.target, ast.Name) and node.target.id == "__version__":
                 _fail("runtime_version_invalid")
     _require(len(values) == 1, "runtime_version_invalid")
-    _require(re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", values[0]) is not None, "runtime_version_invalid")
+    _require(SEMVER.fullmatch(values[0]) is not None, "runtime_version_invalid")
     return values[0]
+
+
+def strict_release_version(root: Path) -> str:
+    """Read the canonical VERSION and require all source identities to match it."""
+
+    path = root / "VERSION"
+    info = _regular(path, "release_version_file_rejected")
+    _require(info.st_size <= 64, "release_version_invalid")
+    try:
+        payload = path.read_bytes()
+        version = payload.decode("ascii").removesuffix("\n")
+    except (OSError, UnicodeDecodeError) as exc:
+        raise PublicReleaseError("release_version_invalid") from exc
+    _require(
+        payload == (version + "\n").encode("ascii")
+        and SEMVER.fullmatch(version) is not None,
+        "release_version_invalid",
+    )
+    _require(strict_source_version(root) == version, "runtime_version_mismatch")
+    pyproject_path = root / "pyproject.toml"
+    _regular(pyproject_path, "project_metadata_rejected")
+    try:
+        project = tomllib.loads(pyproject_path.read_text(encoding="utf-8")).get("project")
+    except (OSError, UnicodeDecodeError, tomllib.TOMLDecodeError) as exc:
+        raise PublicReleaseError("project_metadata_rejected") from exc
+    _require(
+        isinstance(project, dict) and project.get("version") == version,
+        "project_version_mismatch",
+    )
+    return version
 
 
 def require_exact_public_head(root: Path, revision: str) -> None:
@@ -398,7 +450,7 @@ def build_archives(source_root: Path, output_root: Path, revision: str, epoch: i
     source_root = source_root.resolve()
     output_root = output_root.resolve()
     _require(HEX40.fullmatch(revision) is not None, "revision_rejected")
-    _require(strict_source_version(source_root) == VERSION, "runtime_version_mismatch")
+    _require(strict_release_version(source_root) == VERSION, "release_version_mismatch")
     if check_head:
         require_exact_public_head(source_root, revision)
     verify_source_manifest(source_root)
@@ -553,7 +605,7 @@ def generate_acceptance(root: Path, runtime_a: Path, runtime_b: Path, source_a: 
         "product": PRODUCT,
         "qualification_id": "",
         "revision": revision,
-        "schema": "home-center.public-release-acceptance.0.14.1.v1",
+        "schema": "home-center.public-release-acceptance.v1",
         "source_date_epoch": epoch,
         "status": "PASS",
         "version": VERSION,
@@ -578,7 +630,7 @@ def validate_acceptance(path: Path, root: Path, revision: str, epoch: int) -> di
         "acceptance_invalid",
     )
     _require(
-        value.get("schema") == "home-center.public-release-acceptance.0.14.1.v1"
+        value.get("schema") == "home-center.public-release-acceptance.v1"
         and value.get("product") == PRODUCT
         and value.get("version") == VERSION
         and value.get("revision") == revision
@@ -732,6 +784,8 @@ def _parser() -> argparse.ArgumentParser:
     verify.add_argument("--release-json", type=Path)
     source = commands.add_parser("verify-source")
     source.add_argument("--source-root", type=Path, required=True)
+    version = commands.add_parser("source-version")
+    version.add_argument("--source-root", type=Path, required=True)
     return parser
 
 
@@ -744,12 +798,17 @@ def main(argv: Sequence[str] | None = None) -> int:
             verify_bundle(args.directory, args.revision, args.source_date_epoch, args.release_json)
         elif args.command == "verify-source":
             verify_source_manifest(args.source_root)
+        elif args.command == "source-version":
+            version = strict_release_version(args.source_root)
+            _require(version == VERSION, "release_version_mismatch")
+            print(version)
+            return 0
         else:  # pragma: no cover
             _fail("command_rejected")
     except PublicReleaseError as exc:
-        print(f"PUBLIC_RELEASE_0141=FAIL code={exc.code}", file=sys.stderr)
+        print(f"PUBLIC_RELEASE=FAIL version={VERSION} code={exc.code}", file=sys.stderr)
         return 1
-    print(f"PUBLIC_RELEASE_0141=PASS command={args.command}")
+    print(f"PUBLIC_RELEASE=PASS version={VERSION} command={args.command}")
     return 0
 
 

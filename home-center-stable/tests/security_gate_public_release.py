@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import ast
+import json
 import re
 from pathlib import Path
 
@@ -12,7 +13,7 @@ SOURCE_MANIFEST = ROOT / "SOURCE-MANIFEST.sha256"
 
 def require(condition: bool, message: str) -> None:
     if not condition:
-        raise SystemExit(f"SECURITY_GATE_PUBLIC_0141_FAIL: {message}")
+        raise SystemExit(f"SECURITY_GATE_PUBLIC_RELEASE_FAIL: {message}")
 
 
 def main() -> int:
@@ -22,6 +23,16 @@ def main() -> int:
         {path.name for path in (ROOT / "contracts/openapi").iterdir()} == {"home-center.v1.openapi.json"},
         "OpenAPI is not consolidated",
     )
+    release_contracts = {
+        "public-release-acceptance.v1.schema.json",
+        "public-release-manifest.v1.schema.json",
+    }
+    require(
+        {path.name for path in (ROOT / "contracts/releases").iterdir()} == release_contracts,
+        "release contracts are not generic",
+    )
+    for name in release_contracts:
+        json.loads((ROOT / "contracts/releases" / name).read_text(encoding="utf-8"))
 
     forbidden_modules = {
         "module_artifact.py",
@@ -79,12 +90,19 @@ def main() -> int:
                 failures.append(f"{path.relative_to(ROOT)}:{fragment}")
     require(not failures, "deployment or cross-product marker: " + ",".join(failures[:10]))
 
-    for tool in (ROOT / "deploy/scripts/build-release.py",):
+    build_tool = ROOT / "deploy/scripts/build-release.py"
+    for tool in (build_tool,):
         tree = ast.parse(tool.read_text(encoding="utf-8"), filename=str(tool))
         for node in ast.walk(tree):
             if not isinstance(node, ast.Call):
                 continue
-            name = node.func.id if isinstance(node.func, ast.Name) else node.func.attr if isinstance(node.func, ast.Attribute) else ""
+            name = (
+                node.func.id
+                if isinstance(node.func, ast.Name)
+                else node.func.attr
+                if isinstance(node.func, ast.Attribute)
+                else ""
+            )
             require(name not in {"eval", "exec", "extract", "extractall", "system"}, f"unsafe primitive: {name}")
             if name in {"run", "Popen", "call", "check_call", "check_output"}:
                 require(
@@ -97,14 +115,53 @@ def main() -> int:
                     "subprocess shell=True",
                 )
 
-    workflows = "\n".join(path.read_text(encoding="utf-8") for path in sorted((ROOT / ".github/workflows").glob("*.yml")))
+    concrete_semver = re.compile(
+        r"(?<![0-9])(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)(?![0-9])"
+    )
+    for path in (
+        ROOT / "deploy/scripts/build-release.py",
+        ROOT / "deploy/scripts/install.sh",
+        ROOT / "deploy/scripts/verify-artifact.sh",
+    ):
+        require(concrete_semver.search(path.read_text(encoding="utf-8")) is None, f"hardcoded version: {path.name}")
+
+    current_version = (ROOT / "VERSION").read_text(encoding="ascii").removesuffix("\n")
+    release_workflow = (ROOT / ".github/workflows/release.yml").read_text(encoding="utf-8")
+    verify_workflow = (ROOT / ".github/workflows/verify.yml").read_text(encoding="utf-8")
+    workflows = release_workflow + "\n" + verify_workflow
     uses = re.findall(r"^\s*-?\s*uses:\s*([^\s#]+)", workflows, re.MULTILINE)
     require(bool(uses), "workflow actions missing")
     require(all(re.fullmatch(r"[^@\s]+@[0-9a-f]{40}", item) for item in uses), "workflow action not pinned")
     require("workflow_dispatch" not in workflows, "manual release entrypoint present")
-    require("github.repository == 'ControlCenterSoft/home-center-stable'" in workflows, "repository guard missing")
+    require("pull_request_target" not in workflows, "privileged pull request trigger present")
+    require(
+        "github.repository == 'ControlCenterSoft/home-center-stable'" in release_workflow
+        and "github.repository == 'ControlCenterSoft/home-center-stable'" in verify_workflow,
+        "repository guard missing",
+    )
+    version_specific_release_tokens = (
+        f"release/{current_version}",
+        f"Home Center {current_version}",
+        f"home-center-{current_version}-linux",
+        f"home-center-{current_version}-source",
+    )
+    require(
+        not any(token in release_workflow for token in version_specific_release_tokens),
+        "release workflow hardcodes current version identity",
+    )
+    require("startsWith(github.ref_name, 'release/')" in release_workflow, "release branch gate missing")
+    require('release_branch="release/$version"' in release_workflow, "VERSION-derived branch missing")
+    require('release_tag="v$version"' in release_workflow, "VERSION-derived tag missing")
+    require(release_workflow.count("main_record=") == 2, "exact main is not checked twice")
+    require(release_workflow.count("require_tag_vacant \"") == 2, "tag vacancy is not checked twice")
+    require(release_workflow.count("require_release_vacant \"") == 2, "release vacancy is not checked twice")
+    require("artifact-ids: ${{ needs.qualify.outputs.artifact_id }}" in release_workflow, "qualified artifact ID is not reused")
+    require(release_workflow.count("build-release.py candidate") == 1, "candidate must be built exactly once")
+    require("deploy/scripts/install.sh" not in release_workflow, "publication workflow performs deployment")
+    require('python-version: ["3.12", "3.13", "3.14"]' in release_workflow, "release Python matrix incomplete")
+    require('python-version: ["3.12", "3.13", "3.14"]' in verify_workflow, "Python matrix incomplete")
 
-    print("SECURITY_GATE_PUBLIC_0141=PASS")
+    print(f"SECURITY_GATE_PUBLIC_RELEASE=PASS version={current_version}")
     return 0
 
 

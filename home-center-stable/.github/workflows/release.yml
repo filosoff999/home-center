@@ -1,28 +1,82 @@
-name: Publish Home Center 0.14.1
+name: Publish versioned Home Center stable release
 
 on:
   create:
 
 concurrency:
-  group: publish-home-center-v0.14.1
+  group: publish-home-center-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
+  test:
+    if: >-
+      github.repository == 'ControlCenterSoft/home-center-stable' &&
+      github.ref_type == 'branch' &&
+      startsWith(github.ref_name, 'release/')
+    name: Release gate Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12", "3.13", "3.14"]
+    env:
+      EXPECTED_SHA: ${{ github.sha }}
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - name: Checkout exact release commit
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          ref: ${{ env.EXPECTED_SHA }}
+
+      - name: Establish exact source identity
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA" || { echo EXACT_HEAD_MISMATCH >&2; exit 66; }
+          test -z "$(git status --porcelain=v1 --untracked-files=all)" || { echo SOURCE_TREE_DIRTY >&2; exit 66; }
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: ""
+
+      - name: Run public product and security gates
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 deploy/scripts/build-release.py verify-source --source-root .
+          PYTHONPATH=product/control-plane/src python3 -m unittest -v tests/test_public_release.py
+          python3 tests/security_gate_public_release.py
+          PYTHONPATH=product/control-plane/src python3 -c 'import home_center.actions, home_center.api, home_center.module_admission, home_center.server'
+          test -z "$(git status --porcelain=v1 --untracked-files=all)" || { echo SOURCE_TREE_MUTATED >&2; exit 66; }
+
   qualify:
     if: >-
       github.repository == 'ControlCenterSoft/home-center-stable' &&
       github.ref_type == 'branch' &&
-      github.ref_name == 'release/0.14.1'
+      startsWith(github.ref_name, 'release/')
     name: Qualify exact release branch
+    needs: test
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
       contents: read
     outputs:
+      artifact_id: ${{ steps.upload.outputs.artifact-id }}
+      candidate_name: ${{ steps.identity.outputs.candidate_name }}
+      release_branch: ${{ steps.identity.outputs.release_branch }}
+      release_tag: ${{ steps.identity.outputs.release_tag }}
       source_date_epoch: ${{ steps.identity.outputs.source_date_epoch }}
+      version: ${{ steps.identity.outputs.version }}
     env:
+      CREATED_BRANCH: ${{ github.ref_name }}
       REVISION: ${{ github.sha }}
-      CANDIDATE_NAME: home-center-release-${{ github.sha }}
       PYTHONDONTWRITEBYTECODE: "1"
     steps:
       - name: Checkout exact release commit
@@ -32,47 +86,81 @@ jobs:
           persist-credentials: false
           ref: ${{ env.REVISION }}
 
-      - name: Verify exact main identity and release vacancy
-        id: identity
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: v0.14.1
-        run: |
-          set -Eeuo pipefail
-          [[ "$REVISION" =~ ^[0-9a-f]{40}$ ]] || { echo REVISION_REJECTED >&2; exit 64; }
-          test "$(git rev-parse HEAD)" = "$REVISION" || { echo EXACT_HEAD_MISMATCH >&2; exit 66; }
-          test -z "$(git status --porcelain=v1 --untracked-files=all)" || { echo SOURCE_TREE_DIRTY >&2; exit 66; }
-          main_head="$(git ls-remote --exit-code origin refs/heads/main | awk '{print $1}')"
-          test "$main_head" = "$REVISION" || { echo MAIN_HEAD_MISMATCH >&2; exit 66; }
-          if git ls-remote --exit-code origin "refs/tags/$RELEASE_TAG" >/dev/null 2>&1; then
-            echo RELEASE_TAG_ALREADY_EXISTS >&2; exit 66
-          fi
-          if gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" >/dev/null 2>&1; then
-            echo RELEASE_ALREADY_EXISTS >&2; exit 66
-          fi
-          epoch="$(git show -s --format=%ct "$REVISION")"
-          [[ "$epoch" =~ ^[1-9][0-9]{8,11}$ ]] || { echo SOURCE_DATE_EPOCH_REJECTED >&2; exit 66; }
-          echo "source_date_epoch=$epoch" >> "$GITHUB_OUTPUT"
-
       - name: Set up Python
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: "3.12"
           cache: ""
 
+      - name: Verify version, exact main identity, and release vacancy
+        id: identity
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -Eeuo pipefail
+          fail() { echo "$1" >&2; exit 66; }
+          require_tag_vacant() {
+            local output status
+            set +e
+            output="$(git ls-remote --exit-code origin "refs/tags/$1" 2>&1)"
+            status=$?
+            set -e
+            case "$status" in
+              0) fail RELEASE_TAG_ALREADY_EXISTS ;;
+              2) test -z "$output" || fail RELEASE_TAG_VACANCY_AMBIGUOUS ;;
+              *) printf '%s\n' "$output" >&2; fail RELEASE_TAG_VACANCY_CHECK_FAILED ;;
+            esac
+          }
+          require_release_vacant() {
+            local error_file="$RUNNER_TEMP/release-vacancy.err"
+            if gh api "repos/$GITHUB_REPOSITORY/releases/tags/$1" >/dev/null 2>"$error_file"; then
+              fail RELEASE_ALREADY_EXISTS
+            fi
+            grep -Eq '\(HTTP 404\)$' "$error_file" || {
+              cat "$error_file" >&2
+              fail RELEASE_VACANCY_CHECK_FAILED
+            }
+          }
+
+          [[ "$REVISION" =~ ^[0-9a-f]{40}$ ]] || { echo REVISION_REJECTED >&2; exit 64; }
+          test "$(git rev-parse HEAD)" = "$REVISION" || fail EXACT_HEAD_MISMATCH
+          test -z "$(git status --porcelain=v1 --untracked-files=all)" || fail SOURCE_TREE_DIRTY
+
+          version="$(python3 deploy/scripts/build-release.py source-version --source-root .)"
+          [[ "$version" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]] || fail VERSION_REJECTED
+          release_branch="release/$version"
+          release_tag="v$version"
+          test "$CREATED_BRANCH" = "$release_branch" || fail RELEASE_BRANCH_VERSION_MISMATCH
+
+          main_record="$(git ls-remote --exit-code origin refs/heads/main)" || fail MAIN_IDENTITY_CHECK_FAILED
+          [[ "$main_record" == "$REVISION"$'\trefs/heads/main' ]] || fail MAIN_HEAD_MISMATCH
+          require_tag_vacant "$release_tag"
+          require_release_vacant "$release_tag"
+
+          epoch="$(git show -s --format=%ct "$REVISION")"
+          [[ "$epoch" =~ ^[1-9][0-9]{8,11}$ ]] || fail SOURCE_DATE_EPOCH_REJECTED
+          candidate_name="home-center-$version-qualified-$REVISION"
+          echo "candidate_name=$candidate_name" >> "$GITHUB_OUTPUT"
+          echo "release_branch=$release_branch" >> "$GITHUB_OUTPUT"
+          echo "release_tag=$release_tag" >> "$GITHUB_OUTPUT"
+          echo "source_date_epoch=$epoch" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
       - name: Run public product gates
         shell: bash
         run: |
           set -Eeuo pipefail
           python3 deploy/scripts/build-release.py verify-source --source-root .
-          PYTHONPATH=product/control-plane/src python3 tests/test_public_release_0141.py -v
-          python3 tests/security_gate_public_0141.py
+          PYTHONPATH=product/control-plane/src python3 -m unittest -v tests/test_public_release.py
+          python3 tests/security_gate_public_release.py
+          PYTHONPATH=product/control-plane/src python3 -c 'import home_center.actions, home_center.api, home_center.module_admission, home_center.server'
           test -z "$(git status --porcelain=v1 --untracked-files=all)" || { echo SOURCE_TREE_MUTATED >&2; exit 66; }
 
       - name: Build and verify the release candidate once
         shell: bash
         env:
+          CANDIDATE_NAME: ${{ steps.identity.outputs.candidate_name }}
           SOURCE_DATE_EPOCH: ${{ steps.identity.outputs.source_date_epoch }}
         run: |
           set -Eeuo pipefail
@@ -89,14 +177,16 @@ jobs:
           test -z "$(git status --porcelain=v1 --untracked-files=all)" || { echo SOURCE_TREE_MUTATED >&2; exit 66; }
 
       - name: Upload exact qualified candidate
+        id: upload
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: ${{ env.CANDIDATE_NAME }}
-          path: ${{ runner.temp }}/${{ env.CANDIDATE_NAME }}/*
+          name: ${{ steps.identity.outputs.candidate_name }}
+          path: ${{ runner.temp }}/${{ steps.identity.outputs.candidate_name }}/*
           if-no-files-found: error
           retention-days: 14
           compression-level: 0
           overwrite: false
+          include-hidden-files: false
 
   publish:
     name: Publish reused candidate
@@ -107,11 +197,14 @@ jobs:
       actions: read
       contents: write
     env:
+      CREATED_BRANCH: ${{ github.ref_name }}
       GH_TOKEN: ${{ github.token }}
+      QUALIFIED_ARTIFACT_ID: ${{ needs.qualify.outputs.artifact_id }}
+      RELEASE_BRANCH: ${{ needs.qualify.outputs.release_branch }}
+      RELEASE_TAG: ${{ needs.qualify.outputs.release_tag }}
       REVISION: ${{ github.sha }}
       SOURCE_DATE_EPOCH: ${{ needs.qualify.outputs.source_date_epoch }}
-      RELEASE_TAG: v0.14.1
-      CANDIDATE_NAME: home-center-release-${{ github.sha }}
+      VERSION: ${{ needs.qualify.outputs.version }}
       PYTHONDONTWRITEBYTECODE: "1"
     steps:
       - name: Checkout the same qualified commit
@@ -124,26 +217,55 @@ jobs:
       - name: Download the exact candidate from this run
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
-          name: ${{ env.CANDIDATE_NAME }}
+          artifact-ids: ${{ needs.qualify.outputs.artifact_id }}
           path: ${{ runner.temp }}/candidate
+          merge-multiple: true
 
-      - name: Recheck identity, vacancy, and candidate
+      - name: Recheck identity, vacancy, and qualified candidate
         shell: bash
         run: |
           set -Eeuo pipefail
-          test "$(git rev-parse HEAD)" = "$REVISION" || { echo EXACT_HEAD_MISMATCH >&2; exit 66; }
-          main_head="$(git ls-remote --exit-code origin refs/heads/main | awk '{print $1}')"
-          test "$main_head" = "$REVISION" || { echo MAIN_HEAD_MISMATCH >&2; exit 66; }
-          if git ls-remote --exit-code origin "refs/tags/$RELEASE_TAG" >/dev/null 2>&1; then
-            echo RELEASE_TAG_ALREADY_EXISTS >&2; exit 66
-          fi
-          if gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" >/dev/null 2>&1; then
-            echo RELEASE_ALREADY_EXISTS >&2; exit 66
-          fi
+          fail() { echo "$1" >&2; exit 66; }
+          require_tag_vacant() {
+            local output status
+            set +e
+            output="$(git ls-remote --exit-code origin "refs/tags/$1" 2>&1)"
+            status=$?
+            set -e
+            case "$status" in
+              0) fail RELEASE_TAG_ALREADY_EXISTS ;;
+              2) test -z "$output" || fail RELEASE_TAG_VACANCY_AMBIGUOUS ;;
+              *) printf '%s\n' "$output" >&2; fail RELEASE_TAG_VACANCY_CHECK_FAILED ;;
+            esac
+          }
+          require_release_vacant() {
+            local error_file="$RUNNER_TEMP/release-vacancy.err"
+            if gh api "repos/$GITHUB_REPOSITORY/releases/tags/$1" >/dev/null 2>"$error_file"; then
+              fail RELEASE_ALREADY_EXISTS
+            fi
+            grep -Eq '\(HTTP 404\)$' "$error_file" || {
+              cat "$error_file" >&2
+              fail RELEASE_VACANCY_CHECK_FAILED
+            }
+          }
+
+          [[ "$QUALIFIED_ARTIFACT_ID" =~ ^[1-9][0-9]*$ ]] || fail QUALIFIED_ARTIFACT_ID_REJECTED
+          test "$(git rev-parse HEAD)" = "$REVISION" || fail EXACT_HEAD_MISMATCH
+          test -z "$(git status --porcelain=v1 --untracked-files=all)" || fail SOURCE_TREE_DIRTY
+          source_version="$(python3 deploy/scripts/build-release.py source-version --source-root .)"
+          test "$source_version" = "$VERSION" || fail QUALIFIED_VERSION_MISMATCH
+          test "$CREATED_BRANCH" = "$RELEASE_BRANCH" || fail RELEASE_BRANCH_CHANGED
+          test "$RELEASE_BRANCH" = "release/$VERSION" || fail RELEASE_BRANCH_VERSION_MISMATCH
+          test "$RELEASE_TAG" = "v$VERSION" || fail RELEASE_TAG_VERSION_MISMATCH
+
           python3 deploy/scripts/build-release.py verify \
             --directory "$RUNNER_TEMP/candidate" \
             --revision "$REVISION" \
             --source-date-epoch "$SOURCE_DATE_EPOCH"
+          main_record="$(git ls-remote --exit-code origin refs/heads/main)" || fail MAIN_IDENTITY_CHECK_FAILED
+          [[ "$main_record" == "$REVISION"$'\trefs/heads/main' ]] || fail MAIN_HEAD_MISMATCH
+          require_tag_vacant "$RELEASE_TAG"
+          require_release_vacant "$RELEASE_TAG"
 
       - name: Create annotated release tag
         shell: bash
@@ -151,7 +273,7 @@ jobs:
           set -Eeuo pipefail
           tag_object="$(gh api -X POST "repos/$GITHUB_REPOSITORY/git/tags" \
             -f tag="$RELEASE_TAG" \
-            -f message='Home Center 0.14.1' \
+            -f message="Home Center $VERSION" \
             -f object="$REVISION" \
             -f type='commit' --jq .sha)"
           [[ "$tag_object" =~ ^[0-9a-f]{40}$ ]] || { echo TAG_OBJECT_REJECTED >&2; exit 66; }
@@ -165,14 +287,14 @@ jobs:
           set -Eeuo pipefail
           notes="$RUNNER_TEMP/release-notes.md"
           printf '%s\n' \
-            'Home Center 0.14.1 corrective release.' \
+            "Home Center $VERSION stable release." \
             '' \
             'Verify the downloaded files with SHA256SUMS, then inspect the embedded manifests, SPDX 2.3 SBOM, acceptance record, and release manifest before installation.' \
             > "$notes"
           gh release create "$RELEASE_TAG" "$RUNNER_TEMP/candidate/"* \
             --verify-tag \
             --draft \
-            --title 'Home Center 0.14.1' \
+            --title "Home Center $VERSION" \
             --notes-file "$notes"
           gh release edit "$RELEASE_TAG" --draft=false --prerelease=false --latest
 
@@ -204,4 +326,5 @@ jobs:
           if resolved != os.environ["REVISION"]:
               raise SystemExit("RELEASE_TAG_TARGET_MISMATCH")
           PY
-          echo 'HOME_CENTER_PUBLIC_RELEASE_0_14_1=PASS exact_head=true artifact_reused=true' >> "$GITHUB_STEP_SUMMARY"
+          printf 'HOME_CENTER_PUBLIC_RELEASE=PASS version=%s exact_head=true artifact_id=%s artifact_reused=true\n' \
+            "$VERSION" "$QUALIFIED_ARTIFACT_ID" >> "$GITHUB_STEP_SUMMARY"

@@ -5,6 +5,7 @@ artifact_root="${1:-.}"
 python3 - "$artifact_root" <<'PY'
 from __future__ import annotations
 
+import ast
 import hashlib
 import os
 import re
@@ -58,10 +59,47 @@ for name, path in actual.items():
     digest = hashlib.sha256(path.read_bytes()).hexdigest()
     if digest != expected[name]:
         raise SystemExit("ARTIFACT_DIGEST_MISMATCH")
-if (root / "VERSION").read_text(encoding="ascii") != "0.14.1\n":
+version_payload = (root / "VERSION").read_bytes()
+try:
+    version = version_payload.decode("ascii").removesuffix("\n")
+except UnicodeDecodeError as exc:
+    raise SystemExit("ARTIFACT_VERSION_MISMATCH") from exc
+if (
+    version_payload != (version + "\n").encode("ascii")
+    or re.fullmatch(r"(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)", version) is None
+):
     raise SystemExit("ARTIFACT_VERSION_MISMATCH")
-revision = (root / "REVISION").read_text(encoding="ascii").strip()
-if re.fullmatch(r"[0-9a-f]{40}", revision) is None:
+revision_payload = (root / "REVISION").read_bytes()
+try:
+    revision = revision_payload.decode("ascii").removesuffix("\n")
+except UnicodeDecodeError as exc:
+    raise SystemExit("ARTIFACT_REVISION_REJECTED") from exc
+if revision_payload != (revision + "\n").encode("ascii") or re.fullmatch(r"[0-9a-f]{40}", revision) is None:
     raise SystemExit("ARTIFACT_REVISION_REJECTED")
-print(f"HOME_CENTER_ARTIFACT=PASS version=0.14.1 revision={revision}")
+runtime_version_path = root / "home_center/__init__.py"
+if not runtime_version_path.is_file() or runtime_version_path.is_symlink():
+    raise SystemExit("ARTIFACT_RUNTIME_VERSION_REJECTED")
+try:
+    tree = ast.parse(runtime_version_path.read_text(encoding="utf-8"), filename=str(runtime_version_path))
+except (OSError, UnicodeDecodeError, SyntaxError) as exc:
+    raise SystemExit("ARTIFACT_RUNTIME_VERSION_REJECTED") from exc
+runtime_versions = []
+for node in tree.body:
+    if isinstance(node, ast.Assign) and any(
+        isinstance(target, ast.Name) and target.id == "__version__" for target in node.targets
+    ):
+        if (
+            len(node.targets) != 1
+            or not isinstance(node.targets[0], ast.Name)
+            or not isinstance(node.value, ast.Constant)
+            or not isinstance(node.value.value, str)
+        ):
+            raise SystemExit("ARTIFACT_RUNTIME_VERSION_REJECTED")
+        runtime_versions.append(node.value.value)
+    elif isinstance(node, (ast.AnnAssign, ast.AugAssign)) and isinstance(node.target, ast.Name):
+        if node.target.id == "__version__":
+            raise SystemExit("ARTIFACT_RUNTIME_VERSION_REJECTED")
+if runtime_versions != [version]:
+    raise SystemExit("ARTIFACT_RUNTIME_VERSION_MISMATCH")
+print(f"HOME_CENTER_ARTIFACT=PASS version={version} revision={revision}")
 PY

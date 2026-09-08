@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/ControlCenterSoft/home-center-stable/contracts/releases/public-release-acceptance-0.14.1.v1.schema.json",
-  "title": "Home Center 0.14.1 public release acceptance",
+  "$id": "https://github.com/ControlCenterSoft/home-center-stable/contracts/releases/public-release-acceptance.v1.schema.json",
+  "title": "Home Center public release acceptance",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -17,9 +17,9 @@
     "qualification_id"
   ],
   "properties": {
-    "schema": {"const": "home-center.public-release-acceptance.0.14.1.v1"},
+    "schema": {"const": "home-center.public-release-acceptance.v1"},
     "product": {"const": "home-center"},
-    "version": {"const": "0.14.1"},
+    "version": {"type": "string", "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"},
     "revision": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
     "source_date_epoch": {"type": "integer", "minimum": 1},
     "generated_at": {"type": "string", "format": "date-time"},

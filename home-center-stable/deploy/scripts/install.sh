@@ -43,7 +43,9 @@ PY
 
 revision="$(tr -d '\n' < "$source_root/REVISION")"
 [[ "$revision" =~ ^[0-9a-f]{40}$ ]] || { echo "REVISION_REJECTED" >&2; exit 65; }
-target="$release_root/0.14.1-${revision:0:12}"
+version="$(tr -d '\n' < "$source_root/VERSION")"
+[[ "$version" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]] || { echo "VERSION_REJECTED" >&2; exit 65; }
+target="$release_root/$version-${revision:0:12}"
 install -d -m 0755 "$release_root"
 
 if [[ -e "$target" || -L "$target" ]]; then
@@ -51,7 +53,7 @@ if [[ -e "$target" || -L "$target" ]]; then
   bash "$target/deploy/scripts/verify-artifact.sh" "$target"
   [[ "$(tr -d '\n' < "$target/REVISION")" == "$revision" ]] || { echo "RELEASE_TARGET_CONFLICT" >&2; exit 65; }
 else
-  stage="$(mktemp -d "$release_root/.home-center-0.14.1.XXXXXXXX")"
+  stage="$(mktemp -d "$release_root/.home-center-$version.XXXXXXXX")"
   trap '[[ -n "${stage:-}" && -d "$stage" ]] && rm -rf -- "$stage"' EXIT
   cp -a -- "$source_root/." "$stage/"
   bash "$stage/deploy/scripts/verify-artifact.sh" "$stage"

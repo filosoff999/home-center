@@ -1,4 +1,4 @@
-name: Verify Home Center 0.14.1 public source
+name: Verify versioned Home Center public source
 
 on:
   pull_request:
@@ -24,7 +24,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.12", "3.14"]
+        python-version: ["3.12", "3.13", "3.14"]
     env:
       EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
       PYTHONDONTWRITEBYTECODE: "1"
@@ -54,8 +54,8 @@ jobs:
         run: |
           set -Eeuo pipefail
           python3 deploy/scripts/build-release.py verify-source --source-root .
-          PYTHONPATH=product/control-plane/src python3 tests/test_public_release_0141.py -v
-          python3 tests/security_gate_public_0141.py
+          PYTHONPATH=product/control-plane/src python3 -m unittest -v tests/test_public_release.py
+          python3 tests/security_gate_public_release.py
           PYTHONPATH=product/control-plane/src python3 -c 'import home_center.actions, home_center.api, home_center.module_admission, home_center.server'
           test -z "$(git status --porcelain=v1 --untracked-files=all)" || { echo SOURCE_TREE_MUTATED >&2; exit 66; }
 
@@ -65,8 +65,11 @@ jobs:
     needs: verify
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    permissions:
+      contents: read
     env:
       EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      PYTHONDONTWRITEBYTECODE: "1"
     steps:
       - name: Checkout exact event head
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
