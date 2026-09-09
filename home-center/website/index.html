@@ -3,11 +3,11 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Home Center — простой центр управления цифровым домом</title>
-  <meta name="description" content="Home Center помогает управлять домашними данными, пользователями, интернетом, медиатекой и умными устройствами из одного понятного интерфейса.">
+  <title>Home Center — весь цифровой дом в одном месте</title>
+  <meta name="description" content="Home Center объединяет семью, устройства, интернет, VPN, умный дом, медиатеку, игры, файлы, резервные копии и домашний сервер в одной системе.">
   <meta name="theme-color" content="#f7faf8">
-  <meta property="og:title" content="Home Center — весь цифровой дом в одном месте">
-  <meta property="og:description" content="Один понятный центр для семьи: данные, устройства, интернет, медиа и домашние сервисы.">
+  <meta property="og:title" content="Home Center — дом, который проще управлять">
+  <meta property="og:description" content="Один центр для семьи, устройств, интернета, медиа, умного дома, игр и домашней инфраструктуры.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://home.control-center.pro/">
   <link rel="canonical" href="https://home.control-center.pro/">
@@ -31,14 +31,15 @@
       </button>
 
       <nav id="site-nav" class="site-nav" aria-label="Основная навигация" data-menu>
-        <a href="#what">Что это</a>
-        <a href="#family">Для семьи</a>
-        <a href="#look">Как выглядит</a>
+        <a href="#cozy">Уютный</a>
+        <a href="#family">Семья</a>
+        <a href="#home">Мой дом</a>
+        <a href="#platform">Платформа</a>
         <a href="/docs.html">Установка</a>
         <a href="/releases.html">Версии</a>
       </nav>
 
-      <a class="version-chip" href="/releases.html">0.15.0</a>
+      <a class="version-chip" href="/releases.html">0.15 stable</a>
     </div>
   </header>
 
@@ -46,30 +47,31 @@
     <section class="hero">
       <div class="shell hero-grid">
         <div class="hero-copy reveal">
-          <div class="eyebrow">Домашняя цифровая система</div>
-          <h1>Один центр<br>для всего дома.</h1>
+          <div class="eyebrow">Цифровой дом без лишней сложности</div>
+          <h1>Дом работает.<br>Вы просто им управляете.</h1>
           <p class="lead">
-            Home Center собирает домашние данные, пользователей, устройства и сервисы в одном понятном месте.
-            Не нужно помнить, где что настроено — всё видно из одной панели.
+            Home Center объединяет семью, компьютеры и телефоны, интернет, VPN, файлы,
+            умный дом, медиатеку, игры, резервные копии и домашний сервер.
+            Всё находится в одной системе и управляется понятными действиями.
           </p>
 
           <div class="hero-actions">
             <a class="button primary" href="/docs.html">Установить Home Center</a>
-            <a class="button secondary" href="#family">Посмотреть возможности</a>
+            <a class="button secondary" href="#cozy">Посмотреть возможности</a>
           </div>
 
           <div class="quick-points" aria-label="Главные преимущества">
-            <span>Просто для семьи</span>
-            <span>Данные дома</span>
-            <span>Расширяется модулями</span>
+            <span>Уютный и Полный интерфейс</span>
+            <span>Local-first</span>
+            <span>Один или несколько серверов</span>
           </div>
         </div>
 
-        <div class="home-panel reveal" aria-label="Пример главной панели Home Center">
+        <div class="home-panel reveal" aria-label="Пример интерфейса Уютный">
           <div class="panel-top">
             <div>
-              <small>Home Center</small>
-              <strong>Мой дом</strong>
+              <small>Уютный</small>
+              <strong>Домой</strong>
             </div>
             <span class="online">Всё работает</span>
           </div>
@@ -78,27 +80,27 @@
             <article class="panel-card">
               <span class="panel-icon">👨‍👩‍👧‍👦</span>
               <small>Семья</small>
-              <strong>5 пользователей</strong>
-            </article>
-            <article class="panel-card">
-              <span class="panel-icon">📁</span>
-              <small>Данные</small>
-              <strong>Доступны</strong>
+              <strong>Все дома</strong>
             </article>
             <article class="panel-card">
               <span class="panel-icon">🌐</span>
               <small>Интернет</small>
-              <strong>Работает</strong>
+              <strong>Защищён</strong>
             </article>
             <article class="panel-card">
               <span class="panel-icon">🏠</span>
-              <small>Устройства</small>
-              <strong>32 дома</strong>
+              <small>Мой дом</small>
+              <strong>38 устройств</strong>
+            </article>
+            <article class="panel-card">
+              <span class="panel-icon">💾</span>
+              <small>Резервные копии</small>
+              <strong>Актуальны</strong>
             </article>
           </div>
 
           <div class="panel-summary">
-            <div><span>●</span><p><strong>Дом в порядке</strong><small>Критических проблем нет</small></p></div>
+            <div><span>●</span><p><strong>Дом в порядке</strong><small>Home Center следит за остальным</small></p></div>
             <button type="button" aria-label="Пример кнопки интерфейса">Открыть</button>
           </div>
         </div>
@@ -108,102 +110,228 @@
     <section class="section" id="what">
       <div class="shell">
         <div class="section-head reveal">
-          <span class="kicker">Что это</span>
-          <h2>Не сложные вкладки с непонятными настройками, а удобный дружелюбный интерфейс.</h2>
-          <p>Вместо десятка отдельных панелей вы видите главное: кто пользуется системой, где лежат данные, что происходит с устройствами и какие домашние сервисы работают.</p>
+          <span class="kicker">Одна система</span>
+          <h2>Home Center управляет домом как единым целым.</h2>
+          <p>Не нужно отдельно разбираться в сервере, VPN, профилях, ZigBee, загрузках и резервных копиях. Home Center связывает всё это в общие домашние сценарии.</p>
         </div>
 
         <div class="three-benefits">
           <article class="benefit reveal">
             <span>1</span>
-            <h3>Всё в одном месте</h3>
-            <p>Одна панель вместо набора несвязанных сервисов.</p>
+            <h3>Пользователь говорит, что нужно</h3>
+            <p>Home Center сам превращает бытовое действие в безопасный набор технических настроек.</p>
           </article>
           <article class="benefit reveal">
             <span>2</span>
-            <h3>Понятно без опыта администратора</h3>
-            <p>Сначала обычные домашние задачи, технические детали — только когда нужны.</p>
+            <h3>Сложное скрыто</h3>
+            <p>Обычные задачи выполняются в «Уютном». Технические параметры остаются в полном интерфейсе.</p>
           </article>
           <article class="benefit reveal">
             <span>3</span>
-            <h3>Дом остаётся вашим</h3>
-            <p>Основные данные и управление могут находиться внутри вашей домашней инфраструктуры.</p>
+            <h3>Изменения проверяются</h3>
+            <p>Система планирует действие, применяет его, проверяет результат и использует восстановление, если это необходимо.</p>
           </article>
         </div>
       </div>
     </section>
 
-    <section class="section soft" id="family">
+    <section class="section soft" id="cozy">
       <div class="shell">
         <div class="section-head reveal">
-          <span class="kicker">Для семьи</span>
-          <h2>Шесть вещей, которые легко понять</h2>
-          <p>Home Center строится не вокруг сервера, а вокруг того, что семья делает каждый день.</p>
+          <span class="kicker">Интерфейс «Уютный»</span>
+          <h2>Минимум действий. Максимум результата.</h2>
+          <p>«Уютный» рассчитан прежде всего на телефон. Большие элементы, короткие сценарии, понятные слова и безопасные настройки по умолчанию.</p>
         </div>
 
         <div class="feature-grid">
           <article class="feature-card reveal">
-            <span class="feature-icon">📁</span>
-            <h3>Файлы и документы</h3>
-            <p>Личные и общие семейные данные находятся в одном понятном месте.</p>
+            <span class="feature-icon">⌂</span>
+            <h3>Домой</h3>
+            <p>Одним взглядом видно семью, интернет, умный дом, медиа, игры, сервер, резервные копии и только действительно важные уведомления.</p>
           </article>
           <article class="feature-card reveal">
-            <span class="feature-icon">👤</span>
-            <h3>Личные профили</h3>
-            <p>Каждый входит под своей учётной записью и получает свои данные.</p>
+            <span class="feature-icon">👨‍👩‍👧‍👦</span>
+            <h3>Семья</h3>
+            <p>Одна карточка на человека: учётная запись, устройства, профиль, доступы, интернет, VPN, лимиты и домашние сервисы.</p>
+          </article>
+          <article class="feature-card reveal">
+            <span class="feature-icon">🏡</span>
+            <h3>Мой дом</h3>
+            <p>Умный дом, мультимедиа, игры, файлы, сервер, сеть и резервные копии представлены как обычные домашние функции.</p>
+          </article>
+          <article class="feature-card reveal">
+            <span class="feature-icon">🧠</span>
+            <h3>Автоматические настройки</h3>
+            <p>Home Center подбирает безопасные параметры по роли, доступным устройствам и установленным модулям.</p>
           </article>
           <article class="feature-card reveal">
             <span class="feature-icon">🛡️</span>
-            <h3>Детский контроль</h3>
-            <p>Правила интернета и устройств можно задавать отдельно для каждого ребёнка.</p>
+            <h3>Защита от ошибок</h3>
+            <p>Опасные операции не выдаются за обычные кнопки. Для серьёзных изменений используются проверки, подтверждение и восстановление.</p>
           </article>
           <article class="feature-card reveal">
-            <span class="feature-icon">🎬</span>
-            <h3>Фильмы и медиа</h3>
-            <p>Домашняя медиатека, загрузки и просмотр — рядом, а не в разных системах.</p>
-          </article>
-          <article class="feature-card reveal">
-            <span class="feature-icon">💡</span>
-            <h3>Умный дом</h3>
-            <p>ZigBee-устройства, комнаты и сценарии можно объединить в одной панели.</p>
-          </article>
-          <article class="feature-card reveal">
-            <span class="feature-icon">🌐</span>
-            <h3>Интернет и VPN</h3>
-            <p>Домашние сетевые правила и защищённый доступ управляются централизованно.</p>
+            <span class="feature-icon">⚙️</span>
+            <h3>Полный интерфейс</h3>
+            <p>Администратор может перейти к узлам, сети, хранилищам, ролям, журналам, политикам и диагностике без ограничения возможностей платформы.</p>
           </article>
         </div>
       </div>
     </section>
 
-    <section class="section" id="scenarios">
+    <section class="section" id="family">
       <div class="shell">
         <div class="section-head reveal">
-          <span class="kicker">Примеры</span>
-          <h2>Как это выглядит в обычной жизни</h2>
+          <span class="kicker">Семья</span>
+          <h2>Создайте человека и выберите роль. Остальное Home Center настроит сам.</h2>
+          <p>Базовые роли — родитель, ребёнок и гость. Роль задаёт не только права в интерфейсе, а полный домашний набор политик.</p>
         </div>
 
-        <div class="story-list">
-          <article class="story reveal">
-            <div class="story-number">01</div>
-            <div>
-              <h3>Сели за другой компьютер</h3>
-              <p>Вошли под своей учётной записью — ваши папки и разрешённые данные снова рядом.</p>
-            </div>
+        <div class="feature-grid">
+          <article class="feature-card reveal">
+            <span class="feature-icon">👤</span>
+            <h3>Учётные записи и переносимые профили</h3>
+            <p>Личные профили, домашние каталоги и доступы привязываются к человеку и используются на разрешённых компьютерах.</p>
           </article>
-          <article class="story reveal">
-            <div class="story-number">02</div>
-            <div>
-              <h3>Нужно ограничить ребёнку интернет вечером</h3>
-              <p>Открыли профиль ребёнка, выбрали расписание и правило. Не нужно настраивать каждое приложение отдельно.</p>
-            </div>
+          <article class="feature-card reveal">
+            <span class="feature-icon">📱</span>
+            <h3>Устройства человека</h3>
+            <p>Телефон, планшет, ноутбук и другие управляемые устройства видны в одной карточке и получают общую эффективную политику.</p>
           </article>
-          <article class="story reveal">
-            <div class="story-number">03</div>
-            <div>
-              <h3>Хотите посмотреть фильм или включить устройство</h3>
-              <p>Медиа и умный дом доступны из той же домашней системы — без перехода между множеством панелей.</p>
-            </div>
+          <article class="feature-card reveal">
+            <span class="feature-icon">🌐</span>
+            <h3>Интернет и детский контроль</h3>
+            <p>Расписания, дневные и недельные лимиты, категории, белые и чёрные списки, перерывы и дополнительные минуты задаются централизованно.</p>
+          </article>
+          <article class="feature-card reveal">
+            <span class="feature-icon">🔐</span>
+            <h3>VPN и удалённый доступ</h3>
+            <p>VPN-политика назначается человеку или устройству, учитывает DNS, split routing, fallback и более приоритетные правила безопасности.</p>
+          </article>
+          <article class="feature-card reveal">
+            <span class="feature-icon">📁</span>
+            <h3>Файлы и домашние ресурсы</h3>
+            <p>Личные и семейные данные, общие папки, мультимедиа и внутренние сервисы доступны согласно роли и устройству.</p>
+          </article>
+          <article class="feature-card reveal">
+            <span class="feature-icon">🎟️</span>
+            <h3>Гостевой доступ</h3>
+            <p>Гостя можно добавить с ограниченным набором возможностей и сроком действия. Для подключения используется короткий безопасный onboarding, включая QR-сценарии.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section soft" id="home">
+      <div class="shell">
+        <div class="section-head reveal">
+          <span class="kicker">Мой дом</span>
+          <h2>Все домашние сервисы — в одном месте.</h2>
+          <p>Home Center объединяет повседневные функции и скрывает конкретные backend-технологии там, где они не нужны пользователю.</p>
+        </div>
+
+        <div class="feature-grid">
+          <article class="feature-card reveal">
+            <span class="feature-icon">💡</span>
+            <h3>Умный дом</h3>
+            <p>ZigBee, MQTT, комнаты, устройства, состояния, батарея, качество связи, сценарии и интеграция с Yandex Smart Home.</p>
+          </article>
+          <article class="feature-card reveal">
+            <span class="feature-icon">🎬</span>
+            <h3>Фильмы и музыка</h3>
+            <p>Домашняя медиатека, TorrServer, Lampa, torrent-клиент, загрузки, каталоги, лимиты скорости и активные потоки.</p>
+          </article>
+          <article class="feature-card reveal">
+            <span class="feature-icon">🎮</span>
+            <h3>Игровые серверы</h3>
+            <p>Minecraft Server: несколько экземпляров, миры, импорт, клонирование, whitelist, свойства, packs, backup, restore и безопасные обновления.</p>
+          </article>
+          <article class="feature-card reveal">
+            <span class="feature-icon">📦</span>
+            <h3>Приложения и Market</h3>
+            <p>Домашние сервисы устанавливаются как модули с зависимостями, совместимостью, health checks, обновлением, backup и удалением.</p>
+          </article>
+          <article class="feature-card reveal">
+            <span class="feature-icon">📲</span>
+            <h3>Android MDM</h3>
+            <p>Enrollment, сертификаты, Wi-Fi/VPN-профили, политики, managed app configuration и доступ к разрешённым внутренним ресурсам.</p>
+          </article>
+          <article class="feature-card reveal">
+            <span class="feature-icon">🪟</span>
+            <h3>Windows-компьютеры</h3>
+            <p>PXE/iPXE, WinPE, wimboot, Unattend, подключение к домену или рабочей группе и автоматизация ПО через Ansible, WinRM/PSRP, WinGet и DSC.</p>
+          </article>
+          <article class="feature-card reveal">
+            <span class="feature-icon">🗄️</span>
+            <h3>Файлы и хранилища</h3>
+            <p>Диски, файловые системы, точки монтирования, состояние хранилища, каталоги пользователей и данные домашних сервисов.</p>
+          </article>
+          <article class="feature-card reveal">
+            <span class="feature-icon">💾</span>
+            <h3>Резервные копии и восстановление</h3>
+            <p>Backup конфигурации и данных, проверка целостности, recovery points, restore на исходный или новый узел и периодические проверки восстановления.</p>
+          </article>
+          <article class="feature-card reveal">
+            <span class="feature-icon">🔔</span>
+            <h3>Состояние дома</h3>
+            <p>Readiness, health, ошибки, зависимости, загрузка ресурсов, последние успешные операции и понятные рекомендации по исправлению.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="platform">
+      <div class="shell">
+        <div class="section-head reveal">
+          <span class="kicker">Платформа</span>
+          <h2>Под простым интерфейсом — полноценное управление инфраструктурой.</h2>
+          <p>Home Center одинаково подходит для одного домашнего сервера и для нескольких узлов с распределением ролей и поддерживаемыми HA-сценариями.</p>
+        </div>
+
+        <div class="feature-grid">
+          <article class="feature-card reveal">
+            <span class="feature-icon">🖥️</span>
+            <h3>Узлы и роли</h3>
+            <p>Подключение серверов, инвентаризация возможностей, placement ролей, maintenance, drain, replacement, decommission и rejoin.</p>
+          </article>
+          <article class="feature-card reveal">
+            <span class="feature-icon">♻️</span>
+            <h3>Multi-node и HA</h3>
+            <p>Распределение поддерживаемых ролей, проверки redundancy/quorum, controlled failover/failback и восстановление после потери узла.</p>
+          </article>
+          <article class="feature-card reveal">
+            <span class="feature-icon">🌐</span>
+            <h3>Сеть</h3>
+            <p>Multi-NIC, LAN/WAN, VLAN, bonding, routing, DNS/NTP, firewall и staged changes с проверкой связи и автоматическим rollback.</p>
+          </article>
+          <article class="feature-card reveal">
+            <span class="feature-icon">🔒</span>
+            <h3>Безопасность и доступ</h3>
+            <p>Local admin, дополнительная доменная аутентификация, RBAC, сертификаты, audit и защищённые boundaries для privileged actions.</p>
+          </article>
+          <article class="feature-card reveal">
+            <span class="feature-icon">🧩</span>
+            <h3>Desired / Actual State</h3>
+            <p>Home Center хранит требуемое состояние отдельно от фактического, планирует изменения и подтверждает результат повторной проверкой.</p>
+          </article>
+          <article class="feature-card reveal">
+            <span class="feature-icon">📊</span>
+            <h3>Ресурсы и размещение</h3>
+            <p>CPU, RAM, storage capacity, VM/LXC и другие workload-профили учитываются при планировании размещения домашних сервисов.</p>
+          </article>
+          <article class="feature-card reveal">
+            <span class="feature-icon">🔄</span>
+            <h3>Жизненный цикл</h3>
+            <p>Install, Configure, Health, Update, Migrate/Drain, Backup, Restore и Remove проходят через единый управляемый процесс.</p>
+          </article>
+          <article class="feature-card reveal">
+            <span class="feature-icon">🧾</span>
+            <h3>Jobs и Audit</h3>
+            <p>Изменения оформляются как типизированные задания с проверками, idempotency, stale-state protection и сохранением результата.</p>
+          </article>
+          <article class="feature-card reveal">
+            <span class="feature-icon">🩺</span>
+            <h3>Автовосстановление</h3>
+            <p>Для безопасных типовых проблем Home Center использует проверяемые сценарии исправления и показывает пользователю уже итоговое состояние.</p>
           </article>
         </div>
       </div>
@@ -212,67 +340,90 @@
     <section class="section dark" id="look">
       <div class="shell">
         <div class="section-head light reveal">
-          <span class="kicker">Как выглядит</span>
-          <h2>Сначала главное. Потом детали.</h2>
-          <p>Главный экран отвечает на простой вопрос: «Дома всё работает?» Дальше можно открыть нужный раздел — семью, данные, устройства или сервисы.</p>
+          <span class="kicker">Как выглядит «Уютный»</span>
+          <h2>Три раздела вместо десятков технических экранов.</h2>
+          <p>«Домой» показывает состояние, «Семья» отвечает за людей и их устройства, «Мой дом» — за сервисы и инфраструктуру.</p>
         </div>
 
         <div class="screen-demo reveal">
           <div class="screen-sidebar">
             <div class="screen-logo"><img src="/assets/logo.svg" alt="" width="32" height="32"><strong>Home Center</strong></div>
             <nav aria-label="Пример меню">
-              <span class="active">⌂ Главная</span>
+              <span class="active">⌂ Домой</span>
               <span>👨‍👩‍👧‍👦 Семья</span>
-              <span>📁 Данные</span>
-              <span>🌐 Интернет</span>
-              <span>💡 Умный дом</span>
-              <span>▦ Приложения</span>
+              <span>🏡 Мой дом</span>
+              <span>⚙ Полный интерфейс</span>
             </nav>
           </div>
 
           <div class="screen-content">
             <div class="screen-heading">
-              <div><small>Добрый вечер</small><h3>Мой дом</h3></div>
+              <div><small>Добрый вечер</small><h3>Дома всё в порядке</h3></div>
               <span class="online">Всё работает</span>
             </div>
 
             <div class="screen-metrics">
-              <article><small>Пользователи</small><strong>5</strong><span>все профили доступны</span></article>
-              <article><small>Устройства</small><strong>32</strong><span>30 сейчас в сети</span></article>
-              <article><small>Домашние сервисы</small><strong>8</strong><span>все запущены</span></article>
+              <article><small>Семья</small><strong>5</strong><span>у каждого своя политика</span></article>
+              <article><small>Устройства</small><strong>38</strong><span>36 сейчас в сети</span></article>
+              <article><small>Сервисы</small><strong>12</strong><span>все доступны</span></article>
             </div>
 
             <div class="screen-row">
-              <div><strong>Интернет</strong><span>Работает нормально</span></div><b>OK</b>
+              <div><strong>Интернет детей</strong><span>По расписанию, фильтры активны</span></div><b>OK</b>
             </div>
             <div class="screen-row">
-              <div><strong>Семейные данные</strong><span>Доступны</span></div><b>OK</b>
+              <div><strong>Резервные копии</strong><span>Последняя проверка восстановления успешна</span></div><b>OK</b>
+            </div>
+            <div class="screen-row">
+              <div><strong>Умный дом</strong><span>Все критичные устройства доступны</span></div><b>OK</b>
             </div>
           </div>
         </div>
       </div>
     </section>
 
-    <section class="section">
+    <section class="section" id="scenarios">
       <div class="shell">
         <div class="section-head reveal">
-          <span class="kicker">Состояние продукта</span>
-          <h2>Что уже есть и что появляется дальше</h2>
-          <p>На сайте отдельно показаны выпущенная основа Home Center и домашние функции, которые добавляются следующими версиями и модулями.</p>
+          <span class="kicker">Обычная жизнь</span>
+          <h2>Сложные технологии превращаются в простые действия.</h2>
         </div>
 
-        <div class="status-grid">
-          <article class="status-card current reveal">
-            <span class="status-label">Доступно сейчас</span>
-            <h3>Home Center 0.15.0</h3>
-            <p>Текущая стабильная линия Home Center с опубликованным Linux amd64 пакетом и проверяемым набором релизных артефактов.</p>
-            <a href="/releases.html">Посмотреть текущую версию →</a>
+        <div class="story-list">
+          <article class="story reveal">
+            <div class="story-number">01</div>
+            <div>
+              <h3>Добавили ребёнка</h3>
+              <p>Создаёте учётную запись и выбираете роль «Ребёнок». Home Center применяет профиль, доступы, интернет-правила, лимиты, VPN и связанные политики устройств.</p>
+            </div>
           </article>
-          <article class="status-card next reveal">
-            <span class="status-label">Развивается</span>
-            <h3>Домашние функции</h3>
-            <p>Семейные сценарии, медиа, умный дом, сетевые правила, VPN и дополнительные приложения подключаются по мере выпуска соответствующих версий и модулей.</p>
-            <a href="/releases.html#next">Посмотреть развитие →</a>
+          <article class="story reveal">
+            <div class="story-number">02</div>
+            <div>
+              <h3>Купили новый телефон</h3>
+              <p>Привязываете устройство к члену семьи. Нужные Wi-Fi/VPN, сертификаты, доступы и ограничения применяются автоматически через доступные providers.</p>
+            </div>
+          </article>
+          <article class="story reveal">
+            <div class="story-number">03</div>
+            <div>
+              <h3>Пришли гости</h3>
+              <p>Создаёте гостя или короткое приглашение. Home Center выдаёт только разрешённый доступ и автоматически учитывает срок его действия.</p>
+            </div>
+          </article>
+          <article class="story reveal">
+            <div class="story-number">04</div>
+            <div>
+              <h3>Хотите фильм вечером</h3>
+              <p>Медиатека, TorrServer, Lampa и загрузки находятся в одном домашнем разделе, а серверная часть остаётся скрытой.</p>
+            </div>
+          </article>
+          <article class="story reveal">
+            <div class="story-number">05</div>
+            <div>
+              <h3>Серверу нужно обслуживание</h3>
+              <p>Home Center проверяет зависимости и резервирование, планирует drain или перенос поддерживаемых ролей, выполняет обслуживание и подтверждает восстановление состояния.</p>
+            </div>
           </article>
         </div>
       </div>
@@ -282,12 +433,12 @@
       <div class="shell cta">
         <div>
           <span class="kicker">Начать</span>
-          <h2>Хотите попробовать Home Center?</h2>
-          <p>Откройте короткую инструкцию по установке и проверьте доступный стабильный релиз.</p>
+          <h2>Home Center устанавливается из стабильного канала.</h2>
+          <p>Состав конкретной установки зависит от версии, подключённых модулей и доступных возможностей инфраструктуры.</p>
         </div>
         <div class="hero-actions">
           <a class="button primary" href="/docs.html">Как установить</a>
-          <a class="button secondary" href="/releases.html">Версии</a>
+          <a class="button secondary" href="/releases.html">Возможности и версии</a>
         </div>
       </div>
     </section>

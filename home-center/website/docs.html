@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Установка Home Center — короткая инструкция</title>
-  <meta name="description" content="Простая инструкция по установке Home Center 0.15.0 из официального стабильного канала.">
+  <title>Установка Home Center — установка и первый запуск</title>
+  <meta name="description" content="Установка Home Center из официального stable-канала, проверка пакета, первый вход и выбор интерфейса «Уютный» или полного режима.">
   <meta name="theme-color" content="#f7faf8">
   <link rel="canonical" href="https://home.control-center.pro/docs.html">
   <link rel="icon" href="/assets/logo.svg" type="image/svg+xml">
@@ -13,21 +13,19 @@
 </head>
 <body>
   <a class="skip" href="#content">К содержимому</a>
-
   <header class="site-header" data-header>
     <div class="shell header-inner">
       <a class="brand" href="/"><img src="/assets/logo.svg" alt="" width="34" height="34"><span>Home Center</span></a>
-      <button class="menu-button" type="button" aria-expanded="false" aria-controls="site-nav" data-menu-button>
-        <span></span><span></span><span></span><span class="sr-only">Меню</span>
-      </button>
+      <button class="menu-button" type="button" aria-expanded="false" aria-controls="site-nav" data-menu-button><span></span><span></span><span></span><span class="sr-only">Меню</span></button>
       <nav id="site-nav" class="site-nav" data-menu>
         <a href="/">Главная</a>
-        <a href="/#family">Возможности</a>
-        <a href="/#look">Как выглядит</a>
+        <a href="/#cozy">Уютный</a>
+        <a href="/#family">Семья</a>
+        <a href="/#platform">Платформа</a>
         <a class="current" href="/docs.html">Установка</a>
         <a href="/releases.html">Версии</a>
       </nav>
-      <a class="version-chip" href="/releases.html">0.15.0</a>
+      <a class="version-chip" href="/releases.html">Stable 0.15.0</a>
     </div>
   </header>
 
@@ -35,10 +33,10 @@
     <section class="page-hero">
       <div class="shell">
         <span class="kicker">Установка</span>
-        <h1>Home Center за четыре понятных шага</h1>
-        <p>Используйте только официальный стабильный канал. Для текущей версии 0.15.0 опубликован пакет Linux amd64 и файл SHA256SUMS для проверки загрузки.</p>
+        <h1>Установите Home Center и начните с простого интерфейса.</h1>
+        <p>Пользовательская установка выполняется из официального stable-канала. Текущий stable-пакет — Home Center 0.15.0 для Linux amd64.</p>
         <div class="hero-actions">
-          <a class="button primary" href="https://github.com/ControlCenterSoft/home-center-stable/releases/latest">Открыть последнюю версию</a>
+          <a class="button primary" href="https://github.com/ControlCenterSoft/home-center-stable/releases/latest">Открыть stable-релиз</a>
           <a class="button secondary" href="#requirements">Что понадобится</a>
         </div>
       </div>
@@ -47,36 +45,31 @@
     <section class="section">
       <div class="shell page-grid">
         <aside class="doc-nav">
-          <strong>Коротко по шагам</strong>
+          <strong>По шагам</strong>
           <a href="#requirements">Что понадобится</a>
           <a href="#download">1. Скачать</a>
           <a href="#verify">2. Проверить</a>
           <a href="#unpack">3. Распаковать</a>
           <a href="#install">4. Установить</a>
-          <a href="#update">Как обновить</a>
+          <a href="#first-login">Первый вход</a>
+          <a href="#interfaces">Два интерфейса</a>
+          <a href="#update">Обновление</a>
         </aside>
 
         <div class="doc-content">
           <section class="doc-section" id="requirements">
             <span class="step-label">Перед началом</span>
             <h2>Что понадобится</h2>
-            <p>64-битный Linux-сервер, доступ администратора и стандартные утилиты <code>tar</code> и <code>sha256sum</code>. Перед установкой Home Center убедитесь, что у вас есть резервная копия важных данных.</p>
-            <div class="callout">
-              <strong>Home Center не должен самовольно менять домашнюю сеть.</strong>
-              <p>Маршрутизация, NAT, DNS, DHCP, firewall и внешний доступ включаются отдельно, только после явного выбора владельца.</p>
-            </div>
+            <p>64-битный Linux-сервер, административный доступ и стандартные утилиты <code>tar</code> и <code>sha256sum</code>. Для важных данных заранее подготовьте резервную копию.</p>
+            <div class="callout"><strong>Home Center не должен самовольно перестраивать домашнюю сеть.</strong><p>Routing, NAT, port-forwarding, firewall и внешний доступ включаются только отдельными управляемыми действиями.</p></div>
           </section>
 
           <section class="doc-section" id="download">
             <span class="step-label">Шаг 1</span>
-            <h2>Скачайте два файла</h2>
-            <p>Откройте страницу последнего стабильного релиза и скачайте пакет для Linux amd64 вместе с файлом <code>SHA256SUMS</code>.</p>
+            <h2>Скачайте пакет и SHA256SUMS</h2>
+            <p>Откройте последний stable-релиз и скачайте пакет Linux amd64 вместе с файлом контрольных сумм.</p>
             <div class="download-card">
-              <div>
-                <small>Текущая версия</small>
-                <strong>home-center-0.15.0-linux-amd64.tar.gz</strong>
-                <span>и SHA256SUMS из того же релиза</span>
-              </div>
+              <div><small>Текущий stable</small><strong>home-center-0.15.0-linux-amd64.tar.gz</strong><span>и SHA256SUMS из того же релиза</span></div>
               <a class="button primary" href="https://github.com/ControlCenterSoft/home-center-stable/releases/latest">Скачать</a>
             </div>
           </section>
@@ -86,10 +79,7 @@
             <h2>Проверьте загрузку</h2>
             <p>В каталоге со скачанными файлами выполните:</p>
             <div class="code-block"><pre><code>sha256sum -c SHA256SUMS --ignore-missing</code></pre></div>
-            <div class="callout warning">
-              <strong>Продолжайте только после результата OK.</strong>
-              <p>Если проверка не прошла, не распаковывайте и не запускайте пакет — скачайте файлы заново из того же релиза.</p>
-            </div>
+            <div class="callout warning"><strong>Продолжайте только после результата OK.</strong><p>Если проверка не прошла, скачайте пакет заново из официального stable-релиза.</p></div>
           </section>
 
           <section class="doc-section" id="unpack">
@@ -98,40 +88,49 @@
             <div class="code-block"><pre><code>mkdir -p home-center-0.15.0
 tar -xzf home-center-0.15.0-linux-amd64.tar.gz -C home-center-0.15.0
 cd home-center-0.15.0</code></pre></div>
-            <p>После распаковки не запускайте случайные файлы. Сначала откройте инструкцию, которая входит именно в этот релиз.</p>
           </section>
 
           <section class="doc-section" id="install">
             <span class="step-label">Шаг 4</span>
-            <h2>Следуйте инструкции внутри релиза</h2>
-            <p>Откройте <code>docs/INSTALL-AND-UPDATE.md</code> и используйте указанную там команду установки. Так сайт не расходится с реальным установщиком конкретной версии.</p>
+            <h2>Используйте инструкцию именно вашего релиза</h2>
+            <p>Откройте <code>docs/INSTALL-AND-UPDATE.md</code> внутри пакета и выполните указанную там процедуру. Это защищает от расхождения между сайтом и фактическим установщиком конкретной версии.</p>
             <div class="code-block"><pre><code>less docs/INSTALL-AND-UPDATE.md</code></pre></div>
-            <div class="callout">
-              <strong>После установки</strong>
-              <p>Проверьте состояние Home Center по инструкции релиза и только затем переходите к настройке внешнего доступа, сертификатов и домашних модулей.</p>
+          </section>
+
+          <section class="doc-section" id="first-login">
+            <span class="step-label">Первый запуск</span>
+            <h2>Сразу защитите административную учётную запись</h2>
+            <p>После чистой установки Home Center использует bootstrap-учётную запись <code>admin</code>. В релизах, где включена политика первого входа, первоначальный пароль <code>admin</code> предназначен только для первичной авторизации и должен быть немедленно заменён. При обновлении уже установленный пользовательский пароль не должен сбрасываться.</p>
+            <div class="callout"><strong>Не откладывайте смену bootstrap-пароля.</strong><p>Обычная работа с системой должна выполняться только после установки собственного пароля администратора.</p></div>
+          </section>
+
+          <section class="doc-section" id="interfaces">
+            <span class="step-label">После входа</span>
+            <h2>Выберите удобный уровень управления</h2>
+            <div class="update-facts">
+              <div><strong>«Уютный»</strong><span>Домой, Семья, Мой дом. Минимум настроек и готовые безопасные сценарии для телефона.</span></div>
+              <div><strong>Полный</strong><span>Узлы, сеть, storage, сервисы, политики, monitoring, сертификаты, lifecycle и диагностика.</span></div>
             </div>
+            <p>Оба интерфейса управляют одной системой. «Уютный» не создаёт отдельную конфигурацию и не обходит общие правила безопасности.</p>
           </section>
 
           <section class="doc-section" id="update">
             <span class="step-label">Обновление</span>
-            <h2>Обновление — по той же схеме</h2>
-            <p>Скачайте новую стабильную версию, проверьте <code>SHA256SUMS</code> и выполните процедуру обновления из <code>docs/INSTALL-AND-UPDATE.md</code> нового релиза.</p>
+            <h2>Обновляйте по той же проверяемой схеме</h2>
+            <p>Скачайте новый stable-релиз, проверьте <code>SHA256SUMS</code> и следуйте <code>docs/INSTALL-AND-UPDATE.md</code> из нового пакета.</p>
             <div class="update-facts">
-              <div><strong>1. Резервная копия</strong><span>перед серьёзным обновлением</span></div>
-              <div><strong>2. Новый релиз</strong><span>только из stable-канала</span></div>
-              <div><strong>3. Проверка SHA-256</strong><span>до распаковки</span></div>
-              <div><strong>4. Проверка запуска</strong><span>до удаления предыдущей версии</span></div>
+              <div><strong>1. Backup</strong><span>перед существенным обновлением</span></div>
+              <div><strong>2. Stable release</strong><span>только официальный канал</span></div>
+              <div><strong>3. SHA-256</strong><span>проверка до распаковки</span></div>
+              <div><strong>4. Проверка состояния</strong><span>до удаления предыдущего пакета</span></div>
             </div>
           </section>
 
           <section class="doc-section">
-            <span class="step-label">Нужна версия?</span>
-            <h2>Все стабильные выпуски находятся в одном месте</h2>
-            <p>Публичный канал Home Center предназначен именно для пользовательских стабильных пакетов.</p>
-            <div class="hero-actions">
-              <a class="button primary" href="https://github.com/ControlCenterSoft/home-center-stable/releases">Открыть stable-релизы</a>
-              <a class="button secondary" href="/releases.html">Что меняется по версиям</a>
-            </div>
+            <span class="step-label">Важно</span>
+            <h2>Функции зависят от версии и модулей</h2>
+            <p>Главная страница описывает полный функциональный контур Home Center. После установки ориентируйтесь на фактическую версию Core, установленные модули и список поддерживаемых capabilities/providers вашей системы.</p>
+            <div class="hero-actions"><a class="button primary" href="https://github.com/ControlCenterSoft/home-center-stable/releases">Stable-релизы</a><a class="button secondary" href="/releases.html">Версии и каналы</a></div>
           </section>
         </div>
       </div>
@@ -139,11 +138,7 @@ cd home-center-0.15.0</code></pre></div>
   </main>
 
   <footer class="site-footer">
-    <div class="shell footer-inner">
-      <div class="brand"><img src="/assets/logo.svg" alt="" width="30" height="30"><span>Home Center</span></div>
-      <p>Один понятный центр для цифрового дома.</p>
-      <span>© 2026 Home Center</span>
-    </div>
+    <div class="shell footer-inner"><div class="brand"><img src="/assets/logo.svg" alt="" width="30" height="30"><span>Home Center</span></div><p>Один центр для цифрового дома.</p><span>© 2026 Home Center</span></div>
   </footer>
 </body>
 </html>

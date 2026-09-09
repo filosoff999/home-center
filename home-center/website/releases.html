@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Версии Home Center — что уже доступно и что дальше</title>
-  <meta name="description" content="Текущая стабильная версия Home Center 0.15.0 и простое объяснение развития продукта.">
+  <title>Версии Home Center — стабильный канал и возможности продукта</title>
+  <meta name="description" content="Стабильный канал Home Center, правила обновления и объяснение того, как возможности продукта связаны с версиями и модулями.">
   <meta name="theme-color" content="#f7faf8">
   <link rel="canonical" href="https://home.control-center.pro/releases.html">
   <link rel="icon" href="/assets/logo.svg" type="image/svg+xml">
@@ -13,30 +13,28 @@
 </head>
 <body>
   <a class="skip" href="#content">К содержимому</a>
-
   <header class="site-header" data-header>
     <div class="shell header-inner">
       <a class="brand" href="/"><img src="/assets/logo.svg" alt="" width="34" height="34"><span>Home Center</span></a>
-      <button class="menu-button" type="button" aria-expanded="false" aria-controls="site-nav" data-menu-button>
-        <span></span><span></span><span></span><span class="sr-only">Меню</span>
-      </button>
+      <button class="menu-button" type="button" aria-expanded="false" aria-controls="site-nav" data-menu-button><span></span><span></span><span></span><span class="sr-only">Меню</span></button>
       <nav id="site-nav" class="site-nav" data-menu>
         <a href="/">Главная</a>
-        <a href="/#family">Возможности</a>
-        <a href="/#look">Как выглядит</a>
+        <a href="/#cozy">Уютный</a>
+        <a href="/#family">Семья</a>
+        <a href="/#platform">Платформа</a>
         <a href="/docs.html">Установка</a>
         <a class="current" href="/releases.html">Версии</a>
       </nav>
-      <a class="version-chip" href="/releases.html">0.15.0</a>
+      <a class="version-chip" href="/releases.html">Stable 0.15.0</a>
     </div>
   </header>
 
   <main id="content">
     <section class="page-hero">
       <div class="shell">
-        <span class="kicker">Версии</span>
-        <h1>Что уже работает.<br>Что появится дальше.</h1>
-        <p>Без сложной дорожной карты: текущая стабильная версия — сверху, следующие домашние возможности — ниже.</p>
+        <span class="kicker">Версии и каналы</span>
+        <h1>Продукт развивается постоянно.<br>Стабильный канал остаётся проверяемым.</h1>
+        <p>Главная страница описывает полный функциональный контур Home Center. Эта страница показывает, какой пользовательский пакет сейчас опубликован в stable-канале и как проверять доступность конкретной capability.</p>
       </div>
     </section>
 
@@ -44,9 +42,9 @@
       <div class="shell">
         <div class="release-hero-card reveal">
           <div>
-            <span class="badge">ТЕКУЩАЯ СТАБИЛЬНАЯ</span>
+            <span class="badge">ТЕКУЩИЙ STABLE</span>
             <h2>Home Center 0.15.0</h2>
-            <p>Опубликован 9 сентября 2026 года. Доступен стабильный пакет для Linux amd64.</p>
+            <p>Опубликован 9 сентября 2026 года. Доступен пакет Linux amd64, исходный архив, SHA256SUMS, release manifest, acceptance record и SPDX SBOM.</p>
           </div>
           <div class="hero-actions" style="margin-top:0">
             <a class="button primary" href="https://github.com/ControlCenterSoft/home-center-stable/releases/tag/v0.15.0">Скачать 0.15.0</a>
@@ -56,92 +54,64 @@
       </div>
     </section>
 
-    <section class="section" id="released">
+    <section class="section" id="channels">
       <div class="shell">
         <div class="section-head reveal">
-          <span class="kicker">Уже выпущено</span>
-          <h2>Основа Home Center становится сильнее</h2>
-          <p>Эти версии уже опубликованы в стабильном канале.</p>
+          <span class="kicker">Как читать сайт</span>
+          <h2>Возможность продукта и stable-пакет — не одно и то же.</h2>
+          <p>Home Center состоит из Core и подключаемых модулей. Конкретная функция доступна в установленной системе только тогда, когда она входит в установленный релиз и нужный модуль/provider поддерживается вашей инфраструктурой.</p>
         </div>
-
-        <div class="release-list">
-          <article class="release-card reveal">
-            <div class="release-card-top"><span class="version">0.15.0</span><time datetime="2026-09-09">09 сентября 2026</time></div>
-            <h3>Следующий стабильный шаг платформы</h3>
-            <p>Версия опубликована как полноценный stable-релиз с Linux amd64 пакетом, контрольными суммами, release manifest, acceptance record и SPDX SBOM.</p>
-            <div class="tags"><span>Stable</span><span>Linux amd64</span><span>SHA-256</span><span>SBOM</span></div>
-          </article>
-
-          <article class="release-card reveal">
-            <div class="release-card-top"><span class="version">0.14.1</span><span class="badge">ВЫПУЩЕНО</span></div>
-            <h3>Обновление линии 0.14</h3>
-            <p>Стабильное обновление предыдущей линии Home Center перед переходом к 0.15.</p>
-          </article>
-
-          <article class="release-card reveal">
-            <div class="release-card-top"><span class="version">0.14.0</span><time datetime="2026-09-07">07 сентября 2026</time></div>
-            <h3>Основа домашней инфраструктуры</h3>
-            <p>Web-интерфейс, работа с узлами и ресурсами, сертификаты, Home Lab и безопасное планирование действий.</p>
-            <div class="tags"><span>Узлы</span><span>Ресурсы</span><span>Сертификаты</span><span>Web-интерфейс</span></div>
-          </article>
+        <div class="three-benefits">
+          <article class="benefit reveal"><span>1</span><h3>Сайт</h3><p>Показывает полный продукт: «Уютный», семью, умный дом, медиа, игры, MDM, сеть, HA, backup/recovery и другие возможности.</p></article>
+          <article class="benefit reveal"><span>2</span><h3>Stable-канал</h3><p>Содержит пользовательские пакеты, для которых опубликованы контрольные суммы и сопроводительные release-артефакты.</p></article>
+          <article class="benefit reveal"><span>3</span><h3>Модули и providers</h3><p>Часть возможностей включается только при наличии соответствующего оборудования, операционной системы или внешнего provider.</p></article>
         </div>
       </div>
     </section>
 
-    <section class="section release-next" id="next">
+    <section class="section soft" id="product">
       <div class="shell">
         <div class="section-head reveal">
-          <span class="kicker">Дальше</span>
-          <h2>Больше домашних задач — меньше технической рутины</h2>
-          <p>Следующие версии расширяют Home Center от инфраструктурной основы к полноценной домашней системе.</p>
+          <span class="kicker">Функциональный контур</span>
+          <h2>Что относится к Home Center.</h2>
+          <p>Эти области рассматриваются как единый продуктовый контур и описаны на главной странице.</p>
         </div>
+        <div class="feature-grid">
+          <article class="feature-card reveal"><span class="feature-icon">🏡</span><h3>«Уютный»</h3><p>Mobile-first интерфейс «Домой», «Семья» и «Мой дом» с intent-driven управлением и безопасными настройками.</p></article>
+          <article class="feature-card reveal"><span class="feature-icon">👨‍👩‍👧‍👦</span><h3>Семья</h3><p>Роли, переносимые профили, устройства, детский контроль, интернет-политики, VPN и гостевой доступ.</p></article>
+          <article class="feature-card reveal"><span class="feature-icon">💡</span><h3>Дом и IoT</h3><p>ZigBee/MQTT, Yandex Smart Home, комнаты, устройства, сценарии и диагностика.</p></article>
+          <article class="feature-card reveal"><span class="feature-icon">🎬</span><h3>Медиа и игры</h3><p>TorrServer, torrent client, Lampa, медиатека и Minecraft Server с управлением мирами и резервными копиями.</p></article>
+          <article class="feature-card reveal"><span class="feature-icon">🖥️</span><h3>Компьютеры и MDM</h3><p>Windows deployment/software automation и Android MDM с enrollment, profiles и policies.</p></article>
+          <article class="feature-card reveal"><span class="feature-icon">🧩</span><h3>Платформа</h3><p>Single-node, multi-node/HA, VM/LXC, сеть, сертификаты, monitoring, capacity, backup и recovery.</p></article>
+        </div>
+      </div>
+    </section>
 
-        <div class="release-list">
-          <article class="release-card reveal">
-            <div class="release-card-top"><span class="version">0.16.0</span><span class="badge">СЛЕДУЮЩАЯ ЛИНИЯ</span></div>
-            <h3>Виртуальные машины, контейнеры и домашние приложения</h3>
-            <p>Домашние сервисы можно будет размещать раздельно, но видеть и обслуживать из одной панели.</p>
-            <div class="tags"><span>Proxmox</span><span>VM</span><span>Контейнеры</span></div>
-          </article>
-
-          <article class="release-card reveal">
-            <div class="release-card-top"><span class="version">0.17.0</span><span class="badge">РАЗВИВАЕТСЯ</span></div>
-            <h3>Умный дом</h3>
-            <p>ZigBee, комнаты, устройства, состояния и сценарии становятся обычной частью Home Center.</p>
-            <div class="tags"><span>ZigBee</span><span>Устройства</span><span>Сценарии</span></div>
-          </article>
-
-          <article class="release-card reveal">
-            <div class="release-card-top"><span class="version">0.18.0</span><span class="badge">РАЗВИВАЕТСЯ</span></div>
-            <h3>Семья и безопасный доступ</h3>
-            <p>Роли, права, защищённый удалённый доступ, восстановление и сетевые политики становятся понятнее для домашнего использования.</p>
-            <div class="tags"><span>Семья</span><span>Права</span><span>VPN</span><span>Восстановление</span></div>
-          </article>
+    <section class="section" id="verify">
+      <div class="shell">
+        <div class="section-head reveal">
+          <span class="kicker">Перед установкой</span>
+          <h2>Проверяйте релиз, а не только номер версии.</h2>
+          <p>Для пользовательского пакета используйте страницу stable-релиза и проверяйте SHA256SUMS. После установки смотрите фактическую версию Core, список установленных модулей и поддерживаемые capabilities/providers в интерфейсе Home Center.</p>
+        </div>
+        <div class="story-list">
+          <article class="story reveal"><div class="story-number">01</div><div><h3>Скачайте из stable-канала</h3><p>Используйте только официальный пользовательский release и его артефакты.</p></div></article>
+          <article class="story reveal"><div class="story-number">02</div><div><h3>Проверьте SHA-256</h3><p>Не продолжайте установку, если контрольная сумма скачанного пакета не совпадает.</p></div></article>
+          <article class="story reveal"><div class="story-number">03</div><div><h3>Проверьте capabilities после установки</h3><p>Home Center показывает, какие функции поддерживаются конкретным узлом, модулем и provider.</p></div></article>
         </div>
       </div>
     </section>
 
     <section class="section cta-section">
       <div class="shell cta">
-        <div>
-          <span class="kicker">Попробовать</span>
-          <h2>Начните с текущей стабильной версии</h2>
-          <p>Скачайте Home Center 0.15.0 и следуйте короткой инструкции.</p>
-        </div>
-        <div class="hero-actions">
-          <a class="button primary" href="/docs.html">Как установить</a>
-          <a class="button secondary" href="https://github.com/ControlCenterSoft/home-center-stable/releases/latest">Скачать</a>
-        </div>
+        <div><span class="kicker">Установка</span><h2>Начните со стабильного пользовательского пакета.</h2><p>Текущий stable-релиз — Home Center 0.15.0.</p></div>
+        <div class="hero-actions"><a class="button primary" href="/docs.html">Инструкция</a><a class="button secondary" href="https://github.com/ControlCenterSoft/home-center-stable/releases/latest">Открыть stable</a></div>
       </div>
     </section>
   </main>
 
   <footer class="site-footer">
-    <div class="shell footer-inner">
-      <div class="brand"><img src="/assets/logo.svg" alt="" width="30" height="30"><span>Home Center</span></div>
-      <p>Один понятный центр для цифрового дома.</p>
-      <span>© 2026 Home Center</span>
-    </div>
+    <div class="shell footer-inner"><div class="brand"><img src="/assets/logo.svg" alt="" width="30" height="30"><span>Home Center</span></div><p>Один центр для цифрового дома.</p><span>© 2026 Home Center</span></div>
   </footer>
 </body>
 </html>

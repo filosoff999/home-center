@@ -35,14 +35,21 @@ FORBIDDEN = [
 ]
 
 POSITIONING_MARKERS = [
-    "домашней инфраструктур",
+    "домашнюю инфраструктуру",
+    "Уютный",
     "переносимые профили",
     "детский контроль",
-    "медиатек",
-    "Lampa",
-    "ZigBee",
-    "VPN",
     "белые и чёрные списки",
+    "VPN",
+    "ZigBee",
+    "Yandex Smart Home",
+    "TorrServer",
+    "Lampa",
+    "Minecraft Server",
+    "Android MDM",
+    "Windows deployment",
+    "multi-node/HA",
+    "Backup и Recovery",
 ]
 
 
@@ -63,19 +70,24 @@ text_files = [
 combined = "\n".join(p.read_text(encoding="utf-8") for p in text_files)
 homepage = (SITE / "index.html").read_text(encoding="utf-8")
 docs = (SITE / "docs.html").read_text(encoding="utf-8")
+releases = (SITE / "releases.html").read_text(encoding="utf-8")
 app_js = (SITE / "assets/app.js").read_text(encoding="utf-8")
 
 if "home.control-center.pro" not in combined:
     fail("public hostname is absent")
-if "0.14.0" not in homepage:
-    fail("latest release identity is absent from homepage")
-if "Plan-only" not in homepage:
-    fail("0.14.0 safety boundary is absent from homepage")
+if "Stable 0.15.0" not in homepage:
+    fail("stable release identity is absent from homepage")
+if "Доступность конкретной capability зависит" not in homepage:
+    fail("release/module availability boundary is absent from homepage")
 
 for marker in POSITIONING_MARKERS:
     if marker.casefold() not in homepage.casefold():
-        fail(f"home infrastructure positioning marker is absent: {marker}")
+        fail(f"home product positioning marker is absent: {marker}")
 
+if "Home Center 0.15.0" not in releases:
+    fail("current stable release is absent from releases page")
+if "Возможность продукта и stable-пакет" not in releases:
+    fail("product-vs-stable availability explanation is absent")
 if "ControlCenterSoft/home-center-stable/releases" not in docs:
     fail("public stable installation channel is absent from installation page")
 if "ControlCenterSoft/home-center-free" in docs:
