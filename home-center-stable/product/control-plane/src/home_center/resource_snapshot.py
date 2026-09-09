@@ -10,7 +10,7 @@ from typing import Any, Iterable, Mapping
 NODE_ID = re.compile(r"^[a-z0-9][a-z0-9.-]{2,63}$")
 NODE_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9.-]{0,62}$")
 CAPABILITY = re.compile(r"^[a-z0-9][a-z0-9.-]+\.v[0-9]+$")
-VALID_ROLES = frozenset({"leader", "standby"})
+ROLE_ID = re.compile(r"^[a-z][a-z0-9-]{1,31}$")
 VALID_STATUSES = frozenset({"ready", "unreachable"})
 MAX_CAPABILITIES = 128
 MAX_CPU_COUNT = 4096
@@ -59,7 +59,7 @@ def _capacity_node(row: Mapping[str, Any]) -> dict[str, Any]:
     node_id = _text(row.get("node_id"), pattern=NODE_ID, code="invalid_node_id")
     name = _text(row.get("name"), pattern=NODE_NAME, code="invalid_node_name")
     role = row.get("role")
-    if role not in VALID_ROLES:
+    if not isinstance(role, str) or ROLE_ID.fullmatch(role) is None:
         raise ResourceSnapshotError("invalid_node_role")
     status = row.get("status")
     if status not in VALID_STATUSES:

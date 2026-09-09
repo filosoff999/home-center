@@ -71,5 +71,5 @@ class UpgradeEngine:
             current=current,
             target=target,
             state="planned",
-            steps=("preflight", "backup", "verify", "canary-secondary", "soak", "primary", "accept"),
+            steps=("preflight", "backup", "verify", "canary", "soak", "rollout", "accept"),
         )

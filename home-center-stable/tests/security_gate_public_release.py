@@ -9,6 +9,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 RUNTIME = ROOT / "product/control-plane/src/home_center"
 SOURCE_MANIFEST = ROOT / "SOURCE-MANIFEST.sha256"
+APPROVED_SOURCE = ROOT / "APPROVED-SOURCE.json"
 
 
 def require(condition: bool, message: str) -> None:
@@ -24,6 +25,7 @@ def main() -> int:
         "OpenAPI is not consolidated",
     )
     release_contracts = {
+        "approved-source-provenance.v1.schema.json",
         "public-release-acceptance.v1.schema.json",
         "public-release-manifest.v1.schema.json",
     }
@@ -33,6 +35,10 @@ def main() -> int:
     )
     for name in release_contracts:
         json.loads((ROOT / "contracts/releases" / name).read_text(encoding="utf-8"))
+
+    provenance = json.loads(APPROVED_SOURCE.read_text(encoding="utf-8"))
+    require(provenance.get("version") == (ROOT / "VERSION").read_text(encoding="ascii").strip(), "source provenance version")
+    require(re.fullmatch(r"[0-9a-f]{40}", str(provenance.get("approved_revision"))) is not None, "source provenance revision")
 
     forbidden_modules = {
         "module_artifact.py",
@@ -78,7 +84,7 @@ def main() -> int:
                 failures.append(f"{SOURCE_MANIFEST.relative_to(ROOT)}:{relative}:{fragment}")
 
     for path in sorted(ROOT.rglob("*")):
-        if not path.is_file() or path.is_symlink() or path in {Path(__file__), SOURCE_MANIFEST}:
+        if not path.is_file() or path.is_symlink() or path in {Path(__file__), SOURCE_MANIFEST, APPROVED_SOURCE}:
             continue
         try:
             value = path.read_text(encoding="utf-8")
@@ -155,6 +161,20 @@ def main() -> int:
     require(release_workflow.count("main_record=") == 2, "exact main is not checked twice")
     require(release_workflow.count("require_tag_vacant \"") == 2, "tag vacancy is not checked twice")
     require(release_workflow.count("require_release_vacant \"") == 2, "release vacancy is not checked twice")
+    candidate_build = release_workflow.index("build-release.py candidate")
+    tag_mutation = release_workflow.index("- name: Create annotated release tag")
+    release_mutation = release_workflow.index("- name: Create and publish release from reused assets")
+    require(
+        release_workflow.index('require_tag_vacant "$release_tag"') < candidate_build
+        and release_workflow.index('require_release_vacant "$release_tag"') < candidate_build,
+        "qualification vacancy check occurs after candidate build",
+    )
+    require(
+        release_workflow.rindex('require_tag_vacant "$RELEASE_TAG"') < tag_mutation
+        and release_workflow.rindex('require_release_vacant "$RELEASE_TAG"') < tag_mutation
+        and tag_mutation < release_mutation,
+        "publication mutation occurs before final vacancy check",
+    )
     require("artifact-ids: ${{ needs.qualify.outputs.artifact_id }}" in release_workflow, "qualified artifact ID is not reused")
     require(release_workflow.count("build-release.py candidate") == 1, "candidate must be built exactly once")
     require("deploy/scripts/install.sh" not in release_workflow, "publication workflow performs deployment")

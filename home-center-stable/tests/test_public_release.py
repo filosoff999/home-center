@@ -141,6 +141,7 @@ class PublicReleaseTests(unittest.TestCase):
 
     def test_release_contracts_are_version_neutral(self) -> None:
         expected = {
+            "approved-source-provenance.v1.schema.json": "home-center.approved-source-provenance.v1",
             "public-release-acceptance.v1.schema.json": "home-center.public-release-acceptance.v1",
             "public-release-manifest.v1.schema.json": "home-center.public-release-manifest.v1",
         }
@@ -154,6 +155,13 @@ class PublicReleaseTests(unittest.TestCase):
             self.assertNotIn(current, payload)
             self.assertEqual(schema["properties"]["schema"]["const"], schema_id)
             self.assertIn("pattern", schema["properties"]["version"])
+
+    def test_runtime_contains_source_provenance_and_portable_profile(self) -> None:
+        self.assertIn(
+            ("APPROVED-SOURCE.json", "APPROVED-SOURCE.json"),
+            release.RUNTIME_FILE_MAPPINGS,
+        )
+        self.assertIn(("deploy/examples", "deploy/examples"), release.RUNTIME_TREE_MAPPINGS)
 
     def test_nested_bytecode_cache_is_omitted(self) -> None:
         with tempfile.TemporaryDirectory() as value:

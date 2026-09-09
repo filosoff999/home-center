@@ -34,7 +34,7 @@ info = path.lstat()
 if not stat.S_ISREG(info.st_mode) or path.is_symlink() or info.st_size > 1024 * 1024:
     raise SystemExit("CONFIG_FILE_REJECTED")
 value = json.loads(path.read_text(encoding="utf-8"))
-if not isinstance(value, dict) or value.get("schema") != "home-center.config.v4":
+if not isinstance(value, dict) or value.get("schema") not in {"home-center.config.v4", "home-center.config.v5"}:
     raise SystemExit("CONFIG_SCHEMA_REJECTED")
 node_id = value.get("node_id")
 if not isinstance(node_id, str) or re.fullmatch(r"[a-z0-9](?:[a-z0-9.-]{0,126}[a-z0-9])?", node_id) is None:

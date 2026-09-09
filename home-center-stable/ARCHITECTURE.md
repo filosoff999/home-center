@@ -6,6 +6,8 @@ mutually authenticated peer listeners. Planning components return typed,
 non-executing plans. A root service exposes only fixed helper actions over a
 local Unix socket; callers cannot supply executable paths or shell commands.
 
-The two-node topology is single-writer. Health, backup, audit, module admission,
-resource snapshots, and release identity remain explicit subsystems with
-fail-closed input validation.
+Peer reconciliation is collection-based and deployment profiles support one to
+64 nodes. The supplied two-node topology remains single-writer. Health,
+infrastructure inventory, backup, audit, module admission, resource snapshots,
+and release identity remain explicit subsystems with fail-closed input
+validation.

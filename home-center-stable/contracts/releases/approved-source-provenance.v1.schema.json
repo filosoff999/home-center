@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ControlCenterSoft/home-center-stable/contracts/releases/approved-source-provenance.v1.schema.json",
+  "title": "Home Center approved source provenance",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "product",
+    "version",
+    "approved_repository",
+    "approved_revision",
+    "approved_manifest_sha256",
+    "stable_release_boundary_revision",
+    "summary",
+    "files"
+  ],
+  "properties": {
+    "schema": {"const": "home-center.approved-source-provenance.v1"},
+    "product": {"const": "home-center"},
+    "version": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"
+    },
+    "approved_repository": {"const": "ControlCenterSoft/home-center-development"},
+    "approved_revision": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "approved_manifest_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "stable_release_boundary_revision": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["total", "identical", "adapted", "excluded"],
+      "properties": {
+        "total": {"type": "integer", "minimum": 1},
+        "identical": {"type": "integer", "minimum": 0},
+        "adapted": {"type": "integer", "minimum": 0},
+        "excluded": {"type": "integer", "minimum": 0}
+      }
+    },
+    "files": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/file"}
+    }
+  },
+  "$defs": {
+    "file": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "approved_sha256", "disposition", "stable_sha256", "reason"],
+      "properties": {
+        "path": {"type": "string", "pattern": "^[A-Za-z0-9._/-]+$"},
+        "approved_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "disposition": {"enum": ["identical", "adapted", "excluded"]},
+        "stable_sha256": {
+          "oneOf": [
+            {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+            {"type": "null"}
+          ]
+        },
+        "reason": {
+          "enum": [
+            "approved-byte-copy",
+            "hardened-stable-integration",
+            "stable-public-surface",
+            "stable-release-boundary",
+            "stable-release-documentation"
+          ]
+        }
+      }
+    }
+  }
+}
