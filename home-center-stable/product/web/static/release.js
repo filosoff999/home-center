@@ -1,7 +1,7 @@
 "use strict";
 
 window.HOME_CENTER_RELEASE = Object.freeze({
-  version: "0.14.1",
+  version: "0.15.0",
   revision: null,
 });
 
@@ -21,7 +21,7 @@ function installReleaseUI() {
     label.id = "homeCenterVersion";
     const version = /^[0-9]+\.[0-9]+\.[0-9]+$/.test(window.HOME_CENTER_RELEASE.version)
       ? window.HOME_CENTER_RELEASE.version
-      : "0.14.1";
+      : "0.15.0";
     const revision = /^[0-9a-f]{40}$/.test(window.HOME_CENTER_RELEASE.revision || "")
       ? window.HOME_CENTER_RELEASE.revision
       : null;

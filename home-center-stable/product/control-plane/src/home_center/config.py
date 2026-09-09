@@ -15,7 +15,10 @@ from .external_access import normalize_public_hostname, normalize_trusted_proxy_
 from .util import secure_file
 
 
-CONFIG_SCHEMA = "home-center.config.v4"
+CONFIG_SCHEMAS = frozenset({"home-center.config.v4", "home-center.config.v5"})
+IDENTIFIER = re.compile(r"^[a-z][a-z0-9._:-]{1,127}$", re.IGNORECASE)
+ROLE_ID = re.compile(r"^[a-z][a-z0-9-]{1,31}$")
+CERTIFICATE_NAME = re.compile(r"^[A-Za-z0-9](?:[A-Za-z0-9.-]{0,251}[A-Za-z0-9])?$")
 
 
 @dataclass(frozen=True, slots=True)
@@ -55,7 +58,7 @@ class Config:
     cluster_ca: Path
     web_ca: Path
     deployment_profile: Path
-    peer: Peer
+    peers: tuple[Peer, ...]
     reconcile_interval_seconds: int
     peer_timeout_seconds: int
     ad_auth: AdAuthConfig = field(default_factory=AdAuthConfig.disabled)
@@ -166,33 +169,76 @@ def _external_access(raw: dict[str, Any]) -> ExternalAccessConfig:
         trusted_proxy_addresses=proxies,
     )
 
+
+def _peer(raw: dict[str, Any], peer_port: int) -> Peer:
+    node_id = _required(raw, "node_id", str)
+    name = _required(raw, "name", str)
+    if IDENTIFIER.fullmatch(node_id) is None or IDENTIFIER.fullmatch(name) is None:
+        raise ValueError("peer identity rejected")
+    address = _required(raw, "address", str)
+    parsed_address = ipaddress.ip_address(address)
+    if parsed_address.is_unspecified or parsed_address.is_loopback or parsed_address.is_multicast:
+        raise ValueError("peer address rejected")
+    formatted_address = f"[{address}]" if parsed_address.version == 6 else address
+    url = _required(raw, "url", str)
+    if url != f"https://{formatted_address}:{peer_port}":
+        raise ValueError("peer URL must match peer address and configured peer port")
+    certificate_name = _required(raw, "certificate_name", str)
+    if CERTIFICATE_NAME.fullmatch(certificate_name) is None:
+        raise ValueError("peer certificate name rejected")
+    return Peer(
+        node_id=node_id,
+        name=name,
+        address=address,
+        url=url,
+        certificate_name=certificate_name,
+    )
+
 def load_config(path: str | Path | None = None) -> Config:
     config_path = Path(path or os.environ.get("HOME_CENTER_CONFIG", "/etc/home-center/config.json"))
     with config_path.open("r", encoding="utf-8") as stream:
         raw = json.load(stream)
-    if not isinstance(raw, dict) or raw.get("schema") != CONFIG_SCHEMA:
+    if not isinstance(raw, dict) or raw.get("schema") not in CONFIG_SCHEMAS:
         raise ValueError(f"unsupported config schema in {config_path}")
     if config_path.stat().st_mode & 0o002:
         raise PermissionError(f"world-writable config rejected: {config_path}")
 
     role = _required(raw, "role", str)
-    if role not in {"leader", "standby"}:
-        raise ValueError("role must be leader or standby")
+    if ROLE_ID.fullmatch(role) is None:
+        raise ValueError("role rejected")
     address = _required(raw, "management_address", str)
     parsed_address = ipaddress.ip_address(address)
     if parsed_address.is_unspecified or parsed_address.is_loopback or parsed_address.is_multicast:
         raise ValueError("management_address must be a concrete LAN address")
 
-    peer_raw = _required(raw, "peer", dict)
-    peer_address = _required(peer_raw, "address", str)
-    ipaddress.ip_address(peer_address)
-    peer_url = _required(peer_raw, "url", str)
-    if peer_url != f"https://{peer_address}:{int(raw.get('peer_port', 9443))}":
-        raise ValueError("peer URL must match peer address and configured peer port")
-
     ports = (int(raw.get("web_port", 8443)), int(raw.get("peer_port", 9443)))
     if any(port < 1024 or port > 65535 for port in ports) or ports[0] == ports[1]:
         raise ValueError("web/peer ports must be distinct unprivileged ports")
+
+    if raw["schema"] == "home-center.config.v4":
+        if "peers" in raw:
+            raise ValueError("v4 peers collection rejected")
+        peers_raw: object = [_required(raw, "peer", dict)]
+    else:
+        if "peer" in raw:
+            raise ValueError("v5 legacy peer rejected")
+        peers_raw = _required(raw, "peers", list)
+    if (
+        not isinstance(peers_raw, list)
+        or len(peers_raw) > 63
+        or any(not isinstance(item, dict) for item in peers_raw)
+    ):
+        raise ValueError("peers config rejected")
+    peers = tuple(_peer(item, ports[1]) for item in peers_raw)
+    peer_ids = [item.node_id.casefold() for item in peers]
+    peer_names = [item.name.casefold() for item in peers]
+    peer_addresses = [item.address for item in peers]
+    peer_certificates = [item.certificate_name.casefold() for item in peers]
+    if any(
+        len(values) != len(set(values))
+        for values in (peer_ids, peer_names, peer_addresses, peer_certificates)
+    ):
+        raise ValueError("duplicate peer identity")
 
     cfg = Config(
         cluster_id=_required(raw, "cluster_id", str),
@@ -213,19 +259,20 @@ def load_config(path: str | Path | None = None) -> Config:
         cluster_ca=_path(raw, "cluster_ca"),
         web_ca=_path(raw, "web_ca"),
         deployment_profile=_path(raw, "deployment_profile"),
-        peer=Peer(
-            node_id=_required(peer_raw, "node_id", str),
-            name=_required(peer_raw, "name", str),
-            address=peer_address,
-            url=peer_url,
-            certificate_name=_required(peer_raw, "certificate_name", str),
-        ),
+        peers=peers,
         reconcile_interval_seconds=max(5, min(int(raw.get("reconcile_interval_seconds", 15)), 300)),
         peer_timeout_seconds=max(1, min(int(raw.get("peer_timeout_seconds", 3)), 15)),
         ad_auth=_ad_auth(raw),
         external_access=_external_access(raw),
     )
-    if cfg.peer.node_id == cfg.node_id or cfg.peer.name == cfg.node_name:
+    if IDENTIFIER.fullmatch(cfg.node_id) is None or IDENTIFIER.fullmatch(cfg.node_name) is None:
+        raise ValueError("local node identity rejected")
+    if any(
+        peer.node_id.casefold() == cfg.node_id.casefold()
+        or peer.name.casefold() == cfg.node_name.casefold()
+        or peer.address == cfg.management_address
+        for peer in cfg.peers
+    ):
         raise ValueError("peer identity must differ from local node identity")
     if cfg.web_ca.resolve() == cfg.cluster_ca.resolve():
         raise ValueError("web_ca must be independent from cluster_ca")

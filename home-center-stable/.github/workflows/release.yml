@@ -51,7 +51,7 @@ jobs:
         run: |
           set -Eeuo pipefail
           python3 deploy/scripts/build-release.py verify-source --source-root .
-          PYTHONPATH=product/control-plane/src python3 -m unittest -v tests/test_public_release.py
+          PYTHONPATH=product/control-plane/src python3 -m unittest discover -v -s tests -p 'test_*.py'
           python3 tests/security_gate_public_release.py
           PYTHONPATH=product/control-plane/src python3 -c 'import home_center.actions, home_center.api, home_center.module_admission, home_center.server'
           test -z "$(git status --porcelain=v1 --untracked-files=all)" || { echo SOURCE_TREE_MUTATED >&2; exit 66; }
@@ -152,7 +152,7 @@ jobs:
         run: |
           set -Eeuo pipefail
           python3 deploy/scripts/build-release.py verify-source --source-root .
-          PYTHONPATH=product/control-plane/src python3 -m unittest -v tests/test_public_release.py
+          PYTHONPATH=product/control-plane/src python3 -m unittest discover -v -s tests -p 'test_*.py'
           python3 tests/security_gate_public_release.py
           PYTHONPATH=product/control-plane/src python3 -c 'import home_center.actions, home_center.api, home_center.module_admission, home_center.server'
           test -z "$(git status --porcelain=v1 --untracked-files=all)" || { echo SOURCE_TREE_MUTATED >&2; exit 66; }

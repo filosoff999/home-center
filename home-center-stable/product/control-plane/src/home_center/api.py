@@ -28,6 +28,7 @@ from .auth import SessionManager
 from .external_access import ExternalAccessRejected, ExternalRequestContext
 from .helper_client import HelperClientError
 from .local_admin_auth import LocalAdminAuthError
+from .node_inventory_api import NodeInventoryError
 from .runtime import Runtime
 from .util import utc_now
 
@@ -232,6 +233,28 @@ class RuntimeRequestHandler(BaseHTTPRequestHandler):
             self._json(200, {"schema": "home-center.session.v1", "authenticated": True, "actor": actor})
         elif path in {"/api/v1/overview", "/api/v1/cluster"}:
             self._json(200, self.runtime.overview())
+        elif path == "/api/v1/infrastructure":
+            try:
+                inventory = self.runtime.node_inventory.snapshot()
+            except NodeInventoryError:
+                LOG.error("typed infrastructure inventory rejected inconsistent persisted facts")
+                self._error(
+                    HTTPStatus.SERVICE_UNAVAILABLE,
+                    "infrastructure_inventory_unavailable",
+                    "Инвентаризация инфраструктуры временно недоступна",
+                    correlation_id,
+                )
+                return
+            except Exception:
+                LOG.exception("typed infrastructure inventory unavailable")
+                self._error(
+                    HTTPStatus.SERVICE_UNAVAILABLE,
+                    "infrastructure_inventory_unavailable",
+                    "Инвентаризация инфраструктуры временно недоступна",
+                    correlation_id,
+                )
+                return
+            self._json(HTTPStatus.OK, inventory)
         elif path == "/api/v1/nodes":
             self._json(200, {"schema": "home-center.nodes.v1", "items": self.runtime.store.nodes()})
         elif path == "/api/v1/actions":
@@ -634,4 +657,5 @@ class PeerRequestHandler(BaseHTTPRequestHandler):
     def _peer_identity_matches(self) -> bool:
         certificate = self.connection.getpeercert()  # type: ignore[attr-defined]
         subjects = dict(item[0] for item in certificate.get("subject", ()))
-        return subjects.get("commonName") == self.runtime.config.peer.certificate_name
+        common_name = subjects.get("commonName")
+        return any(common_name == peer.certificate_name for peer in self.runtime.config.peers)

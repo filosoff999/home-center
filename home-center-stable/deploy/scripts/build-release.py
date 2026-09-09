@@ -435,8 +435,10 @@ RUNTIME_TREE_MAPPINGS = (
     ("deploy/systemd", "deploy/systemd"),
     ("deploy/config", "deploy/config"),
     ("deploy/profiles", "deploy/profiles"),
+    ("deploy/examples", "deploy/examples"),
 )
 RUNTIME_FILE_MAPPINGS = (
+    ("APPROVED-SOURCE.json", "APPROVED-SOURCE.json"),
     ("deploy/runtime/run.py", "run.py"),
     ("deploy/runtime/backup-run.py", "backup-run.py"),
     ("deploy/runtime/provision-local-admin.py", "provision-local-admin.py"),

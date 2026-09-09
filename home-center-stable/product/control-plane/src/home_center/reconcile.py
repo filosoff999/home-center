@@ -10,7 +10,7 @@ import urllib.error
 import urllib.request
 from typing import Any
 
-from .config import Config
+from .config import Config, Peer
 from .inventory import collect
 from .store import StateStore
 
@@ -26,7 +26,7 @@ class Reconciler:
         self._thread = threading.Thread(target=self._run, name="home-center-reconcile", daemon=True)
         self._latest_local: dict[str, Any] = {}
         self._lock = threading.Lock()
-        self._peer_state = "unknown"
+        self._peer_states = {peer.node_id: "unknown" for peer in config.peers}
 
     def start(self) -> None:
         self.reconcile_once()
@@ -57,22 +57,23 @@ class Reconciler:
         with self._lock:
             self._latest_local = local
         self.store.upsert_node(local, "ready")
-        try:
-            peer = self._fetch_peer()
-            self._validate_peer(peer)
-            self.store.upsert_node(peer, "ready")
-            self._transition_peer("ready", None)
-        except Exception as exc:
-            self.store.mark_node(self.config.peer.node_id, "unreachable")
-            self._transition_peer("unreachable", self._failure_class(exc))
+        for peer in self.config.peers:
+            try:
+                capability = self._fetch_peer(peer)
+                self._validate_peer(peer, capability)
+                self.store.upsert_node(capability, "ready")
+                self._transition_peer(peer, "ready", None)
+            except Exception as exc:
+                self.store.mark_node(peer.node_id, "unreachable")
+                self._transition_peer(peer, "unreachable", self._failure_class(exc))
 
-    def _fetch_peer(self) -> dict[str, Any]:
+    def _fetch_peer(self, peer: Peer) -> dict[str, Any]:
         context = ssl.create_default_context(cafile=str(self.config.cluster_ca))
         context.minimum_version = ssl.TLSVersion.TLSv1_3
         context.load_cert_chain(str(self.config.tls_certificate), str(self.config.tls_private_key))
         request = urllib.request.Request(
-            f"{self.config.peer.url}/internal/v1/node",
-            headers={"Accept": "application/json", "User-Agent": "home-center-peer/0.1"},
+            f"{peer.url}/internal/v1/node",
+            headers={"Accept": "application/json", "User-Agent": "home-center-peer/1"},
         )
         with urllib.request.urlopen(request, timeout=self.config.peer_timeout_seconds, context=context) as response:
             if response.status != 200:
@@ -92,32 +93,33 @@ class Reconciler:
             raise ValueError("missing peer capability")
         return capability
 
-    def _validate_peer(self, capability: dict[str, Any]) -> None:
+    @staticmethod
+    def _validate_peer(peer: Peer, capability: dict[str, Any]) -> None:
         if capability.get("schema") != "home-center.node-capability.v1":
             raise ValueError("unsupported capability schema")
         node = capability.get("node")
         if not isinstance(node, dict):
             raise ValueError("missing node identity")
         expected = {
-            "id": self.config.peer.node_id,
-            "name": self.config.peer.name,
-            "address": self.config.peer.address,
+            "id": peer.node_id,
+            "name": peer.name,
+            "address": peer.address,
         }
         for key, value in expected.items():
             if node.get(key) != value:
                 raise ValueError(f"peer {key} mismatch")
 
-    def _transition_peer(self, state: str, reason: str | None) -> None:
-        if state == self._peer_state:
+    def _transition_peer(self, peer: Peer, state: str, reason: str | None) -> None:
+        old = self._peer_states.get(peer.node_id, "unknown")
+        if state == old:
             return
-        old = self._peer_state
-        self._peer_state = state
+        self._peer_states[peer.node_id] = state
         self.store.audit(
             actor="system:reconciler",
             action="peer.health.transition",
-            target=self.config.peer.node_id,
+            target=peer.node_id,
             outcome=state,
-            correlation_id=f"peer-{self.config.peer.node_id}",
+            correlation_id=f"peer-{peer.node_id}",
             details={"from": old, "to": state, "reason_class": reason},
         )
 

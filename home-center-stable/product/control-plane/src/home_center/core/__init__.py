@@ -32,7 +32,7 @@ from .intent_engine import (
     IntentRequest,
     IntentStep,
 )
-from .node_manager import NodeManager, NodeState, NodeTransitionPlan
+from .node_manager import NodeDescriptor, NodeManager, NodeState, NodeTransitionPlan
 from .policy_engine import PolicyEngine
 from .service_manager import ServiceManager
 from .upgrade_engine import UpgradeEngine
@@ -65,6 +65,7 @@ __all__ = [
     "IntentPlanState",
     "IntentRequest",
     "IntentStep",
+    "NodeDescriptor",
     "NodeManager",
     "NodeState",
     "NodeTransitionPlan",
