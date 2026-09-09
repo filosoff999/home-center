@@ -35,7 +35,6 @@ FORBIDDEN = [
 ]
 
 POSITIONING_MARKERS = [
-    "домашнюю инфраструктуру",
     "Уютный",
     "переносимые профили",
     "детский контроль",
@@ -47,9 +46,10 @@ POSITIONING_MARKERS = [
     "Lampa",
     "Minecraft Server",
     "Android MDM",
-    "Windows deployment",
-    "multi-node/HA",
-    "Backup и Recovery",
+    "PXE/iPXE",
+    "Multi-node",
+    "Резервные копии",
+    "восстановление",
 ]
 
 
@@ -75,9 +75,9 @@ app_js = (SITE / "assets/app.js").read_text(encoding="utf-8")
 
 if "home.control-center.pro" not in combined:
     fail("public hostname is absent")
-if "Stable 0.15.0" not in homepage:
+if "0.15 stable" not in homepage:
     fail("stable release identity is absent from homepage")
-if "Доступность конкретной capability зависит" not in homepage:
+if "Состав конкретной установки зависит" not in homepage:
     fail("release/module availability boundary is absent from homepage")
 
 for marker in POSITIONING_MARKERS:
