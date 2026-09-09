@@ -1,24 +1,7 @@
 (() => {
-  const scriptSrc = document.currentScript?.src || '';
-  let assetVersion = '';
-  if (scriptSrc) {
-    try {
-      assetVersion = new URL(scriptSrc, window.location.href).searchParams.get('v') || '';
-    } catch {
-      assetVersion = '';
-    }
-  }
-
-  const lightTheme = document.createElement('link');
-  lightTheme.rel = 'stylesheet';
-  lightTheme.href = `/assets/light.css${assetVersion ? `?v=${encodeURIComponent(assetVersion)}` : ''}`;
-  document.head.appendChild(lightTheme);
-  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', '#f6fbf8');
-
-  // The public installation channel is deliberately stable and separate from
-  // private/product source history. Keep old published CTA URLs from leading
-  // visitors to inaccessible or retired repositories.
   const stableReleases = 'https://github.com/ControlCenterSoft/home-center-stable/releases';
+
+  // Старые публичные ссылки автоматически переводим в актуальный stable-канал.
   for (const link of document.querySelectorAll('a[href]')) {
     const href = link.getAttribute('href') || '';
     if (
@@ -26,9 +9,6 @@
       href.includes('github.com/ControlCenterSoft/home-center/releases')
     ) {
       link.href = stableReleases;
-      if (/скачать|открыть 0\.14|последн/i.test(link.textContent || '')) {
-        link.textContent = 'Проверить стабильные релизы';
-      }
     }
   }
 
@@ -45,6 +25,7 @@
       const open = menu.classList.toggle('open');
       menuButton.setAttribute('aria-expanded', String(open));
     });
+
     menu.addEventListener('click', event => {
       if (event.target instanceof HTMLAnchorElement) {
         menu.classList.remove('open');
@@ -63,6 +44,7 @@
         }
       }
     }, { threshold: 0.08 });
+
     items.forEach(item => observer.observe(item));
   } else {
     items.forEach(item => item.classList.add('visible'));
