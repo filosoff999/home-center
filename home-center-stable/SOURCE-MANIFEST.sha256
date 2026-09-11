@@ -1,3 +1,4 @@
+8fc7b3c260ffde9047513d2c65fcf7c35d8cadf5008896e78ce861a213f35d3f  .github/workflows/promote-qualified-stable-v7.yml
 4ae28e6c15e7e043fde8a0aa947798878822befd611a6b0d3947feed1fa41c61  .github/workflows/release.yml
 25d359cef93c518845da602ddff96ee2cd0987530676a72156b289922f089c14  .github/workflows/verify.yml
 ca0e0809bcef9946addf167a6dc212d388ba50319170e69a8c64c0e5c78c6b66  .gitignore
