@@ -8,6 +8,21 @@ and a bounded helper for local credential rotation. Version 0.15 supports
 validated deployment profiles containing one to 64 nodes while retaining the
 two-node, single-writer profile as a conservative deployment example.
 
+## Release channels
+
+This repository is the **stable channel**. Version `0.15.0` is the current
+qualified stable release.
+
+The newer official source-release line is published separately in
+[`ControlCenterSoft/home-center-development`](https://github.com/ControlCenterSoft/home-center-development),
+where the latest officially published source release is `0.40.0`.
+
+Features added after stable `0.15.0` must not be treated as available in this
+stable channel until the corresponding stable package is separately qualified
+and published here.
+
+## Start here
+
 Start with [INSTALL.md](INSTALL.md), then tailor the examples described in
 [CONFIGURATION.md](CONFIGURATION.md). Release identity and integrity files are
 described in [RELEASE.md](RELEASE.md).
