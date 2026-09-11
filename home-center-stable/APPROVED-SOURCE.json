@@ -1,16 +1,16 @@
 {
   "schema": "home-center.approved-source-provenance.v1",
   "product": "home-center",
-  "version": "0.44.0",
+  "version": "0.45.0",
   "approved_repository": "ControlCenterSoft/home-center-development",
-  "approved_revision": "465aa6508742662e5bd4771278c2dfc73f5bcf9a",
-  "approved_manifest_sha256": "c73475e8d26a256570346a819b4ef612ca096d11ae688a0a82a170069778d1ca",
-  "stable_release_boundary_revision": "91feddd78da305b15908645dea704aa8712a0815",
+  "approved_revision": "d1aecad176f402e3e2a72dd1107a25cfdb465add",
+  "approved_manifest_sha256": "0fd430aa2aa6ad54a92fd0acd751a7cec5c7a1de789e6cf8f5b0505cc0b4c1c6",
+  "stable_release_boundary_revision": "2724ef9885eef459fa7daded646e98f73d6469d1",
   "summary": {
-    "total": 373,
-    "identical": 239,
+    "total": 379,
+    "identical": 241,
     "adapted": 6,
-    "excluded": 128
+    "excluded": 132
   },
   "files": [
     {
@@ -36,14 +36,14 @@
     },
     {
       "path": ".github/workflows/publish-deployment-artifact.yml",
-      "approved_sha256": "161d4afb77ab49c0c1837dc4fa56e9f2b6a884643993a79aabf281a719dc8972",
+      "approved_sha256": "15ffd6dc9a133ffc5fed459c77728017c05b557642bc711a1d45b73c9c371186",
       "disposition": "excluded",
       "stable_sha256": null,
       "reason": "stable-release-boundary"
     },
     {
       "path": ".github/workflows/publish-release.yml",
-      "approved_sha256": "8812000663651d9e0381a09bff6541ebe822049de6a224aa3ba3642a0d8f9ae1",
+      "approved_sha256": "ecdc657049e682eab4dbe576fddddb032bb846e5eee916783fdc4daf47ae24e3",
       "disposition": "excluded",
       "stable_sha256": null,
       "reason": "stable-release-boundary"
@@ -66,21 +66,21 @@
       "path": "README.md",
       "approved_sha256": "93657b2ac76192cc2b457c7019c3a7b82afba5d8ee0a50d9a796234de3788814",
       "disposition": "adapted",
-      "stable_sha256": "199b818a8f9faad4906714cb16e930ed1000f568aaf7f8905873a4e8db207366",
+      "stable_sha256": "eab252f3da1bc80c5244fba97a1c89c3ac4213d2915f3016e99232aa28e5f0ce",
       "reason": "hardened-stable-integration"
     },
     {
       "path": "VERSION",
-      "approved_sha256": "2e67466499d10d356b662dee575193faed47851ad2cd230d762d2d5b4231118f",
+      "approved_sha256": "fd0ffde4149bd15f8b246e0625bad7ae9dee486ce63e9b87632f1457bae2c781",
       "disposition": "identical",
-      "stable_sha256": "2e67466499d10d356b662dee575193faed47851ad2cd230d762d2d5b4231118f",
+      "stable_sha256": "fd0ffde4149bd15f8b246e0625bad7ae9dee486ce63e9b87632f1457bae2c781",
       "reason": "approved-byte-copy"
     },
     {
       "path": "contracts/README.md",
       "approved_sha256": "a1e587c06ad129fe7fdc66ffc2f7aa25b06ab560fe1e8977525956cebb6be6a0",
       "disposition": "adapted",
-      "stable_sha256": "a5e666e86d189bdaebc1292d2009da4fedcfc57b36ad2f0339e18b29dc8f970d",
+      "stable_sha256": "baa8ba7f00dd04cdaf1adfb58e6ad05cdb396e727ee371ffa3029413999d1c75",
       "reason": "hardened-stable-integration"
     },
     {
@@ -777,6 +777,13 @@
       "reason": "approved-byte-copy"
     },
     {
+      "path": "contracts/modules/module-home-service-contract-multi-requirement-set.v1.schema.json",
+      "approved_sha256": "f2db275f9d6ea6e52e186e83aa1aed03a72b0f1321e32474c8bacea0911fcca3",
+      "disposition": "identical",
+      "stable_sha256": "f2db275f9d6ea6e52e186e83aa1aed03a72b0f1321e32474c8bacea0911fcca3",
+      "reason": "approved-byte-copy"
+    },
+    {
       "path": "contracts/modules/module-home-service-contract-requirement-binding-revalidation.v1.schema.json",
       "approved_sha256": "2f33fe01feffe00bfbe9595dedf9e981b77e55342c2aa2ea053d2ecaade78684",
       "disposition": "identical",
@@ -1330,10 +1337,17 @@
       "reason": "stable-release-documentation"
     },
     {
+      "path": "docs/releases/0.45.0.md",
+      "approved_sha256": "76daf1f77185d4466d261126e2f290bd6d8116c402681e9a09bf4f05062db25f",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-release-documentation"
+    },
+    {
       "path": "product/control-plane/src/home_center/__init__.py",
-      "approved_sha256": "a2c43e9b829842f70bd30591e2df19615f05f01caee0f5c0e5ef50a5583c2ba3",
+      "approved_sha256": "875b89b7fbd9c80bee742e2edfb2e111baae8bf0b364aae5744eb1b3d91797bd",
       "disposition": "identical",
-      "stable_sha256": "a2c43e9b829842f70bd30591e2df19615f05f01caee0f5c0e5ef50a5583c2ba3",
+      "stable_sha256": "875b89b7fbd9c80bee742e2edfb2e111baae8bf0b364aae5744eb1b3d91797bd",
       "reason": "approved-byte-copy"
     },
     {
@@ -1897,6 +1911,13 @@
       "reason": "approved-byte-copy"
     },
     {
+      "path": "product/control-plane/src/home_center/module_home_service_multi_requirements.py",
+      "approved_sha256": "3718523f7c90666d2f03e4ee7a6aa91359e193ee13b7295429322facf8b14723",
+      "disposition": "identical",
+      "stable_sha256": "3718523f7c90666d2f03e4ee7a6aa91359e193ee13b7295429322facf8b14723",
+      "reason": "approved-byte-copy"
+    },
+    {
       "path": "product/control-plane/src/home_center/module_home_service_requirement_binding.py",
       "approved_sha256": "f4a901fe9770ba5627d5931f8fdf99346741c9e87f83475d3d10fe9b1c1fd08b",
       "disposition": "identical",
@@ -2115,9 +2136,9 @@
     },
     {
       "path": "pyproject.toml",
-      "approved_sha256": "db5bcd67b9eebbd5cdaf3672d9f8328a154eb3a5edce10e818e0569787ad86ed",
+      "approved_sha256": "950f12a58a1fe1578f23bcb262639bbc06c854289a6103f3abd2459531915233",
       "disposition": "identical",
-      "stable_sha256": "db5bcd67b9eebbd5cdaf3672d9f8328a154eb3a5edce10e818e0569787ad86ed",
+      "stable_sha256": "950f12a58a1fe1578f23bcb262639bbc06c854289a6103f3abd2459531915233",
       "reason": "approved-byte-copy"
     },
     {
@@ -2401,6 +2422,13 @@
       "reason": "stable-public-surface"
     },
     {
+      "path": "tests/test_module_home_service_boundary_hardening.py",
+      "approved_sha256": "a0a79d23665042ffc6f0905da2c2fce7ac0f385447575ce95291225cab9419e6",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
       "path": "tests/test_module_home_service_contract_binding.py",
       "approved_sha256": "c491fddc92d321a5d4293735f33de6d6d12a49a574ff12488d571e2e5e96a479",
       "disposition": "excluded",
@@ -2431,6 +2459,20 @@
     {
       "path": "tests/test_module_home_service_contract_requirements_hardening.py",
       "approved_sha256": "75be6f0b71c4eab0038022c51147071bd619c5987d1fb8043a325de8f9fa07ef",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_module_home_service_multi_requirements.py",
+      "approved_sha256": "57b81487bf4320528c566c2a851e6a2a5354bfc8611cf0b619e9fce34830024c",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_module_home_service_multi_requirements_bounds.py",
+      "approved_sha256": "ae01dd7cd29d97f95bc267e01698132852b00c31b2e2431d847b09dd17f991ea",
       "disposition": "excluded",
       "stable_sha256": null,
       "reason": "stable-public-surface"
