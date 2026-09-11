@@ -1,21 +1,21 @@
 {
   "schema": "home-center.approved-source-provenance.v1",
   "product": "home-center",
-  "version": "0.47.0",
+  "version": "0.48.0",
   "approved_repository": "ControlCenterSoft/home-center-development",
-  "approved_revision": "2353f1a6cf839dbdb3c981011b8099622484521f",
-  "approved_manifest_sha256": "3b3049a85a144aad70bc4ec79e91a6b77a2512b3bbdbbe93f86e4edb6d3c5cfb",
-  "stable_release_boundary_revision": "4ce519e775ac66e807486474a4a8e29f2f3b6ea2",
+  "approved_revision": "68326c9c213ab0ffede11decfff27e663e95e761",
+  "approved_manifest_sha256": "faafdef1d93e2ba3725eae22ea51ef15f02857ea5d869f6f45022ad1fff494d4",
+  "stable_release_boundary_revision": "3e95b8b9a088e175224b218c1e4a0be86415ab84",
   "summary": {
-    "total": 382,
-    "identical": 241,
+    "total": 387,
+    "identical": 242,
     "adapted": 6,
-    "excluded": 135
+    "excluded": 139
   },
   "files": [
     {
       "path": ".github/workflows/ci.yml",
-      "approved_sha256": "03011647286ebd2ca187613aa2534035673c85ba350f1d504abd9e8387adfb2c",
+      "approved_sha256": "2cced2afbcce3d487e7cae380eec730862a4fb58fc2681ebf61b13b9ea219067",
       "disposition": "excluded",
       "stable_sha256": null,
       "reason": "stable-release-boundary"
@@ -66,21 +66,21 @@
       "path": "README.md",
       "approved_sha256": "93657b2ac76192cc2b457c7019c3a7b82afba5d8ee0a50d9a796234de3788814",
       "disposition": "adapted",
-      "stable_sha256": "1d5b98131daef7b182cee6afa271f33524db6a6b2c4abfcf32e07ae24604a858",
+      "stable_sha256": "d2f592d622a07c83196bcf12470bef94ae6b7cc8279095ad388c32bfb38b4fe6",
       "reason": "hardened-stable-integration"
     },
     {
       "path": "VERSION",
-      "approved_sha256": "ce0ae25b92cad1efa474eb0605bcb1160f6913aed259c1057035987a67f31ae4",
+      "approved_sha256": "aff9ddc2135efcf30e7d35185a1021bb6ce6c87692431ae712b49482a43dd6ae",
       "disposition": "identical",
-      "stable_sha256": "ce0ae25b92cad1efa474eb0605bcb1160f6913aed259c1057035987a67f31ae4",
+      "stable_sha256": "aff9ddc2135efcf30e7d35185a1021bb6ce6c87692431ae712b49482a43dd6ae",
       "reason": "approved-byte-copy"
     },
     {
       "path": "contracts/README.md",
       "approved_sha256": "a1e587c06ad129fe7fdc66ffc2f7aa25b06ab560fe1e8977525956cebb6be6a0",
       "disposition": "adapted",
-      "stable_sha256": "0779499d771832fa65696c93c4022312b892ebf84a3a1dc3d1b9435f8aaf2f2a",
+      "stable_sha256": "077b4c9c88b32b5e7b046c37570071c27f2f24aff17b9e8df9c8c1ac309ee9a7",
       "reason": "hardened-stable-integration"
     },
     {
@@ -1120,6 +1120,13 @@
       "reason": "approved-byte-copy"
     },
     {
+      "path": "docs/architecture/cozy-interface.md",
+      "approved_sha256": "e1979bb7695e44754390991ca159c5e64ae7fed05fa163cb66be475051d4fdfb",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-release-documentation"
+    },
+    {
       "path": "docs/releases/0.15.0.md",
       "approved_sha256": "28e7818337a87bf6422c30128f70d3fcaf4bf9d17a0b497d41f4c6d32e8bdd6a",
       "disposition": "excluded",
@@ -1358,10 +1365,17 @@
       "reason": "stable-release-documentation"
     },
     {
+      "path": "docs/releases/0.48.0.md",
+      "approved_sha256": "12c44b430be418252e84cd58ef64eb4fb7da610f6ad5c651cb2736bb42b6c519",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-release-documentation"
+    },
+    {
       "path": "product/control-plane/src/home_center/__init__.py",
-      "approved_sha256": "c7ddaf136e016dd13261c27650e731fa13c0126b8067e9390337cc6ecfaf7bbb",
+      "approved_sha256": "24b1729b0e645bea823832dffa355f3adebcd5a96961fb4e685f29700e19203d",
       "disposition": "identical",
-      "stable_sha256": "c7ddaf136e016dd13261c27650e731fa13c0126b8067e9390337cc6ecfaf7bbb",
+      "stable_sha256": "24b1729b0e645bea823832dffa355f3adebcd5a96961fb4e685f29700e19203d",
       "reason": "approved-byte-copy"
     },
     {
@@ -1401,9 +1415,9 @@
     },
     {
       "path": "product/control-plane/src/home_center/api_v2.py",
-      "approved_sha256": "4d48c19a08a4ee233424359804251f633c460502bf0de6e0a546e8d38ea63a4d",
+      "approved_sha256": "8504f5da86029f82873409dc6a14f98531dcc54097fa16af7d61c3e678833dce",
       "disposition": "identical",
-      "stable_sha256": "4d48c19a08a4ee233424359804251f633c460502bf0de6e0a546e8d38ea63a4d",
+      "stable_sha256": "8504f5da86029f82873409dc6a14f98531dcc54097fa16af7d61c3e678833dce",
       "reason": "approved-byte-copy"
     },
     {
@@ -1757,6 +1771,13 @@
       "reason": "approved-byte-copy"
     },
     {
+      "path": "product/control-plane/src/home_center/household_runtime.py",
+      "approved_sha256": "578aecfc0b872e6f37c082aafbac6b747a91fe6d7f6153bdf83478a93d6f3202",
+      "disposition": "identical",
+      "stable_sha256": "578aecfc0b872e6f37c082aafbac6b747a91fe6d7f6153bdf83478a93d6f3202",
+      "reason": "approved-byte-copy"
+    },
+    {
       "path": "product/control-plane/src/home_center/household_store.py",
       "approved_sha256": "9e811354be17bc1545c401af355219f9847ea7e2ba62146a4407da21d1a9c48b",
       "disposition": "identical",
@@ -2080,9 +2101,9 @@
     },
     {
       "path": "product/control-plane/src/home_center/runtime.py",
-      "approved_sha256": "182974aeb15b4bb67f132437cce9da7d2d8ab61fdf9860b162e4359d20f60d10",
+      "approved_sha256": "714f02befbbdaddc4c4c8ea5595acf88505f396227dc532d2ee1992b462f8b6e",
       "disposition": "identical",
-      "stable_sha256": "182974aeb15b4bb67f132437cce9da7d2d8ab61fdf9860b162e4359d20f60d10",
+      "stable_sha256": "714f02befbbdaddc4c4c8ea5595acf88505f396227dc532d2ee1992b462f8b6e",
       "reason": "approved-byte-copy"
     },
     {
@@ -2129,30 +2150,30 @@
     },
     {
       "path": "product/web/static/app.css",
-      "approved_sha256": "9378f47f1409520cc83cc354d1c280ea2859ebbbbbb0d412d18793c51dd231a5",
+      "approved_sha256": "27e82573dea63fe425847cebfbb97fa3e42d0c5984cc10a0ca6103b626a58d88",
       "disposition": "identical",
-      "stable_sha256": "9378f47f1409520cc83cc354d1c280ea2859ebbbbbb0d412d18793c51dd231a5",
+      "stable_sha256": "27e82573dea63fe425847cebfbb97fa3e42d0c5984cc10a0ca6103b626a58d88",
       "reason": "approved-byte-copy"
     },
     {
       "path": "product/web/static/app.js",
-      "approved_sha256": "8a4fe70f571d2d6dfa7a242d86b4fec33335c015cdf178c91fc13f58f86081a9",
+      "approved_sha256": "c87b7f344fb2b2afdd2455c4c32f78e8cbbfe327b81017b68c7bedab29816564",
       "disposition": "identical",
-      "stable_sha256": "8a4fe70f571d2d6dfa7a242d86b4fec33335c015cdf178c91fc13f58f86081a9",
+      "stable_sha256": "c87b7f344fb2b2afdd2455c4c32f78e8cbbfe327b81017b68c7bedab29816564",
       "reason": "approved-byte-copy"
     },
     {
       "path": "product/web/static/index.html",
-      "approved_sha256": "754c5b7a4c3f1340b81cbb3c9dae29d2648f1ba553156052cefcfcd327466d22",
+      "approved_sha256": "21f21291eb0184950e9713eb594ae4a1b339dd0fce94fe01398a07074daa82a9",
       "disposition": "identical",
-      "stable_sha256": "754c5b7a4c3f1340b81cbb3c9dae29d2648f1ba553156052cefcfcd327466d22",
+      "stable_sha256": "21f21291eb0184950e9713eb594ae4a1b339dd0fce94fe01398a07074daa82a9",
       "reason": "approved-byte-copy"
     },
     {
       "path": "pyproject.toml",
-      "approved_sha256": "5a11803fb5d58c83e3461bd8b44c057a6c26abd8969c1960087fb17ba45c6ff3",
+      "approved_sha256": "9ce5888b472697d095e1abde876a63de37c30da9b6060602adb482c6637c82cf",
       "disposition": "identical",
-      "stable_sha256": "5a11803fb5d58c83e3461bd8b44c057a6c26abd8969c1960087fb17ba45c6ff3",
+      "stable_sha256": "9ce5888b472697d095e1abde876a63de37c30da9b6060602adb482c6637c82cf",
       "reason": "approved-byte-copy"
     },
     {
@@ -2248,7 +2269,7 @@
     },
     {
       "path": "tests/test_cozy_ui_release.py",
-      "approved_sha256": "86ccdba506f0f4124c4cc11653167c624097f0628d4acdea78862f1de5bb1d43",
+      "approved_sha256": "6275e4aee55d43188018b1697204e3016ffc8c26b24919f44816d7ceb8dee737",
       "disposition": "excluded",
       "stable_sha256": null,
       "reason": "stable-public-surface"
@@ -2352,6 +2373,13 @@
       "reason": "stable-public-surface"
     },
     {
+      "path": "tests/test_household_api_v2_contract.py",
+      "approved_sha256": "1c4f6c7bd4b3b2a806b170dac89ac6d7f6d4d433060994fec3e7aae21ddbd933",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
       "path": "tests/test_household_foundation.py",
       "approved_sha256": "31839ebcd016e3e1d6dd7e05c22927a9f805e667354dd22a8d9ab316b033ab3c",
       "disposition": "excluded",
@@ -2361,6 +2389,13 @@
     {
       "path": "tests/test_household_intent_proposal.py",
       "approved_sha256": "7b6a9b3aab234e315017d30ba2bd89cf68cc9a09a78159997c209033b55d4e3c",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_household_runtime.py",
+      "approved_sha256": "26c3315fa9bb75e50525e2e84674ab89d84de55cdffcf1856f34e3ee14462a6e",
       "disposition": "excluded",
       "stable_sha256": null,
       "reason": "stable-public-surface"
