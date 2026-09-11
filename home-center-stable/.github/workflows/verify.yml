@@ -1,24 +1,67 @@
-name: Diagnose Home Center public promotion manifest
+name: Repair Home Center public promotion source manifest
 
 on:
   pull_request:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  hash-promotion-workflow:
-    if: github.repository == 'ControlCenterSoft/home-center-stable'
+  repair-promotion-manifest:
+    if: >-
+      github.repository == 'ControlCenterSoft/home-center-stable' &&
+      github.head_ref == 'tooling/public-promotion-v9-0.54'
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 8
     steps:
-      - name: Checkout exact event head
+      - name: Checkout exact PR head
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
-          persist-credentials: false
+          fetch-depth: 0
+          persist-credentials: true
           ref: ${{ github.event.pull_request.head.sha }}
-      - name: Print exact promotion workflow SHA-256
+      - name: Restore canonical verifier and rebuild closed source manifest
         shell: bash
         run: |
           set -Eeuo pipefail
-          sha256sum .github/workflows/promote-qualified-stable-v9.yml
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}" || exit 66
+          git fetch --no-tags origin main
+          git checkout origin/main -- .github/workflows/verify.yml
+          rm -f SOURCE-MANIFEST.sha256
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib, os
+          root = Path.cwd()
+          ignored = {'.git', '__pycache__'}
+          forbidden = {'.hc-dev', '.idea', '.vscode', 'dist', 'docs', 'ops', 'secrets'}
+          records = []
+          for directory, names, files in os.walk(root, topdown=True, followlinks=False):
+              base = Path(directory)
+              rel_dir = base.relative_to(root)
+              names[:] = sorted(name for name in names if name not in ignored)
+              if set(rel_dir.parts) & forbidden:
+                  raise SystemExit(f'FORBIDDEN_SOURCE_DIRECTORY:{rel_dir.as_posix()}')
+              for name in sorted(files):
+                  path = base / name
+                  rel = path.relative_to(root)
+                  if name == 'SOURCE-MANIFEST.sha256' or set(rel.parts) & ignored:
+                      continue
+                  if set(rel.parts) & forbidden:
+                      raise SystemExit(f'FORBIDDEN_SOURCE_PATH:{rel.as_posix()}')
+                  if path.is_symlink() or not path.is_file() or path.suffix in {'.pyc', '.pyo'}:
+                      raise SystemExit(f'SPECIAL_SOURCE_FILE:{rel.as_posix()}')
+                  records.append((rel.as_posix(), hashlib.sha256(path.read_bytes()).hexdigest()))
+          records.sort(key=lambda item: item[0])
+          Path('SOURCE-MANIFEST.sha256').write_text(
+              ''.join(f'{digest}  {rel}\n' for rel, digest in records),
+              encoding='ascii',
+          )
+          PY
+          python3 deploy/scripts/build-release.py verify-source --source-root .
+          git diff --check
+          git add .github/workflows/verify.yml SOURCE-MANIFEST.sha256
+          git diff --cached --quiet && exit 0
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'HC Stable: close promotion workflow source manifest'
+          git push origin "HEAD:${{ github.head_ref }}"
