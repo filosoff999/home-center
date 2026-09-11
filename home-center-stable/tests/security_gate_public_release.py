@@ -18,7 +18,7 @@ def require(condition: bool, message: str) -> None:
 
 
 def main() -> int:
-    expected_web = {"app.css", "app.js", "index.html", "planning.css", "planning.js", "release.js"}
+    expected_web = {"app.css", "app.js", "index.html", "member-change.css", "member-change.js", "planning.css", "planning.js", "release.js"}
     require({path.name for path in (ROOT / "product/web/static").iterdir()} == expected_web, "public Web shape")
     require(
         {path.name for path in (ROOT / "contracts/openapi").iterdir()} == {"home-center.v1.openapi.json"},
