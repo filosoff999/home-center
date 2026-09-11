@@ -1,0 +1,98 @@
+name: Sync public source manifest for promotion tooling
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: home-center-stable-promotion-tooling-manifest-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  sync-manifest:
+    if: >-
+      github.repository == 'ControlCenterSoft/home-center-stable' &&
+      github.head_ref == 'tooling/public-promotion-v7-0.42'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout exact PR head
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Refresh adapted provenance hashes
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib, json
+          root = Path.cwd()
+          path = root / 'APPROVED-SOURCE.json'
+          value = json.loads(path.read_text(encoding='utf-8'))
+          for item in value['files']:
+              if item['disposition'] != 'adapted':
+                  continue
+              target = root / item['path']
+              if not target.is_file() or target.is_symlink():
+                  raise SystemExit(f'ADAPTED_PROVENANCE_PATH_MISSING:{item["path"]}')
+              item['stable_sha256'] = hashlib.sha256(target.read_bytes()).hexdigest()
+          path.write_text(json.dumps(value, indent=2, ensure_ascii=True) + '\n', encoding='utf-8')
+          PY
+
+      - name: Rebuild canonical source manifest
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          rm -f SOURCE-MANIFEST.sha256
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib, os
+          root = Path.cwd()
+          ignored = {'.git', '__pycache__'}
+          forbidden = {'.hc-dev', '.idea', '.vscode', 'dist', 'docs', 'ops', 'secrets'}
+          records = []
+          for directory, names, files in os.walk(root, topdown=True, followlinks=False):
+              base = Path(directory)
+              rel_dir = base.relative_to(root)
+              names[:] = sorted(name for name in names if name not in ignored)
+              if set(rel_dir.parts) & forbidden:
+                  raise SystemExit(f'FORBIDDEN_SOURCE_DIRECTORY:{rel_dir.as_posix()}')
+              for name in sorted(files):
+                  path = base / name
+                  rel = path.relative_to(root)
+                  if name == 'SOURCE-MANIFEST.sha256' or set(rel.parts) & ignored:
+                      continue
+                  if set(rel.parts) & forbidden:
+                      raise SystemExit(f'FORBIDDEN_SOURCE_PATH:{rel.as_posix()}')
+                  if path.is_symlink() or not path.is_file() or path.suffix in {'.pyc', '.pyo'}:
+                      raise SystemExit(f'SPECIAL_SOURCE_FILE:{rel.as_posix()}')
+                  records.append((rel.as_posix(), hashlib.sha256(path.read_bytes()).hexdigest()))
+          records.sort(key=lambda item: item[0])
+          Path('SOURCE-MANIFEST.sha256').write_text(
+              ''.join(f'{digest}  {rel}\n' for rel, digest in records),
+              encoding='ascii',
+          )
+          PY
+
+      - name: Commit corrected public metadata when changed
+        shell: bash
+        env:
+          HEAD_BRANCH: ${{ github.head_ref }}
+        run: |
+          set -Eeuo pipefail
+          if git diff --quiet -- APPROVED-SOURCE.json SOURCE-MANIFEST.sha256; then
+            echo PUBLIC_METADATA_ALREADY_CURRENT
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add APPROVED-SOURCE.json SOURCE-MANIFEST.sha256
+          git commit -m 'release: repair public promotion metadata'
+          git push origin "HEAD:$HEAD_BRANCH"

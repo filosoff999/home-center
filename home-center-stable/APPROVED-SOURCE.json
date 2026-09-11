@@ -87,7 +87,7 @@
       "path": "README.md",
       "approved_sha256": "1188f007573e81ed35ded1386be8443a78262d30cb91a5441c118c38b5c5351c",
       "disposition": "adapted",
-      "stable_sha256": "c684fe9af0cda6dc096f65a20eeaf7f90bca5f7cdf3edb092dde8f29a0cc3927",
+      "stable_sha256": "f13c3f7ae32d63686e80a617a135d7f62db627f4f3f3af374abc74261f6d0f24",
       "reason": "hardened-stable-integration"
     },
     {
