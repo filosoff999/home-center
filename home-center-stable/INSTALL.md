@@ -1,6 +1,6 @@
 # Installation
 
-Home Center 0.45.0 requires Linux, systemd, Python 3.12 or newer, SQLite, and
+Home Center 0.46.0 requires Linux, systemd, Python 3.12 or newer, SQLite, and
 operator-provided TLS identities. Verify `SHA256SUMS`, unpack the runtime, then
 run `sudo bash deploy/scripts/install.sh --config /path/to/config.json` to stage
 an immutable versioned directory. Add `--activate` only after reviewing the
