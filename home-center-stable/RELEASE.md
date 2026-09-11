@@ -1,10 +1,10 @@
-# Release 0.15.0
+# Release 0.22.3
 
 The release set contains the Linux runtime archive, source archive, canonical
 SPDX 2.3 document, acceptance record, release manifest, and `SHA256SUMS`. Both
 archives contain `VERSION`, `REVISION`, and an internal `MANIFEST.sha256`.
 Verify the complete set before installation and require the annotated
-`v0.15.0` tag to resolve to the same revision recorded by the artifacts.
+`v0.22.3` tag to resolve to the same revision recorded by the artifacts.
 
 This promotion incorporates the approved Home Center development source at
 revision `6f56e3b7f134b62722e7b53c0ce8e8a6d5c8349f`. The checked-in

@@ -1,2 +1,0 @@
-include product/control-plane/src/home_center/action_registry.v1.json
-recursive-include product/web/static *.css *.html *.js

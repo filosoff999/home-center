@@ -56,8 +56,10 @@ ACTIONS: dict[str, Action] = {
         timeout_seconds=5,
     ),
 }
-SECRET_ACTIONS: dict[str, str] = {"local-admin.password.rotate.v1": "local-admin.password.rotate"}
-PERMISSIONS = frozenset([*(action.permission for action in ACTIONS.values()), *SECRET_ACTIONS.values()])
+SECRET_ACTIONS: dict[str, str] = {
+    "local-admin.password.rotate.v1": "local-admin.password.rotate",
+}
+PERMISSIONS = frozenset(action.permission for action in ACTIONS.values()) | frozenset(SECRET_ACTIONS.values())
 
 
 class HelperError(Exception):
@@ -317,7 +319,9 @@ def _valid_reconcile_result(stdout: str) -> bool:
     valid = (
         value.get("schema") == "home-center.tls-reconcile-result.v1"
         and value.get("status") == "reconciled"
-        and value.get("node_id") in {"home-center-example-node-a", "home-center-example-node-b"}
+        and isinstance(value.get("node_id"), str)
+        and 2 <= len(value["node_id"]) <= 128
+        and all(character.isalnum() or character in "._:-" for character in value["node_id"])
         and value.get("mode") in {
             "legacy-peer-fallback",
             "separate-web-identity",

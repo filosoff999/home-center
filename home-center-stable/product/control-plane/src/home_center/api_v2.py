@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import json
-import logging
 import os
 import ssl
 import stat
@@ -11,14 +9,8 @@ from pathlib import Path
 from urllib.parse import urlsplit
 
 from .api import RuntimeRequestHandler
-from .core.intent_engine import IntentEngineError, IntentRequest
-from .intent_service import IntentAuthorizationError
 from .release_identity import ReleaseIdentityError, current_release_identity
-from .resource_snapshot import ResourceSnapshotError
 from .tls_status import _certificate_profile, _chain_valid, status as tls_status
-
-
-LOG = logging.getLogger("home_center.api.intent")
 
 
 def _read_public_certificate(path: Path) -> tuple[bytes, bytes]:
@@ -101,21 +93,6 @@ class RuntimeRequestHandlerV2(RuntimeRequestHandler):
                 },
             )
             return
-        if path == "/api/v1/resources":
-            if not self._require_actor(correlation_id):
-                return
-            try:
-                value = self.runtime.resource_snapshot()
-            except ResourceSnapshotError:
-                self._error(
-                    HTTPStatus.SERVICE_UNAVAILABLE,
-                    "resource_snapshot_unavailable",
-                    "Снимок ресурсов временно недоступен",
-                    correlation_id,
-                )
-                return
-            self._json(HTTPStatus.OK, value)
-            return
         if path == "/api/v1/tls/ca.crt":
             try:
                 data = _validated_web_ca(self.runtime.config)
@@ -129,7 +106,7 @@ class RuntimeRequestHandlerV2(RuntimeRequestHandler):
                 return
             self.send_response(HTTPStatus.OK)
             self._base_headers("application/x-pem-file", len(data), cache="public, max-age=300")
-            self.send_header("Content-Disposition", 'attachment; filename="home-center-home-center-example-web-ca.crt"')
+            self.send_header("Content-Disposition", 'attachment; filename="home-center-web-ca.crt"')
             self.end_headers()
             self.wfile.write(data)
             return
@@ -149,109 +126,3 @@ class RuntimeRequestHandlerV2(RuntimeRequestHandler):
             self._json(HTTPStatus.OK, value)
             return
         super().do_GET()
-
-    def do_POST(self) -> None:  # noqa: N802
-        path = urlsplit(self.path).path
-        if path != "/api/v1/intents/plan":
-            super().do_POST()
-            return
-
-        self._request_body_complete = False
-        correlation_id = self._correlation_id()
-        context = self._classify_request(correlation_id)
-        if context is None:
-            return
-        if self._blocked_for_external(path, context):
-            self.close_connection = True
-            self._error(HTTPStatus.NOT_FOUND, "not_found", "Ресурс не найден", correlation_id)
-            return
-        if not self._same_origin_post_allowed(context):
-            self.close_connection = True
-            self.runtime.store.audit(
-                actor=f"network:{context.client_address}",
-                action="intent.plan",
-                target=self.runtime.config.node_id,
-                outcome="denied",
-                correlation_id=correlation_id,
-                details={"reason": "cross_origin_request", **self._origin_details(context)},
-            )
-            self._error(
-                HTTPStatus.FORBIDDEN,
-                "cross_origin_request_rejected",
-                "Запрос из другого источника запрещён",
-                correlation_id,
-            )
-            return
-
-        actor = self._require_actor(correlation_id)
-        if not actor:
-            return
-        try:
-            body = self._read_json(max_bytes=16 * 1024)
-            request = IntentRequest.from_mapping(body)
-            plan = self.runtime.intents.plan(actor=actor, request=request)
-        except IntentAuthorizationError:
-            self.runtime.store.audit(
-                actor=actor,
-                action="intent.plan",
-                target=self.runtime.config.node_id,
-                outcome="denied",
-                correlation_id=correlation_id,
-                details={"reason": "intent_permission_denied", **self._origin_details(context)},
-            )
-            self._error(
-                HTTPStatus.FORBIDDEN,
-                "intent_permission_denied",
-                "Недостаточно прав для планирования",
-                correlation_id,
-            )
-            return
-        except (IntentEngineError, ValueError, TypeError, json.JSONDecodeError):
-            self.runtime.store.audit(
-                actor=actor,
-                action="intent.plan",
-                target=self.runtime.config.node_id,
-                outcome="denied",
-                correlation_id=correlation_id,
-                details={"reason": "invalid_intent_request", **self._origin_details(context)},
-            )
-            self._error(
-                HTTPStatus.BAD_REQUEST,
-                "invalid_intent_request",
-                "Некорректный запрос планирования",
-                correlation_id,
-            )
-            return
-        except Exception:
-            LOG.exception("intent planning request failed")
-            self.runtime.store.audit(
-                actor=actor,
-                action="intent.plan",
-                target=self.runtime.config.node_id,
-                outcome="failed",
-                correlation_id=correlation_id,
-                details={"reason": "intent_planning_unavailable", **self._origin_details(context)},
-            )
-            self._error(
-                HTTPStatus.INTERNAL_SERVER_ERROR,
-                "intent_planning_unavailable",
-                "Планирование временно недоступно",
-                correlation_id,
-            )
-            return
-
-        self.runtime.store.audit(
-            actor=actor,
-            action="intent.plan",
-            target=request.target_id,
-            outcome="accepted" if plan.state.value == "planned" else "denied",
-            correlation_id=correlation_id,
-            details={
-                "intent_id": request.intent_id,
-                "kind": request.kind.value,
-                "state": plan.state.value,
-                "code": plan.code,
-                **self._origin_details(context),
-            },
-        )
-        self._json(HTTPStatus.OK, plan.to_dict())

@@ -11,15 +11,15 @@ from typing import Any
 from . import __version__
 from .actions import ActionRegistry
 from .ad_auth import AdAuthenticator
+from .automation_execution import AutomationPlanningService
 from .auth import LoginRateLimiter, SessionManager
+from .certificate_api import CertificateLifecycleApi, runtime_certificate_records
 from .config import Config
 from .external_access import ExternalAccessPolicy, ExternalRequestRateLimiter
-from .helper_client import HelperClientError, rotate_local_admin_password
-from .intent_service import IntentPlanningService
 from .local_admin_auth import LocalAdminCredentialStore
+from .local_admin_change import LocalAdminPasswordChangeClient
 from .node_inventory_api import NodeInventoryService
 from .reconcile import Reconciler
-from .resource_snapshot import build_resource_snapshot
 from .store import StateStore
 from .util import sha256_file, utc_now
 
@@ -28,17 +28,25 @@ LOG = logging.getLogger("home_center.runtime")
 
 
 class Runtime:
-    def __init__(self, config: Config, *, local_admin_expected_uid: int = 0) -> None:
+    def __init__(
+        self,
+        config: Config,
+        *,
+        local_admin_expected_uid: int = 0,
+        local_admin_password_changer: LocalAdminPasswordChangeClient | None = None,
+    ) -> None:
         self.config = config
         self.profile = self._load_profile(config.deployment_profile)
         self.store = StateStore(config.state_db, config.audit_key_file.read_bytes(), config.cluster_id)
+        self._local_admin_expected_uid = local_admin_expected_uid
+        self._local_admin_expected_gid = os.getegid()
         self.local_admin = LocalAdminCredentialStore(
             config.local_admin_credentials_file,
             expected_uid=local_admin_expected_uid,
-            expected_gid=os.getegid(),
+            expected_gid=self._local_admin_expected_gid,
             expected_mode=0o640,
         )
-        self.local_admin_password_rotator = rotate_local_admin_password
+        self.local_admin_password_changer = local_admin_password_changer or LocalAdminPasswordChangeClient()
         self.sessions = SessionManager(config.session_key_file)
         self.login_limiter = LoginRateLimiter()
         self.ad_auth = AdAuthenticator(config.ad_auth)
@@ -49,44 +57,28 @@ class Runtime:
             authentication_ready=True,
         )
         self.external_request_limiter = ExternalRequestRateLimiter()
+        self.certificates = CertificateLifecycleApi(lambda: runtime_certificate_records(self.config))
         self.actions = ActionRegistry(config.node_id, self.store)
         self.node_inventory = NodeInventoryService(self.store, product_version=__version__)
-        self.intents = IntentPlanningService(resource_snapshot_provider=self.resource_snapshot)
+        self.automation = AutomationPlanningService(self.store.nodes)
         self.reconciler = Reconciler(config, self.store)
 
-    def change_local_admin_password(self, current_password: str, new_password: str) -> None:
-        """Rotate through the root helper, then reload only validated local state."""
-
-        result = self.local_admin_password_rotator(
-            self.local_admin.username,
-            current_password,
-            new_password,
+    def actor_requires_password_change(self, actor: str) -> bool:
+        return (
+            actor == f"local-admin:{self.local_admin.username}"
+            and self.local_admin.password_change_required
         )
-        if result.get("status") != "succeeded":
-            reason = result.get("reason")
-            raise HelperClientError(reason if isinstance(reason, str) else "credential_rotation_failed")
+
+    def change_local_admin_password(self, username: str, current_password: str, new_password: str) -> None:
+        """Rotate through the root helper and reload the committed verifier."""
+
+        self.local_admin_password_changer.change(username, current_password, new_password)
         self.local_admin = LocalAdminCredentialStore(
             self.config.local_admin_credentials_file,
-            expected_uid=self.local_admin.expected_uid,
-            expected_gid=self.local_admin.expected_gid,
-            expected_mode=self.local_admin.expected_mode,
+            expected_uid=self._local_admin_expected_uid,
+            expected_gid=self._local_admin_expected_gid,
+            expected_mode=0o640,
         )
-
-    def authenticate_local_admin(self, username: str, password: str) -> str | None:
-        """Reload the atomic verifier before every local authentication.
-
-        This makes an offline, local-console recovery effective without a
-        service restart while retaining exact metadata validation.
-        """
-
-        current = LocalAdminCredentialStore(
-            self.config.local_admin_credentials_file,
-            expected_uid=self.local_admin.expected_uid,
-            expected_gid=self.local_admin.expected_gid,
-            expected_mode=self.local_admin.expected_mode,
-        )
-        self.local_admin = current
-        return current.authenticate(username, password)
 
     def start(self) -> None:
         self.store.audit(
@@ -150,15 +142,6 @@ class Runtime:
             "audit_head": self.store.verify_audit_chain(),
         }
 
-    def resource_snapshot(self) -> dict[str, Any]:
-        """Return validated capacity facts from persisted node observations only."""
-
-        return build_resource_snapshot(
-            cluster_id=self.config.cluster_id,
-            expected_nodes=len(self._profile_details(self.profile)[2]),
-            nodes=self.store.nodes(),
-        )
-
     def backup_inventory(self) -> list[dict[str, Any]]:
         items: list[dict[str, Any]] = []
         if not self.config.backup_dir.exists():
@@ -177,10 +160,7 @@ class Runtime:
         value = json.loads(path.read_text(encoding="utf-8"))
         if not isinstance(value, dict):
             raise ValueError("deployment profile must be an object")
-        if value.get("schema") not in {
-            "home-center.deployment-profile.v1",
-            "home-center.deployment-profile.v2",
-        }:
+        if value.get("schema") not in {"home-center.deployment-profile.v1", "home-center.deployment-profile.v2"}:
             raise ValueError("unsupported deployment profile")
         Runtime._profile_details(value)
         return value

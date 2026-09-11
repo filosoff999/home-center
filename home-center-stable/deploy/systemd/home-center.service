@@ -1,8 +1,7 @@
 [Unit]
 Description=Home Center control plane and node inventory
-Documentation=https://github.com/ControlCenterSoft/home-center-stable
-Requires=home-center-helper.service
-After=network-online.target time-sync.target home-center-helper.service
+Documentation=https://github.com/ControlCenterSoft/home-center-development
+After=network-online.target time-sync.target
 Wants=network-online.target time-sync.target
 
 [Service]

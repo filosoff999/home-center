@@ -1,76 +1,128 @@
-"""Side-effect-free Home Center core planning foundation.
+"""Infrastructure-neutral Home Center core planning foundation."""
 
-The package deliberately exposes validation and planning primitives only. It
-does not download artifacts, execute commands, control services, or mutate
-production nodes.
-"""
-
-from .action_contracts import parse_action_input
 from .certificate_lifecycle import (
+    CertificateLifecycleError,
     CertificateLifecyclePlanner,
+    CertificatePlanState,
     CertificateRecord,
     CertificateRenewalPlan,
     CertificateStatus,
+    classify_certificate,
 )
 from .compute_framework import (
+    ComputeCapacity,
+    ComputeCapacityPlan,
+    ComputeCapacityPlanningRequest,
+    ComputeCapacitySnapshot,
+    ComputeFrameworkError,
     ComputePlan,
     ComputePlanner,
+    ComputePlanState,
     ComputeProviderDescriptor,
     ComputeProviderKind,
+    ComputeProviderProfile,
+    ComputeProviderState,
     ComputeResourceKind,
     ComputeResourceRequest,
+    proxmox_compute_profile,
 )
-from .configuration_engine import ConfigurationEngine
-from .contracts import CoreCommand, CoreContractError, CoreError, CoreResult
 from .home_lab import HomeLabPlan, HomeLabPlanner, HomeLabQuota, HomeLabTemplate, HomeLabUsage
-from .intent_engine import (
-    IntentEngine,
-    IntentEngineError,
-    IntentKind,
-    IntentPlan,
-    IntentPlanState,
-    IntentRequest,
-    IntentStep,
+from .lxc_lifecycle import (
+    LxcAction,
+    LxcLifecycleError,
+    LxcLifecyclePlan,
+    LxcLifecyclePlanner,
+    LxcLifecycleRequest,
+    LxcSnapshot,
+    LxcState,
 )
 from .node_manager import NodeDescriptor, NodeManager, NodeState, NodeTransitionPlan
-from .policy_engine import PolicyEngine
-from .service_manager import ServiceManager
-from .upgrade_engine import UpgradeEngine
+from .proxmox_provider import (
+    AuthState as ProxmoxAuthState,
+    Health as ProxmoxHealth,
+    Node as ProxmoxNode,
+    NodeState as ProxmoxNodeState,
+    ProxmoxDiscovery,
+    ProxmoxProviderError,
+    Resource as ProxmoxResource,
+    ResourceState as ProxmoxResourceState,
+    normalize_proxmox_discovery,
+)
+from .resource_scheduler import (
+    PlacementPlan,
+    PlacementRequest,
+    ProviderCapacity,
+    ResourceScheduler,
+    ResourceSchedulerError,
+)
+from .vm_lifecycle import (
+    VmAction,
+    VmLifecycleError,
+    VmLifecyclePlan,
+    VmLifecyclePlanner,
+    VmLifecycleRequest,
+    VmSnapshot,
+    VmState,
+)
 
 __all__ = [
+    "CertificateLifecycleError",
     "CertificateLifecyclePlanner",
+    "CertificatePlanState",
     "CertificateRecord",
     "CertificateRenewalPlan",
     "CertificateStatus",
+    "classify_certificate",
+    "ComputeCapacity",
+    "ComputeCapacityPlan",
+    "ComputeCapacityPlanningRequest",
+    "ComputeCapacitySnapshot",
+    "ComputeFrameworkError",
     "ComputePlan",
     "ComputePlanner",
+    "ComputePlanState",
     "ComputeProviderDescriptor",
     "ComputeProviderKind",
+    "ComputeProviderProfile",
+    "ComputeProviderState",
     "ComputeResourceKind",
     "ComputeResourceRequest",
-    "ConfigurationEngine",
-    "CoreCommand",
-    "CoreContractError",
-    "CoreError",
-    "CoreResult",
+    "proxmox_compute_profile",
     "HomeLabPlan",
     "HomeLabPlanner",
     "HomeLabQuota",
     "HomeLabTemplate",
     "HomeLabUsage",
-    "IntentEngine",
-    "IntentEngineError",
-    "IntentKind",
-    "IntentPlan",
-    "IntentPlanState",
-    "IntentRequest",
-    "IntentStep",
+    "LxcAction",
+    "LxcLifecycleError",
+    "LxcLifecyclePlan",
+    "LxcLifecyclePlanner",
+    "LxcLifecycleRequest",
+    "LxcSnapshot",
+    "LxcState",
     "NodeDescriptor",
     "NodeManager",
     "NodeState",
     "NodeTransitionPlan",
-    "parse_action_input",
-    "PolicyEngine",
-    "ServiceManager",
-    "UpgradeEngine",
+    "PlacementPlan",
+    "PlacementRequest",
+    "ProviderCapacity",
+    "ProxmoxAuthState",
+    "ProxmoxDiscovery",
+    "ProxmoxHealth",
+    "ProxmoxNode",
+    "ProxmoxNodeState",
+    "ProxmoxProviderError",
+    "ProxmoxResource",
+    "ProxmoxResourceState",
+    "ResourceScheduler",
+    "ResourceSchedulerError",
+    "VmAction",
+    "VmLifecycleError",
+    "VmLifecyclePlan",
+    "VmLifecyclePlanner",
+    "VmLifecycleRequest",
+    "VmSnapshot",
+    "VmState",
+    "normalize_proxmox_discovery",
 ]

@@ -3,190 +3,133 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="color-scheme" content="dark">
-  <meta name="theme-color" content="#0b1220">
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#f5f7fb">
   <title>Home Center</title>
   <link rel="stylesheet" href="/static/app.css">
-  <script src="/static/release.js" defer></script>
-  <script src="/static/app.js" defer></script>
 </head>
 <body>
-  <div class="ambient ambient-a"></div>
-  <div class="ambient ambient-b"></div>
-
-  <aside class="sidebar" aria-label="Основная навигация">
-    <div class="brand">
-      <div class="brand-mark" aria-hidden="true">
-        <svg viewBox="0 0 32 32"><path d="M6 15.4 16 7l10 8.4v10.1a1.5 1.5 0 0 1-1.5 1.5h-17A1.5 1.5 0 0 1 6 25.5V15.4Z"/><path d="M12 27v-8h8v8"/></svg>
-      </div>
-      <div><strong>Home Center</strong><span id="homeCenterInstance">Локальная система</span><small id="homeCenterVersion">v0.15.0</small></div>
-    </div>
-
-    <nav id="navigation">
-      <button class="nav-item active" data-view="overview"><span class="nav-icon">◫</span>Обзор</button>
-      <button class="nav-item" data-view="nodes"><span class="nav-icon">◇</span>Узлы</button>
-      <button class="nav-item" data-view="cluster"><span class="nav-icon">⌘</span>Кластер</button>
-      <button class="nav-item" data-view="tls"><span class="nav-icon">⌾</span>Сертификаты</button>
-      <button class="nav-item" data-view="backups"><span class="nav-icon">↻</span>Резервные копии</button>
-      <button class="nav-item" data-view="jobs"><span class="nav-icon">✓</span>Задания</button>
-      <button class="nav-item" data-view="audit"><span class="nav-icon">≡</span>Аудит</button>
-      <button class="nav-item" data-view="settings"><span class="nav-icon">⚙</span>Настройки</button>
-    </nav>
-
-    <div class="sidebar-foot">
-      <div class="safe-mode"><span></span><div><strong>Безопасный режим</strong><small>Изменения только через typed jobs</small></div></div>
-      <button id="logoutButton" class="ghost-button">Выйти</button>
-    </div>
-  </aside>
-
   <div class="app-shell">
     <header class="topbar">
-      <div>
-        <p class="eyebrow" id="viewEyebrow">Управляемая инфраструктура</p>
-        <h1 id="viewTitle">Обзор</h1>
+      <div class="brand" aria-label="Home Center">
+        <span class="brand-mark" aria-hidden="true">HC</span>
+        <span class="brand-copy">
+          <strong>Home Center</strong>
+          <small id="version">загрузка…</small>
+        </span>
       </div>
       <div class="topbar-actions">
-        <span class="last-update" id="lastUpdate">Ожидание данных</span>
-        <button id="refreshButton" class="icon-button" aria-label="Обновить данные" title="Обновить">↻</button>
-        <button id="mobileLogoutButton" class="icon-button mobile-logout-button" aria-label="Выйти" title="Выйти">⇥</button>
-        <div class="avatar" title="Администратор">PA</div>
+        <span id="service-state" class="status-badge neutral">Проверка</span>
+        <button id="logout-button" class="button ghost compact" type="button" hidden>Выйти</button>
       </div>
     </header>
 
-    <main>
-      <section class="view active" data-panel="overview">
-        <div id="notice" class="notice hidden"></div>
-        <div class="hero-card">
+    <main class="content">
+      <section id="loading-view" class="center-card" aria-live="polite">
+        <div class="spinner" aria-hidden="true"></div>
+        <h1>Подключаемся к Home Center</h1>
+        <p>Проверяем состояние сервиса и текущую сессию.</p>
+      </section>
+
+      <section id="login-view" class="center-card" hidden>
+        <div class="eyebrow">Управление домом</div>
+        <h1>Вход в Home Center</h1>
+        <p>Используйте локальную учётную запись администратора или доменную учётную запись, если она подключена.</p>
+        <form id="login-form" class="form-stack" autocomplete="on">
+          <label>
+            <span>Способ входа</span>
+            <select id="provider" name="provider" autocomplete="off">
+              <option value="local">Локальный администратор</option>
+            </select>
+          </label>
+          <label>
+            <span>Имя пользователя</span>
+            <input id="username" name="username" type="text" value="admin" autocomplete="username" required>
+          </label>
+          <label>
+            <span>Пароль</span>
+            <input id="password" name="password" type="password" autocomplete="current-password" required>
+          </label>
+          <button class="button primary" type="submit">Войти</button>
+          <p id="login-message" class="form-message" role="status"></p>
+        </form>
+      </section>
+
+      <section id="password-view" class="center-card" hidden>
+        <div class="eyebrow">Первый вход</div>
+        <h1>Смените пароль администратора</h1>
+        <p>До смены стандартного пароля обычная работа Home Center заблокирована.</p>
+        <form id="password-form" class="form-stack" autocomplete="off">
+          <label>
+            <span>Текущий пароль</span>
+            <input id="current-password" type="password" autocomplete="current-password" required>
+          </label>
+          <label>
+            <span>Новый пароль</span>
+            <input id="new-password" type="password" autocomplete="new-password" required>
+          </label>
+          <label>
+            <span>Повторите новый пароль</span>
+            <input id="confirm-password" type="password" autocomplete="new-password" required>
+          </label>
+          <button class="button primary" type="submit">Сохранить новый пароль</button>
+          <p id="password-message" class="form-message" role="status"></p>
+        </form>
+      </section>
+
+      <section id="dashboard-view" hidden>
+        <div class="page-heading">
           <div>
-            <span class="status-pill" id="clusterStatus"><i></i>Проверка</span>
-            <h2>Домашняя инфраструктура<br><em>под контролем</em></h2>
-            <p id="clusterSummary">Home Center проверяет состояние управляемых узлов и защищённость управляющего контура.</p>
+            <div class="eyebrow">Полный интерфейс</div>
+            <h1>Инфраструктура</h1>
+            <p>Фактическое состояние узлов Home Center. Количество серверов определяется текущей конфигурацией.</p>
           </div>
-          <div class="hero-metric">
-            <div class="ring" id="healthRing"><span id="healthPercent">—</span><small>готовность</small></div>
+          <button id="refresh-button" class="button secondary" type="button">Обновить</button>
+        </div>
+
+        <div class="summary-grid" aria-label="Сводка инфраструктуры">
+          <article class="summary-card">
+            <span>Всего узлов</span>
+            <strong id="total-nodes">—</strong>
+          </article>
+          <article class="summary-card">
+            <span>Готовы</span>
+            <strong id="ready-nodes">—</strong>
+          </article>
+          <article class="summary-card">
+            <span>Недоступны</span>
+            <strong id="unreachable-nodes">—</strong>
+          </article>
+          <article class="summary-card">
+            <span>Состояние</span>
+            <strong id="cluster-state">—</strong>
+          </article>
+        </div>
+
+        <section class="section-block">
+          <div class="section-heading">
+            <div>
+              <h2>Узлы</h2>
+              <p>Роль, адрес, ресурсы и состояние каждого сервера.</p>
+            </div>
           </div>
-        </div>
+          <div id="nodes" class="node-grid" aria-live="polite"></div>
+        </section>
 
-        <div class="metric-grid">
-          <article class="metric-card"><span>Узлы</span><strong id="nodesMetric">—</strong><small id="nodesMetricNote">ожидание профиля</small></article>
-          <article class="metric-card"><span>Репликация</span><strong id="replicationMetric">Проверка</strong><small>mTLS peer health</small></article>
-          <article class="metric-card"><span>Web TLS</span><strong id="tlsMetric">Проверка</strong><small id="tlsMetricNote">hostname · chain · expiry</small></article>
-          <article class="metric-card"><span>Последняя копия</span><strong id="backupMetric">Нет данных</strong><small id="backupMetricNote">локальная проверка</small></article>
-          <article class="metric-card"><span>Незавершённые задания</span><strong id="jobsMetric">0</strong><small>fail-closed orchestration</small></article>
-        </div>
+        <section class="section-block">
+          <div class="section-heading">
+            <div>
+              <h2>Возможности</h2>
+              <p>Функции, которые фактически доступны в текущей инфраструктуре.</p>
+            </div>
+          </div>
+          <div id="capabilities" class="capability-list" aria-live="polite"></div>
+        </section>
 
-        <div class="content-grid two-thirds">
-          <article class="panel">
-            <div class="panel-head"><div><span class="panel-kicker">Сейчас</span><h3>Состояние узлов</h3></div><button class="text-button" data-go="nodes">Все узлы →</button></div>
-            <div id="overviewNodes" class="node-list loading-block">Загрузка…</div>
-          </article>
-          <article class="panel">
-            <div class="panel-head"><div><span class="panel-kicker">Политика</span><h3>Контур безопасности</h3></div></div>
-            <ul class="check-list">
-              <li><i>✓</i><div><strong>Взаимная TLS-аутентификация</strong><span>Защищённая связь между узлами</span></div></li>
-              <li><i>✓</i><div><strong>Раздельная Web TLS identity</strong><span>Ротация не меняет peer mTLS</span></div></li>
-              <li><i>✓</i><div><strong>Single-writer</strong><span>Авто-failover отключён без witness</span></div></li>
-              <li><i>✓</i><div><strong>Цепочка аудита</strong><span>HMAC и контроль целостности</span></div></li>
-              <li><i>✓</i><div><strong>Least privilege</strong><span>Нет generic shell API</span></div></li>
-            </ul>
-          </article>
-        </div>
-      </section>
-
-      <section class="view" data-panel="nodes">
-        <div class="section-intro"><div><p>Фактическое состояние</p><h2>Управляемые узлы</h2></div><span class="tag">Capability schema v1</span></div>
-        <div id="nodeCards" class="node-card-grid"></div>
-      </section>
-
-      <section class="view" data-panel="cluster">
-        <div class="section-intro"><div><p id="clusterIdentity">Управляемая система</p><h2>Топология кластера</h2></div><span class="tag">Two-node profile</span></div>
-        <article class="panel topology-panel">
-          <div class="topology" id="clusterTopology"><p>Ожидание данных об узлах…</p></div>
-          <div class="policy-note"><strong>Почему автоматическое переключение пока выключено</strong><p>Два узла без независимого witness не могут безопасно отличить отказ соседа от разрыва связи. Home Center сохраняет единственного владельца записи и блокирует риск split-brain.</p></div>
-        </article>
-        <article class="panel json-panel"><div class="panel-head"><div><span class="panel-kicker">Canonical state</span><h3>Deployment Profile</h3></div></div><pre id="profileJson">Загрузка…</pre></article>
-      </section>
-
-      <section class="view" data-panel="tls">
-        <div class="section-intro"><div><p>HTTPS / trust / renewal</p><h2>Сертификаты</h2></div><span id="tlsViewTag" class="tag">Проверка</span></div>
-        <div class="content-grid two-thirds">
-          <article class="panel">
-            <div class="panel-head"><div><span class="panel-kicker">Web endpoint</span><h3 id="tlsWebHostname">—</h3></div><a class="text-button" href="/api/v1/tls/ca.crt">Скачать Web CA ↓</a></div>
-            <div id="tlsDetails" class="detail-grid"></div>
-          </article>
-          <article class="panel">
-            <div class="panel-head"><div><span class="panel-kicker">Lifecycle</span><h3>Ротация и доверие</h3></div></div>
-            <ul id="tlsChecks" class="check-list"></ul>
-          </article>
-        </div>
-        <article class="panel json-panel"><div class="panel-head"><div><span class="panel-kicker">Evidence-safe metadata</span><h3>Состояние TLS</h3></div></div><pre id="tlsJson">Загрузка…</pre></article>
-      </section>
-
-      <section class="view" data-panel="backups">
-        <div class="section-intro"><div><p>Проверяемое восстановление</p><h2>Резервные копии</h2></div><span class="tag">SQLite online backup</span></div>
-        <article class="panel"><div class="panel-head"><div><span class="panel-kicker">Restore points</span><h3>Локальные копии этого узла</h3></div></div><div id="backupList" class="table-wrap"></div></article>
-      </section>
-
-      <section class="view" data-panel="jobs">
-        <div class="section-intro"><div><p>Изменения и оркестрация</p><h2>Задания</h2></div><span class="tag warning">Mutation gate locked</span></div>
-        <article class="panel"><div id="jobList" class="empty-state"><span>✓</span><h3>Активных заданий нет</h3><p>Изменения открываются только через типизированные действия, preflight и recovery. Generic shell API отсутствует.</p></div></article>
-      </section>
-
-      <section class="view" data-panel="audit">
-        <div class="section-intro"><div><p>Append-only evidence</p><h2>Журнал аудита</h2></div><span class="tag">HMAC chain</span></div>
-        <article class="panel"><div id="auditList" class="table-wrap"></div></article>
-      </section>
-
-      <section class="view" data-panel="settings">
-        <div class="section-intro"><div><p>Локальная учётная запись</p><h2>Безопасность администратора</h2></div><span class="tag">Password policy v1</span></div>
-        <div class="content-grid two-thirds">
-          <article class="panel">
-            <div class="panel-head"><div><span class="panel-kicker">Узел</span><h3>Изменить пароль admin</h3></div></div>
-            <form id="passwordChangeForm" class="settings-form">
-              <label for="currentAdminPassword">Текущий пароль</label>
-              <input id="currentAdminPassword" name="current_password" type="password" autocomplete="current-password" maxlength="256" required>
-              <label for="newAdminPassword">Новый пароль</label>
-              <input id="newAdminPassword" name="new_password" type="password" autocomplete="new-password" minlength="8" maxlength="256" required>
-              <label for="confirmAdminPassword">Подтверждение нового пароля</label>
-              <input id="confirmAdminPassword" name="confirm_password" type="password" autocomplete="new-password" minlength="8" maxlength="256" required>
-              <p class="form-hint">Минимум 8 символов, хотя бы одна буква и одна цифра.</p>
-              <button type="submit" class="primary-button">Изменить пароль</button>
-              <div id="passwordChangeMessage" class="form-message" role="status" aria-live="polite"></div>
-            </form>
-          </article>
-          <article class="panel">
-            <div class="panel-head"><div><span class="panel-kicker">Гарантии</span><h3>Что защищает операцию</h3></div></div>
-            <ul class="check-list">
-              <li><i>✓</i><div><strong>Проверка текущего пароля</strong><span>Смена доступна только локальному администратору</span></div></li>
-              <li><i>✓</i><div><strong>Новая соль на каждом узле</strong><span>Хранится только односторонний scrypt verifier</span></div></li>
-              <li><i>✓</i><div><strong>Атомарная замена</strong><span>При ошибке сохраняется предыдущая рабочая учётная запись</span></div></li>
-              <li><i>✓</i><div><strong>Аудит без секретов</strong><span>Пароль, соль и verifier не попадают в журнал</span></div></li>
-            </ul>
-          </article>
-        </div>
+        <p id="dashboard-message" class="inline-message" role="status"></p>
       </section>
     </main>
   </div>
-
-  <div id="loginLayer" class="login-layer" hidden>
-    <form id="loginForm" class="login-card">
-      <div class="brand-mark large" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M6 15.4 16 7l10 8.4v10.1a1.5 1.5 0 0 1-1.5 1.5h-17A1.5 1.5 0 0 1 6 25.5V15.4Z"/><path d="M12 27v-8h8v8"/></svg></div>
-      <p class="eyebrow">Защищённый контур</p>
-      <h2>Вход в Home Center</h2>
-      <p>Выберите локальную или доменную учётную запись. Пароль не сохраняется в браузере; после проверки используется короткая защищённая сессия.</p>
-      <label for="providerInput">Источник учётной записи</label>
-      <select id="providerInput" name="provider">
-        <option value="local">Локальный администратор Home Center</option>
-        <option id="adProviderOption" value="ad" disabled hidden>Доменная учётная запись</option>
-      </select>
-      <label for="usernameInput">Имя пользователя</label>
-      <input id="usernameInput" name="username" type="text" autocomplete="username" minlength="3" maxlength="64" required autofocus>
-      <label for="passwordInput">Пароль</label>
-      <input id="passwordInput" name="password" type="password" autocomplete="current-password" minlength="1" maxlength="256" required>
-      <button type="submit" class="primary-button">Войти</button>
-      <div id="loginError" class="form-error" role="alert" aria-live="assertive"></div>
-      <small>Соединение защищено TLS 1.2+</small>
-    </form>
-  </div>
+  <script src="/static/app.js"></script>
 </body>
 </html>

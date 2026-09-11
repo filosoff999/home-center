@@ -8,7 +8,7 @@
   "properties": {
     "schema": {"const": "home-center.helper.result.v1"},
     "request_id": {"type": "string", "minLength": 8, "maxLength": 96, "pattern": "^[A-Za-z0-9._-]+$"},
-    "action": {"enum": ["helper.probe.v1", "tls.web.activate.v1", "tls.web.reconcile.v1"]},
+    "action": {"enum": ["helper.probe.v1", "tls.web.activate.v1"]},
     "status": {"enum": ["succeeded", "rejected", "failed", "unknown"]},
     "reason": {"type": ["string", "null"]},
     "exit_code": {"type": ["integer", "null"]},

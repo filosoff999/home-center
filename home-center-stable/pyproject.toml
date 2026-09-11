@@ -1,30 +1,18 @@
 [build-system]
-requires = ["setuptools>=77", "wheel"]
+requires = ["setuptools>=75"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "home-center"
-version = "0.15.0"
-description = "Local-first control plane for managed home infrastructure"
+version = "0.22.3"
+description = "Infrastructure-neutral Home Center control plane"
 requires-python = ">=3.12"
-dependencies = []
 
 [tool.setuptools]
 package-dir = {"" = "product/control-plane/src"}
-include-package-data = true
 
 [tool.setuptools.packages.find]
 where = ["product/control-plane/src"]
 
 [tool.setuptools.package-data]
-home_center = ["action_registry.v1.json"]
-
-[tool.setuptools.data-files]
-"share/home-center/web" = [
-  "product/web/static/app.css",
-  "product/web/static/app.js",
-  "product/web/static/index.html",
-  "product/web/static/planning.css",
-  "product/web/static/planning.js",
-  "product/web/static/release.js",
-]
+home_center = ["*.json"]

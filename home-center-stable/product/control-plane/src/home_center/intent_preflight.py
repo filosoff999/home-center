@@ -5,7 +5,6 @@ from __future__ import annotations
 from typing import Any, Mapping
 
 from .core.intent_engine import IntentKind, IntentRequest
-from .resource_snapshot import CAPABILITY, MAX_CAPABILITIES
 
 
 GIB = 1024**3
@@ -63,20 +62,6 @@ def _capacity(node: Mapping[str, Any]) -> tuple[int, int, int]:
     return cpu_count, memory_bytes, free_bytes
 
 
-def _capabilities(node: Mapping[str, Any]) -> frozenset[str]:
-    raw = node.get("capabilities")
-    if not isinstance(raw, list) or len(raw) > MAX_CAPABILITIES:
-        raise IntentPreflightError("invalid_resource_capabilities")
-    capabilities: list[str] = []
-    for value in raw:
-        if not isinstance(value, str) or CAPABILITY.fullmatch(value) is None:
-            raise IntentPreflightError("invalid_resource_capability")
-        capabilities.append(value)
-    if len(capabilities) != len(set(capabilities)):
-        raise IntentPreflightError("duplicate_resource_capability")
-    return frozenset(capabilities)
-
-
 def resource_preflight(request: IntentRequest, snapshot: Mapping[str, Any]) -> tuple[str, ...]:
     """Return deterministic blockers using trusted cluster resource facts only."""
 
@@ -106,28 +91,13 @@ def resource_preflight(request: IntentRequest, snapshot: Mapping[str, Any]) -> t
             return ("insufficient_storage_capacity",)
         return ()
 
-    runtime = parameters.get("runtime")
-    if runtime not in {"vm", "lxc"}:
-        raise IntentPreflightError("invalid_preflight_runtime")
-    required_runtime_capability = f"compute.{runtime}.v1"
-    runtime_nodes = [node for node in ready if required_runtime_capability in _capabilities(node)]
-    capability_blockers: list[str] = []
-    if len(runtime_nodes) < required_nodes:
-        capability_blockers.append("provider_runtime_unsupported")
-    if high_availability:
-        runtime_nodes = [node for node in runtime_nodes if "compute.ha.v1" in _capabilities(node)]
-        if len(runtime_nodes) < required_nodes:
-            capability_blockers.append("provider_ha_unsupported")
-    if capability_blockers:
-        return tuple(capability_blockers)
-
     vcpu = _integer(parameters["vcpu"], minimum=1, code="invalid_preflight_vcpu")
     memory_mib = _integer(parameters["memory_mib"], minimum=1, code="invalid_preflight_memory")
     disk_gib = _integer(parameters["disk_gib"], minimum=1, code="invalid_preflight_disk")
     required_memory_bytes = memory_mib * MIB
     required_storage_bytes = disk_gib * GIB
 
-    capacities = [_capacity(node) for node in runtime_nodes]
+    capacities = [_capacity(node) for node in ready]
     blockers: list[str] = []
     if sum(cpu >= vcpu for cpu, _, _ in capacities) < required_nodes:
         blockers.append("insufficient_cpu_capacity")

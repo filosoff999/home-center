@@ -20,6 +20,7 @@ from typing import Any
 
 
 CREDENTIAL_SCHEMA = "home-center.local-admin-credential.v1"
+CREDENTIAL_SCHEMA_V2 = "home-center.local-admin-credential.v2"
 KDF_NAME = "scrypt"
 KDF_N = 1 << 15
 KDF_R = 8
@@ -28,9 +29,8 @@ KDF_DKLEN = 32
 KDF_MAXMEM = 64 * 1024 * 1024
 SALT_BYTES = 32
 MAX_CREDENTIAL_FILE_BYTES = 16 * 1024
-MIN_PASSWORD_BYTES = 8
+MIN_PASSWORD_BYTES = 12
 MAX_PASSWORD_BYTES = 256
-MIN_NEW_PASSWORD_CHARACTERS = 8
 USERNAME = re.compile(r"^[a-z][a-z0-9._-]{2,63}$")
 
 
@@ -45,6 +45,7 @@ class LocalAdminCredential:
     username: str
     salt: bytes
     verifier: bytes
+    password_change_required: bool = False
 
 
 def normalize_username(value: str) -> str:
@@ -65,26 +66,6 @@ def _password_bytes(value: str) -> bytes:
         raise LocalAdminAuthError("password_rejected") from exc
     if not MIN_PASSWORD_BYTES <= len(encoded) <= MAX_PASSWORD_BYTES:
         raise LocalAdminAuthError("password_rejected")
-    return encoded
-
-
-def validate_new_password(value: str) -> bytes:
-    """Validate password material accepted for a new local credential.
-
-    Authentication deliberately keeps only the structural byte bounds so an
-    existing credential is not made unusable by a later policy change. New
-    provisioning and rotation both use this stricter policy entry point.
-    """
-
-    if not isinstance(value, str) or "\x00" in value or "\r" in value or "\n" in value:
-        raise LocalAdminAuthError("password_rejected")
-    if len(value) < MIN_NEW_PASSWORD_CHARACTERS:
-        raise LocalAdminAuthError("password_too_short")
-    encoded = _password_bytes(value)
-    if not any(character.isalpha() for character in value):
-        raise LocalAdminAuthError("password_letter_required")
-    if not any(character.isdecimal() for character in value):
-        raise LocalAdminAuthError("password_digit_required")
     return encoded
 
 
@@ -110,10 +91,23 @@ def _strict_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
 
 
 def _parse(document: Any) -> LocalAdminCredential:
-    required = {"schema", "username", "kdf", "n", "r", "p", "dklen", "salt_b64", "verifier_b64"}
-    if not isinstance(document, dict) or set(document) != required:
+    common = {"schema", "username", "kdf", "n", "r", "p", "dklen", "salt_b64", "verifier_b64"}
+    if not isinstance(document, dict):
         raise LocalAdminAuthError("credential_shape_rejected")
-    if document["schema"] != CREDENTIAL_SCHEMA or document["kdf"] != KDF_NAME:
+    schema = document.get("schema")
+    if schema == CREDENTIAL_SCHEMA:
+        required = common
+        password_change_required = False
+    elif schema == CREDENTIAL_SCHEMA_V2:
+        required = common | {"password_change_required"}
+        password_change_required = document.get("password_change_required")
+        if not isinstance(password_change_required, bool):
+            raise LocalAdminAuthError("credential_password_state_rejected")
+    else:
+        raise LocalAdminAuthError("credential_schema_rejected")
+    if set(document) != required:
+        raise LocalAdminAuthError("credential_shape_rejected")
+    if document["kdf"] != KDF_NAME:
         raise LocalAdminAuthError("credential_schema_rejected")
     for key, expected in (("n", KDF_N), ("r", KDF_R), ("p", KDF_P), ("dklen", KDF_DKLEN)):
         value = document[key]
@@ -123,6 +117,7 @@ def _parse(document: Any) -> LocalAdminCredential:
         username=normalize_username(document["username"]),
         salt=_material(document["salt_b64"], SALT_BYTES, "credential_salt_rejected"),
         verifier=_material(document["verifier_b64"], KDF_DKLEN, "credential_verifier_rejected"),
+        password_change_required=password_change_required,
     )
 
 
@@ -161,6 +156,10 @@ class LocalAdminCredentialStore:
     @property
     def username(self) -> str:
         return self._credential.username
+
+    @property
+    def password_change_required(self) -> bool:
+        return self._credential.password_change_required
 
     def _load(self) -> LocalAdminCredential:
         flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_CLOEXEC", 0)
@@ -210,7 +209,14 @@ class LocalAdminCredentialStore:
         try:
             candidate_password = _password_bytes(password)
         except LocalAdminAuthError:
-            input_ok = False
+            if (
+                self._credential.password_change_required
+                and self._credential.username == "admin"
+                and password == "admin"
+            ):
+                candidate_password = b"admin"
+            else:
+                input_ok = False
 
         candidate = _derive(candidate_password, self._credential.salt)
         username_ok = hmac.compare_digest(
