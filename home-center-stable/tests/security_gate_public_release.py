@@ -24,7 +24,10 @@ def main() -> int:
     device_management_web = device_registration_web | {"device-management-plan.js"}
     actual_web = {path.name for path in (ROOT / "product/web/static").iterdir()}
     require(
-        actual_web in {frozenset(base_web), frozenset(member_change_web), frozenset(device_registration_web), frozenset(device_management_web)},
+        actual_web == base_web
+        or actual_web == member_change_web
+        or actual_web == device_registration_web
+        or actual_web == device_management_web,
         "public Web shape",
     )
     require(
