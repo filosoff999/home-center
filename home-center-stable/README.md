@@ -1,4 +1,4 @@
-# Home Center 0.46.0
+# Home Center 0.47.0
 
 Home Center is a local-first control plane for managed home infrastructure. It
 provides authenticated administration, typed read-only infrastructure
@@ -10,19 +10,19 @@ two-node, single-writer profile as a conservative deployment example.
 
 ## Release channels
 
-This repository is the **stable channel**. Version `0.46.0` is the current
+This repository is the **stable channel**. Version `0.47.0` is the current
 qualified PUBLIC STABLE RELEASE.
 
 The official canonical/source line is published separately in
 [`ControlCenterSoft/home-center-development`](https://github.com/ControlCenterSoft/home-center-development),
-where the latest officially published source release is also `0.46.0`.
+where the latest officially published source release is also `0.47.0`.
 
 Canonical source and public stable use separate release identities. The
 checked-in `APPROVED-SOURCE.json` records the approved canonical revision and
 its mapping into this hardened public stable tree; commit SHA equality between
 the two repositories is therefore not required.
 
-Features added after stable `0.46.0` must not be treated as available in this
+Features added after stable `0.47.0` must not be treated as available in this
 stable channel until the corresponding stable package is separately qualified
 and published here.
 
