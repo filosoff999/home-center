@@ -11,11 +11,16 @@ two-node, single-writer profile as a conservative deployment example.
 ## Release channels
 
 This repository is the **stable channel**. Version `0.41.0` is the current
-qualified stable release.
+qualified PUBLIC STABLE RELEASE.
 
-The newer official source-release line is published separately in
+The official canonical/source line is published separately in
 [`ControlCenterSoft/home-center-development`](https://github.com/ControlCenterSoft/home-center-development),
-where the latest officially published source release is `0.40.0`.
+where the latest officially published source release is also `0.41.0`.
+
+Canonical source and public stable use separate release identities. The
+checked-in `APPROVED-SOURCE.json` records the approved canonical revision and
+its mapping into this hardened public stable tree; commit SHA equality between
+the two repositories is therefore not required.
 
 Features added after stable `0.41.0` must not be treated as available in this
 stable channel until the corresponding stable package is separately qualified
