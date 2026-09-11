@@ -1,0 +1,190 @@
+name: Ensure Home Center updater checksum sidecar
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/publish-runtime-checksum-sidecar.yml
+  workflow_run:
+    workflows:
+      - Publish versioned Home Center stable release
+    types:
+      - completed
+
+permissions:
+  contents: write
+
+concurrency:
+  group: home-center-runtime-sidecar-${{ github.event.workflow_run.head_branch || github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: >-
+      github.repository == 'ControlCenterSoft/home-center-stable' &&
+      (github.event_name == 'push' ||
+       (github.event.workflow_run.conclusion == 'success' &&
+        startsWith(github.event.workflow_run.head_branch, 'release/')))
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Checkout exact event source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Resolve exact stable release identity
+        id: identity
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          WORKFLOW_HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
+        run: |
+          set -Eeuo pipefail
+          if [[ "$EVENT_NAME" == "workflow_run" ]]; then
+            branch="$WORKFLOW_HEAD_BRANCH"
+            [[ "$branch" == release/* ]] || { echo RELEASE_BRANCH_REJECTED >&2; exit 66; }
+            version="${branch#release/}"
+          else
+            version="$(tr -d '\r\n' < VERSION)"
+          fi
+          [[ "$version" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]] || { echo RELEASE_VERSION_REJECTED >&2; exit 66; }
+          artifact="home-center-${version}-linux-amd64.tar.gz"
+          sidecar="${artifact}.sha256"
+          printf 'version=%s\nartifact=%s\nsidecar=%s\ntag=v%s\n' "$version" "$artifact" "$sidecar" "$version" >> "$GITHUB_OUTPUT"
+
+      - name: Inspect published release before mutation
+        id: release
+        shell: bash
+        env:
+          TAG: ${{ steps.identity.outputs.tag }}
+          ARTIFACT: ${{ steps.identity.outputs.artifact }}
+          SIDECAR: ${{ steps.identity.outputs.sidecar }}
+        run: |
+          set -Eeuo pipefail
+          release_json="$RUNNER_TEMP/release-before.json"
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$TAG" > "$release_json"
+          python3 - "$release_json" "$TAG" "$ARTIFACT" "$SIDECAR" "$GITHUB_OUTPUT" <<'PY'
+          import json
+          import re
+          import sys
+          from pathlib import Path
+
+          path, tag, artifact_name, sidecar_name, output = sys.argv[1:]
+          data = json.loads(Path(path).read_text(encoding="utf-8"))
+          if data.get("tag_name") != tag or data.get("draft") is not False or data.get("prerelease") is not False:
+              raise SystemExit("RELEASE_IDENTITY_REJECTED")
+          assets = data.get("assets")
+          if not isinstance(assets, list):
+              raise SystemExit("RELEASE_ASSETS_REJECTED")
+          by_name = {}
+          for asset in assets:
+              if isinstance(asset, dict) and isinstance(asset.get("name"), str):
+                  by_name.setdefault(asset["name"], []).append(asset)
+          if len(by_name.get(artifact_name, [])) != 1:
+              raise SystemExit("RUNTIME_ASSET_CARDINALITY_REJECTED")
+          if len(by_name.get(sidecar_name, [])) > 1:
+              raise SystemExit("SIDECAR_ASSET_CARDINALITY_REJECTED")
+          artifact = by_name[artifact_name][0]
+          digest = artifact.get("digest", "")
+          match = re.fullmatch(r"sha256:([0-9a-f]{64})", digest or "")
+          if match is None:
+              raise SystemExit("RUNTIME_ASSET_DIGEST_REJECTED")
+          prefix = f"https://github.com/{data['author']['login'] if False else 'ControlCenterSoft'}/home-center-stable/releases/download/{tag}/"
+          url = artifact.get("browser_download_url", "")
+          expected_url = f"https://github.com/ControlCenterSoft/home-center-stable/releases/download/{tag}/{artifact_name}"
+          if url != expected_url:
+              raise SystemExit("RUNTIME_ASSET_URL_REJECTED")
+          with Path(output).open("a", encoding="utf-8") as stream:
+              stream.write(f"digest={match.group(1)}\n")
+              stream.write(f"sidecar_exists={'true' if len(by_name.get(sidecar_name, [])) == 1 else 'false'}\n")
+          PY
+
+      - name: Download and verify immutable runtime artifact
+        shell: bash
+        env:
+          TAG: ${{ steps.identity.outputs.tag }}
+          ARTIFACT: ${{ steps.identity.outputs.artifact }}
+          DIGEST: ${{ steps.release.outputs.digest }}
+        run: |
+          set -Eeuo pipefail
+          mkdir -p "$RUNNER_TEMP/runtime"
+          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --pattern "$ARTIFACT" --dir "$RUNNER_TEMP/runtime"
+          test -f "$RUNNER_TEMP/runtime/$ARTIFACT"
+          actual="$(sha256sum "$RUNNER_TEMP/runtime/$ARTIFACT" | awk '{print $1}')"
+          [[ "$actual" == "$DIGEST" ]] || { echo RUNTIME_ASSET_DIGEST_MISMATCH >&2; exit 66; }
+
+      - name: Verify existing updater sidecar
+        if: steps.release.outputs.sidecar_exists == 'true'
+        shell: bash
+        env:
+          TAG: ${{ steps.identity.outputs.tag }}
+          ARTIFACT: ${{ steps.identity.outputs.artifact }}
+          SIDECAR: ${{ steps.identity.outputs.sidecar }}
+          DIGEST: ${{ steps.release.outputs.digest }}
+        run: |
+          set -Eeuo pipefail
+          mkdir -p "$RUNNER_TEMP/existing-sidecar"
+          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --pattern "$SIDECAR" --dir "$RUNNER_TEMP/existing-sidecar"
+          expected="${DIGEST}  ${ARTIFACT}"
+          actual="$(tr -d '\r' < "$RUNNER_TEMP/existing-sidecar/$SIDECAR" | sed -e '${/^$/d;}')"
+          [[ "$actual" == "$expected" ]] || { echo EXISTING_SIDECAR_MISMATCH >&2; exit 66; }
+
+      - name: Publish missing updater sidecar
+        if: steps.release.outputs.sidecar_exists != 'true'
+        shell: bash
+        env:
+          TAG: ${{ steps.identity.outputs.tag }}
+          ARTIFACT: ${{ steps.identity.outputs.artifact }}
+          SIDECAR: ${{ steps.identity.outputs.sidecar }}
+          DIGEST: ${{ steps.release.outputs.digest }}
+        run: |
+          set -Eeuo pipefail
+          sidecar_path="$RUNNER_TEMP/$SIDECAR"
+          printf '%s  %s\n' "$DIGEST" "$ARTIFACT" > "$sidecar_path"
+          chmod 0644 "$sidecar_path"
+          gh release upload "$TAG" "$sidecar_path" --repo "$GITHUB_REPOSITORY"
+
+      - name: Verify published updater compatibility asset
+        shell: bash
+        env:
+          TAG: ${{ steps.identity.outputs.tag }}
+          ARTIFACT: ${{ steps.identity.outputs.artifact }}
+          SIDECAR: ${{ steps.identity.outputs.sidecar }}
+          DIGEST: ${{ steps.release.outputs.digest }}
+        run: |
+          set -Eeuo pipefail
+          after_json="$RUNNER_TEMP/release-after.json"
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$TAG" > "$after_json"
+          python3 - "$after_json" "$ARTIFACT" "$SIDECAR" "$DIGEST" <<'PY'
+          import json
+          import re
+          import sys
+          from pathlib import Path
+
+          path, artifact_name, sidecar_name, expected_digest = sys.argv[1:]
+          data = json.loads(Path(path).read_text(encoding="utf-8"))
+          assets = data.get("assets")
+          if not isinstance(assets, list):
+              raise SystemExit("POST_RELEASE_ASSETS_REJECTED")
+          by_name = {}
+          for asset in assets:
+              if isinstance(asset, dict) and isinstance(asset.get("name"), str):
+                  by_name.setdefault(asset["name"], []).append(asset)
+          if len(by_name.get(artifact_name, [])) != 1 or len(by_name.get(sidecar_name, [])) != 1:
+              raise SystemExit("POST_SIDECAR_CARDINALITY_REJECTED")
+          digest = by_name[artifact_name][0].get("digest", "")
+          if digest != f"sha256:{expected_digest}" or re.fullmatch(r"[0-9a-f]{64}", expected_digest) is None:
+              raise SystemExit("POST_RUNTIME_DIGEST_MISMATCH")
+          PY
+          mkdir -p "$RUNNER_TEMP/post-sidecar"
+          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --pattern "$SIDECAR" --dir "$RUNNER_TEMP/post-sidecar"
+          expected="${DIGEST}  ${ARTIFACT}"
+          actual="$(tr -d '\r' < "$RUNNER_TEMP/post-sidecar/$SIDECAR" | sed -e '${/^$/d;}')"
+          [[ "$actual" == "$expected" ]] || { echo POST_SIDECAR_CONTENT_MISMATCH >&2; exit 66; }
+          echo "HOME_CENTER_UPDATER_SIDECAR=PASS tag=$TAG artifact=$ARTIFACT"
