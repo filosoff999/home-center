@@ -20,8 +20,12 @@ def require(condition: bool, message: str) -> None:
 def main() -> int:
     base_web = {"app.css", "app.js", "index.html", "planning.css", "planning.js", "release.js"}
     member_change_web = base_web | {"member-change.css", "member-change.js"}
+    device_registration_web = member_change_web | {"device-registration.js"}
     actual_web = {path.name for path in (ROOT / "product/web/static").iterdir()}
-    require(actual_web == base_web or actual_web == member_change_web, "public Web shape")
+    require(
+        actual_web == base_web or actual_web == member_change_web or actual_web == device_registration_web,
+        "public Web shape",
+    )
     require(
         {path.name for path in (ROOT / "contracts/openapi").iterdir()} == {"home-center.v1.openapi.json"},
         "OpenAPI is not consolidated",
