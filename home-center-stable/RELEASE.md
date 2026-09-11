@@ -7,18 +7,20 @@ Verify the complete set before installation and require the published
 `v0.42.0` tag and release artifacts to agree with the release manifest.
 
 This promotion incorporates the approved Home Center development source at
-canonical revision `27f2ee8dae2729cf034f57b8fed29ad99b62a95e` (`v0.42.0`).
-The checked-in `APPROVED-SOURCE.json` records that canonical revision, its
-approved manifest digest, the stable release boundary revision
-`5da7643b2f5eb353fd46a10d2ae285ff1b7f0f03`, and the per-file disposition
+canonical revision `980e9d84736b64a6e1558bae524e4da2a1c8115a` (`v0.42.0`).
+The checked-in `APPROVED-SOURCE.json` records that canonical revision, approved
+manifest digest `f82f1d80515fab27f320a69341e1cd137154faf6ad0281c2bd5349bd5c002958`,
+the stable release-boundary revision
+`c9a9c2ab5c5ccd76369409aed5d0b906bafb77b7`, and the per-file disposition
 (`identical`, `adapted`, or `excluded`).
 
-The published public `v0.42.0` tag resolves to stable commit
-`00152132ab6d9db1dc28921ae0a1d0b63b370972`. This SHA intentionally differs
+The published public `v0.42.0` annotated tag resolves to stable release commit
+`006cbf824c2a3a894a98d1619daadd0029c636b5`. This SHA intentionally differs
 from the canonical development SHA because the public stable tree applies the
 approved hardened/sanitized export mapping. Commit equality between canonical
-and public repositories is not a release requirement; the version, mapping,
-manifest, checksums, SBOM and acceptance evidence are the authoritative link.
+and public repositories is not a release requirement; the version, approved
+source mapping, manifests, checksums, SBOM and acceptance evidence are the
+authoritative link.
 
 For subsequent stable releases, `VERSION` is the canonical publication
 identity. The release branch must be exactly `release/<VERSION>`, the annotated
