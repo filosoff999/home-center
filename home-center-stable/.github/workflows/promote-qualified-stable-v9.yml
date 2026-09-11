@@ -168,11 +168,13 @@ jobs:
           if index.is_file():
               text = index.read_text(encoding='utf-8').replace(old_version, version)
               if (root / 'product/web/static/device-enrollment.js').is_file():
-                  required = (
+                  required = [
                       '<script src="/static/device-registration.js"></script>',
                       '<script src="/static/device-management-plan.js"></script>',
                       '<script src="/static/device-enrollment.js"></script>',
-                  )
+                  ]
+                  if (root / 'product/web/static/device-provider-resolution.js').is_file():
+                      required.append('<script src="/static/device-provider-resolution.js"></script>')
                   insertion = ''.join(f'  {item}\n' for item in required if item not in text)
                   if insertion:
                       if '</body>' not in text:
