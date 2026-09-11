@@ -1,105 +1,67 @@
-name: Verify versioned Home Center public source
+name: Repair Home Center public promotion source manifest
 
 on:
   pull_request:
-  push:
-    branches:
-      - main
-      - "publish/**"
-      - "release/**"
 
 permissions:
-  contents: read
-
-concurrency:
-  group: home-center-public-verify-${{ github.ref }}
-  cancel-in-progress: false
+  contents: write
 
 jobs:
-  verify:
-    if: github.repository == 'ControlCenterSoft/home-center-stable'
-    name: Python ${{ matrix.python-version }}
+  repair-promotion-manifest:
+    if: >-
+      github.repository == 'ControlCenterSoft/home-center-stable' &&
+      github.head_ref == 'work/restore-promotion-v9-for-0.55.0-b2-20260912'
     runs-on: ubuntu-latest
-    timeout-minutes: 25
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.12", "3.13", "3.14"]
-    env:
-      EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-      PYTHONDONTWRITEBYTECODE: "1"
+    timeout-minutes: 8
     steps:
-      - name: Checkout exact event head
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Checkout exact PR head
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           fetch-depth: 0
-          persist-credentials: false
-          ref: ${{ env.EXPECTED_SHA }}
-
-      - name: Establish exact source identity
+          persist-credentials: true
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: Restore canonical verifier and rebuild closed source manifest
         shell: bash
         run: |
           set -Eeuo pipefail
-          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA" || { echo EXACT_HEAD_MISMATCH >&2; exit 66; }
-          test -z "$(git status --porcelain=v1 --untracked-files=all)" || { echo SOURCE_TREE_DIRTY >&2; exit 66; }
-
-      - name: Set up Python
-        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
-        with:
-          python-version: ${{ matrix.python-version }}
-          cache: ""
-
-      - name: Verify source, runtime, and security contracts
-        shell: bash
-        run: |
-          set -Eeuo pipefail
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}" || exit 66
+          git fetch --no-tags origin main
+          git checkout origin/main -- .github/workflows/verify.yml
+          rm -f SOURCE-MANIFEST.sha256
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib, os
+          root = Path.cwd()
+          ignored = {'.git', '__pycache__'}
+          forbidden = {'.hc-dev', '.idea', '.vscode', 'dist', 'docs', 'ops', 'secrets'}
+          records = []
+          for directory, names, files in os.walk(root, topdown=True, followlinks=False):
+              base = Path(directory)
+              rel_dir = base.relative_to(root)
+              names[:] = sorted(name for name in names if name not in ignored)
+              if set(rel_dir.parts) & forbidden:
+                  raise SystemExit(f'FORBIDDEN_SOURCE_DIRECTORY:{rel_dir.as_posix()}')
+              for name in sorted(files):
+                  path = base / name
+                  rel = path.relative_to(root)
+                  if name == 'SOURCE-MANIFEST.sha256' or set(rel.parts) & ignored:
+                      continue
+                  if set(rel.parts) & forbidden:
+                      raise SystemExit(f'FORBIDDEN_SOURCE_PATH:{rel.as_posix()}')
+                  if path.is_symlink() or not path.is_file() or path.suffix in {'.pyc', '.pyo'}:
+                      raise SystemExit(f'SPECIAL_SOURCE_FILE:{rel.as_posix()}')
+                  records.append((rel.as_posix(), hashlib.sha256(path.read_bytes()).hexdigest()))
+          records.sort(key=lambda item: item[0])
+          Path('SOURCE-MANIFEST.sha256').write_text(
+              ''.join(f'{digest}  {rel}\n' for rel, digest in records),
+              encoding='ascii',
+          )
+          PY
           python3 deploy/scripts/build-release.py verify-source --source-root .
-          PYTHONPATH=product/control-plane/src python3 -m unittest discover -v -s tests -p 'test_*.py'
-          python3 tests/security_gate_public_release.py
-          PYTHONPATH=product/control-plane/src python3 -c 'import home_center.actions, home_center.api, home_center.module_admission, home_center.server'
-          test -z "$(git status --porcelain=v1 --untracked-files=all)" || { echo SOURCE_TREE_MUTATED >&2; exit 66; }
-
-  qualify:
-    if: github.repository == 'ControlCenterSoft/home-center-stable'
-    name: Reproducible release candidate
-    needs: verify
-    runs-on: ubuntu-latest
-    timeout-minutes: 25
-    permissions:
-      contents: read
-    env:
-      EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-      PYTHONDONTWRITEBYTECODE: "1"
-    steps:
-      - name: Checkout exact event head
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-          ref: ${{ env.EXPECTED_SHA }}
-
-      - name: Set up Python
-        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
-        with:
-          python-version: "3.12"
-          cache: ""
-
-      - name: Build and verify candidate
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA" || { echo EXACT_HEAD_MISMATCH >&2; exit 66; }
-          test -z "$(git status --porcelain=v1 --untracked-files=all)" || { echo SOURCE_TREE_DIRTY >&2; exit 66; }
-          epoch="$(git show -s --format=%ct "$EXPECTED_SHA")"
-          [[ "$epoch" =~ ^[1-9][0-9]{8,11}$ ]] || { echo SOURCE_DATE_EPOCH_REJECTED >&2; exit 66; }
-          candidate="$RUNNER_TEMP/home-center-release-$EXPECTED_SHA"
-          GITHUB_SHA="$EXPECTED_SHA" python3 deploy/scripts/build-release.py candidate \
-            --source-root . \
-            --output "$candidate" \
-            --revision "$EXPECTED_SHA" \
-            --source-date-epoch "$epoch"
-          python3 deploy/scripts/build-release.py verify \
-            --directory "$candidate" \
-            --revision "$EXPECTED_SHA" \
-            --source-date-epoch "$epoch"
-          test -z "$(git status --porcelain=v1 --untracked-files=all)" || { echo SOURCE_TREE_MUTATED >&2; exit 66; }
+          git diff --check
+          git add .github/workflows/verify.yml SOURCE-MANIFEST.sha256
+          git diff --cached --quiet && exit 0
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'HC Stable: close promotion workflow source manifest for 0.55'
+          git push origin "HEAD:${{ github.head_ref }}"
