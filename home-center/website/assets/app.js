@@ -1,5 +1,7 @@
 (() => {
   const stableReleases = 'https://github.com/ControlCenterSoft/home-center-stable/releases';
+  const stableVersion = '0.22.3';
+  const previousStableVersion = '0.15.0';
 
   // Старые публичные ссылки автоматически переводим в актуальный stable-канал.
   for (const link of document.querySelectorAll('a[href]')) {
@@ -9,6 +11,25 @@
       href.includes('github.com/ControlCenterSoft/home-center/releases')
     ) {
       link.href = stableReleases;
+      continue;
+    }
+
+    if (href.includes(`/home-center-stable/releases/tag/v${previousStableVersion}`)) {
+      link.href = href.replace(`v${previousStableVersion}`, `v${stableVersion}`);
+    }
+  }
+
+  // До статической синхронизации страниц не показываем пользователю устаревший Stable.
+  const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  let node;
+  while ((node = walker.nextNode())) {
+    const value = node.nodeValue || '';
+    const updated = value
+      .replaceAll(previousStableVersion, stableVersion)
+      .replaceAll('0.15 stable', `${stableVersion} stable`)
+      .replaceAll('Опубликован 9 сентября 2026 года.', 'Опубликован 11 сентября 2026 года.');
+    if (updated !== value) {
+      node.nodeValue = updated;
     }
   }
 
