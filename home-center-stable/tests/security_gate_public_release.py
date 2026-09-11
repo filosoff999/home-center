@@ -22,14 +22,21 @@ def main() -> int:
     member_change_web = base_web | {"member-change.css", "member-change.js"}
     device_registration_web = member_change_web | {"device-registration.js"}
     device_management_web = device_registration_web | {"device-management-plan.js"}
+    device_enrollment_web = device_management_web | {"device-enrollment.js"}
     actual_web = {path.name for path in (ROOT / "product/web/static").iterdir()}
     require(
         actual_web == base_web
         or actual_web == member_change_web
         or actual_web == device_registration_web
-        or actual_web == device_management_web,
+        or actual_web == device_management_web
+        or actual_web == device_enrollment_web,
         "public Web shape",
     )
+    index_html = (ROOT / "product/web/static/index.html").read_text(encoding="utf-8")
+    if actual_web == device_enrollment_web:
+        require('/static/device-registration.js' in index_html, "device registration UI is not loaded")
+        require('/static/device-management-plan.js' in index_html, "device management UI is not loaded")
+        require('/static/device-enrollment.js' in index_html, "device enrollment UI is not loaded")
     require(
         {path.name for path in (ROOT / "contracts/openapi").iterdir()} == {"home-center.v1.openapi.json"},
         "OpenAPI is not consolidated",
