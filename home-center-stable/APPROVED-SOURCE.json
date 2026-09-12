@@ -1,21 +1,21 @@
 {
   "schema": "home-center.approved-source-provenance.v1",
   "product": "home-center",
-  "version": "0.57.0",
+  "version": "0.58.0",
   "approved_repository": "ControlCenterSoft/home-center-development",
-  "approved_revision": "60f4c34f82a8335f9eec36bf2c303bb382efdca6",
-  "approved_manifest_sha256": "fa628c03890b3032192e9e2571ec7eb10ae801bf930b39016cef0cebeb7c0748",
-  "stable_release_boundary_revision": "64f17a2baac644e8ae6962f4f07a7a396f3843db",
+  "approved_revision": "94ceae8a3bac2c53beade4c258dc68767d1c04fb",
+  "approved_manifest_sha256": "6ca77f382acecd56d703f7c1c8104a91b02a84abdda9b8862ebb3ed3f47429c2",
+  "stable_release_boundary_revision": "b68e54d6985e6ea0b68a3995eef216103382720a",
   "summary": {
-    "total": 511,
-    "identical": 292,
+    "total": 560,
+    "identical": 319,
     "adapted": 9,
-    "excluded": 210
+    "excluded": 232
   },
   "files": [
     {
       "path": ".github/workflows/ci.yml",
-      "approved_sha256": "112ae12ca73aac64f1d0c775375f4484e5387d54300314b55e6f512d7ec6b8c5",
+      "approved_sha256": "28dd0d0097242c4f30466b43f9f8f3eeae68d28c81eaa6a73d21265591910398",
       "disposition": "excluded",
       "stable_sha256": null,
       "reason": "stable-release-boundary"
@@ -73,21 +73,21 @@
       "path": "README.md",
       "approved_sha256": "93657b2ac76192cc2b457c7019c3a7b82afba5d8ee0a50d9a796234de3788814",
       "disposition": "adapted",
-      "stable_sha256": "9020f7ae6a1842297f0b309a115b6c6aa6e537236f9c3150745442423eba00b9",
+      "stable_sha256": "b26747132ff0968ad9defd4c3b1d1b9014ee22b19a45ba0a40e3da85784bc20f",
       "reason": "hardened-stable-integration"
     },
     {
       "path": "VERSION",
-      "approved_sha256": "732a28434aa873bdb52464b39e12ee5f81781dc1c81eb4eb8867f660842a40ab",
+      "approved_sha256": "f8de3de8a138497bc14999472efa9f096f64fa424a84665266a1f800f6ff5515",
       "disposition": "identical",
-      "stable_sha256": "732a28434aa873bdb52464b39e12ee5f81781dc1c81eb4eb8867f660842a40ab",
+      "stable_sha256": "f8de3de8a138497bc14999472efa9f096f64fa424a84665266a1f800f6ff5515",
       "reason": "approved-byte-copy"
     },
     {
       "path": "contracts/README.md",
       "approved_sha256": "a1e587c06ad129fe7fdc66ffc2f7aa25b06ab560fe1e8977525956cebb6be6a0",
       "disposition": "adapted",
-      "stable_sha256": "b19c80da7c40c4d4b57714ac193eb5714ceca9acee9f6f772d7a78fd729124d6",
+      "stable_sha256": "1bc63fd6edb7e7f89bb052abaf77661bbb9b484d30e3e7b42aea6e6616d8bb02",
       "reason": "hardened-stable-integration"
     },
     {
@@ -179,6 +179,20 @@
       "approved_sha256": "86ccb633d70a346bab82ce68425cd1f86b8d24aa7b2bd0f85868891cfeee68c6",
       "disposition": "identical",
       "stable_sha256": "86ccb633d70a346bab82ce68425cd1f86b8d24aa7b2bd0f85868891cfeee68c6",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "contracts/auth/session-reauth-request.v1.schema.json",
+      "approved_sha256": "cb062bf80d1c4e00b96f06cd6ec21b7b4f13abc6c26b60ed9c20bca30ee079e6",
+      "disposition": "identical",
+      "stable_sha256": "cb062bf80d1c4e00b96f06cd6ec21b7b4f13abc6c26b60ed9c20bca30ee079e6",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "contracts/auth/session-reauth-result.v1.schema.json",
+      "approved_sha256": "02222aaaa4a9bfd27a7d225427afaa60d193c23077897d981720d26d487c5e6b",
+      "disposition": "identical",
+      "stable_sha256": "02222aaaa4a9bfd27a7d225427afaa60d193c23077897d981720d26d487c5e6b",
       "reason": "approved-byte-copy"
     },
     {
@@ -469,6 +483,34 @@
       "reason": "approved-byte-copy"
     },
     {
+      "path": "contracts/devices/device-management-deenrollment-confirmation.v1.schema.json",
+      "approved_sha256": "75ad778fca823c60f14a0e1595689fb3d33368d7a99aa378bd9af57590b42500",
+      "disposition": "identical",
+      "stable_sha256": "75ad778fca823c60f14a0e1595689fb3d33368d7a99aa378bd9af57590b42500",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "contracts/devices/device-management-deenrollment-plan.v1.schema.json",
+      "approved_sha256": "7f554e36ac9bee97c85ee8965343284a1068e66601c218a372389d19fb299b75",
+      "disposition": "identical",
+      "stable_sha256": "7f554e36ac9bee97c85ee8965343284a1068e66601c218a372389d19fb299b75",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "contracts/devices/device-management-deenrollment-readback-result.v1.schema.json",
+      "approved_sha256": "d88a38b20b327159ec19c8af92f8d986ef4e311835ceb0be4584b2440954ea16",
+      "disposition": "identical",
+      "stable_sha256": "d88a38b20b327159ec19c8af92f8d986ef4e311835ceb0be4584b2440954ea16",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "contracts/devices/device-management-deenrollment-verification-receipt.v1.schema.json",
+      "approved_sha256": "95c80d84665494822029bfdb07a41278292dff9a6a2ab07723bda3db594edaf6",
+      "disposition": "identical",
+      "stable_sha256": "95c80d84665494822029bfdb07a41278292dff9a6a2ab07723bda3db594edaf6",
+      "reason": "approved-byte-copy"
+    },
+    {
       "path": "contracts/devices/device-management-enrollment-adapter-cancel-result.v1.schema.json",
       "approved_sha256": "893af7714a9de76c867625d4b9d6c70445ebbf18aa1f9d18fcc5a45395865102",
       "disposition": "identical",
@@ -536,6 +578,76 @@
       "approved_sha256": "16e038ff812db31656fb2913d2824f5b3fdba7d033758bd8345fdfe72fe0f469",
       "disposition": "identical",
       "stable_sha256": "16e038ff812db31656fb2913d2824f5b3fdba7d033758bd8345fdfe72fe0f469",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "contracts/devices/device-management-enrollment-managed-state-apply-receipt.v1.schema.json",
+      "approved_sha256": "a953f0b3b36592edbf5b7c30745b9a648ae751f76ae3ffdfc76ca549c06ba46a",
+      "disposition": "identical",
+      "stable_sha256": "a953f0b3b36592edbf5b7c30745b9a648ae751f76ae3ffdfc76ca549c06ba46a",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "contracts/devices/device-management-enrollment-post-condition-confirm-request.v1.schema.json",
+      "approved_sha256": "4145aaaef88638598b92ccc492f2cade19a70891be8b7c25e38fe13f64b7c890",
+      "disposition": "identical",
+      "stable_sha256": "4145aaaef88638598b92ccc492f2cade19a70891be8b7c25e38fe13f64b7c890",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "contracts/devices/device-management-enrollment-post-condition-evidence.v1.schema.json",
+      "approved_sha256": "b6b20547771b40383d9ff1f4dddd3d375c4fc9caf24c637856d6759697dbc938",
+      "disposition": "identical",
+      "stable_sha256": "b6b20547771b40383d9ff1f4dddd3d375c4fc9caf24c637856d6759697dbc938",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "contracts/devices/device-management-enrollment-post-condition-plan-request.v1.schema.json",
+      "approved_sha256": "789a2f3f8fd7dedc9de738f89c43e66c10e52c6df9f6b405e79a3c4e56b122ae",
+      "disposition": "identical",
+      "stable_sha256": "789a2f3f8fd7dedc9de738f89c43e66c10e52c6df9f6b405e79a3c4e56b122ae",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "contracts/devices/device-management-enrollment-post-condition-request.v1.schema.json",
+      "approved_sha256": "2e5dcef207ad618fbbf9b58fb0a38963643d06076c1cad63694e26fdb61fc300",
+      "disposition": "identical",
+      "stable_sha256": "2e5dcef207ad618fbbf9b58fb0a38963643d06076c1cad63694e26fdb61fc300",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "contracts/devices/device-management-enrollment-post-condition-result.v1.schema.json",
+      "approved_sha256": "b16e76d84b12b8f1fc4d5c80c6f51528d56e21da85879e12133fe71c15feed6b",
+      "disposition": "identical",
+      "stable_sha256": "b16e76d84b12b8f1fc4d5c80c6f51528d56e21da85879e12133fe71c15feed6b",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "contracts/devices/device-management-enrollment-post-condition-verification-receipt.v1.schema.json",
+      "approved_sha256": "4aa16341577fe3be5e4de39c178a0a63d516909777b320c5a0709df89618cb3f",
+      "disposition": "identical",
+      "stable_sha256": "4aa16341577fe3be5e4de39c178a0a63d516909777b320c5a0709df89618cb3f",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "contracts/devices/device-management-failed-enrollment-cleanup-plan.v1.schema.json",
+      "approved_sha256": "15356d045c1429d71a55d10cc1c9fa645215a9e17be30a963a74a2ef1883da61",
+      "disposition": "identical",
+      "stable_sha256": "15356d045c1429d71a55d10cc1c9fa645215a9e17be30a963a74a2ef1883da61",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "contracts/devices/device-management-failed-enrollment-cleanup-readback-result.v1.schema.json",
+      "approved_sha256": "1bd0caf07822dff4bbf556ac4efb7670d4ecceddf00583135646492a1af7490f",
+      "disposition": "identical",
+      "stable_sha256": "1bd0caf07822dff4bbf556ac4efb7670d4ecceddf00583135646492a1af7490f",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "contracts/devices/device-management-failed-enrollment-cleanup-receipt.v1.schema.json",
+      "approved_sha256": "df30aa49bd23241f58d1da4756289c07299fadb5bf0803e52330cac8be36dabf",
+      "disposition": "identical",
+      "stable_sha256": "df30aa49bd23241f58d1da4756289c07299fadb5bf0803e52330cac8be36dabf",
       "reason": "approved-byte-copy"
     },
     {
@@ -1036,6 +1148,13 @@
       "reason": "stable-public-surface"
     },
     {
+      "path": "contracts/openapi/home-center-device-management.v1.openapi.json",
+      "approved_sha256": "be8e11d24c609ad23113a62fbb389543fd5bebac813cc489a84d5761b9a30deb",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
       "path": "contracts/openapi/home-center-intents.v1.openapi.json",
       "approved_sha256": "8d61bd62e7ccee97b55ba2d5636981b92bd4f70751350bd6ccab3946df328381",
       "disposition": "excluded",
@@ -1330,8 +1449,22 @@
       "reason": "hardened-stable-integration"
     },
     {
+      "path": "docs/architecture/0.58-post-condition-verification.md",
+      "approved_sha256": "76c218b5260ae1ddc493eeeee6366e23f4acfcef87705b76a5f939b9eb554dc4",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-release-documentation"
+    },
+    {
       "path": "docs/architecture/cozy-interface.md",
       "approved_sha256": "e1979bb7695e44754390991ca159c5e64ae7fed05fa163cb66be475051d4fdfb",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-release-documentation"
+    },
+    {
+      "path": "docs/architecture/device-management-api-0.58.md",
+      "approved_sha256": "c47ee333e069f0132b703708f1676b12c3d9c088f9219df4b6e5aa5bb933d7c7",
       "disposition": "excluded",
       "stable_sha256": null,
       "reason": "stable-release-documentation"
@@ -1666,10 +1799,17 @@
       "reason": "stable-release-documentation"
     },
     {
+      "path": "docs/releases/0.58.0.md",
+      "approved_sha256": "d6d6cd4c55a8bfe37b83a78c0fed6da09ebcaeef18d4878881d0ce8b32925832",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-release-documentation"
+    },
+    {
       "path": "product/control-plane/src/home_center/__init__.py",
-      "approved_sha256": "e55258f490c6b69bf10583a490ca35d9e1e9996c9f41624e4741dbaed272f54d",
+      "approved_sha256": "a2eca8dd89655558c6e6757eac721e53db0eb0a2857875609865ce507239afdc",
       "disposition": "identical",
-      "stable_sha256": "e55258f490c6b69bf10583a490ca35d9e1e9996c9f41624e4741dbaed272f54d",
+      "stable_sha256": "a2eca8dd89655558c6e6757eac721e53db0eb0a2857875609865ce507239afdc",
       "reason": "approved-byte-copy"
     },
     {
@@ -1719,6 +1859,20 @@
       "approved_sha256": "9a25c1c30d102124ec28e383180bfb9db1716384698867a363c28bb5079a102c",
       "disposition": "identical",
       "stable_sha256": "9a25c1c30d102124ec28e383180bfb9db1716384698867a363c28bb5079a102c",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "product/control-plane/src/home_center/api_v4.py",
+      "approved_sha256": "e3134f64c940c528d144702d385ede97c28a5bbff1e19f2bed5b26a5af6e47d2",
+      "disposition": "identical",
+      "stable_sha256": "e3134f64c940c528d144702d385ede97c28a5bbff1e19f2bed5b26a5af6e47d2",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "product/control-plane/src/home_center/api_v5.py",
+      "approved_sha256": "37cd69f41a7aa4209c82043a663a2e48d9628a95ef454435da474a8c4f2e92bf",
+      "disposition": "identical",
+      "stable_sha256": "37cd69f41a7aa4209c82043a663a2e48d9628a95ef454435da474a8c4f2e92bf",
       "reason": "approved-byte-copy"
     },
     {
@@ -1960,6 +2114,27 @@
       "reason": "approved-byte-copy"
     },
     {
+      "path": "product/control-plane/src/home_center/device_management_deenrollment.py",
+      "approved_sha256": "fcc0c7db6b73fcc6b0409549f3f105b732cc15426a5e29744df539dc50255fed",
+      "disposition": "identical",
+      "stable_sha256": "fcc0c7db6b73fcc6b0409549f3f105b732cc15426a5e29744df539dc50255fed",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "product/control-plane/src/home_center/device_management_deenrollment_execution_runtime.py",
+      "approved_sha256": "0e9e7c99a04e165422c0edad132d379d23ca44040d2f9b2ad06614513b4c0f3d",
+      "disposition": "identical",
+      "stable_sha256": "0e9e7c99a04e165422c0edad132d379d23ca44040d2f9b2ad06614513b4c0f3d",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "product/control-plane/src/home_center/device_management_deenrollment_runtime.py",
+      "approved_sha256": "a09c0cb8076a11c1eeda97aabafc94741852e0e235776724524f4842f9978ded",
+      "disposition": "identical",
+      "stable_sha256": "a09c0cb8076a11c1eeda97aabafc94741852e0e235776724524f4842f9978ded",
+      "reason": "approved-byte-copy"
+    },
+    {
       "path": "product/control-plane/src/home_center/device_management_enrollment_execution.py",
       "approved_sha256": "39cf6cd422bdb316411994d62864d362da4e79e8f7084244bbc1b78befb1e923",
       "disposition": "identical",
@@ -1985,6 +2160,41 @@
       "approved_sha256": "bf3d0051de65b4f76912202cae3dcda0130a99539b5c2e996b624c405b1cab34",
       "disposition": "identical",
       "stable_sha256": "bf3d0051de65b4f76912202cae3dcda0130a99539b5c2e996b624c405b1cab34",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "product/control-plane/src/home_center/device_management_enrollment_post_condition_runtime.py",
+      "approved_sha256": "63eb08cabaa276d6c651a36190ee1995107df80db92ec7953a5aeffa98d6c3e3",
+      "disposition": "identical",
+      "stable_sha256": "63eb08cabaa276d6c651a36190ee1995107df80db92ec7953a5aeffa98d6c3e3",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "product/control-plane/src/home_center/device_management_enrollment_post_condition_runtime_safe.py",
+      "approved_sha256": "7da00a333f8f200691c407265a4935b218f94acbbdbfa9b5f1e342cbaa9f8f92",
+      "disposition": "identical",
+      "stable_sha256": "7da00a333f8f200691c407265a4935b218f94acbbdbfa9b5f1e342cbaa9f8f92",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "product/control-plane/src/home_center/device_management_enrollment_verification.py",
+      "approved_sha256": "ff67a8ce491c669486b9066861adb935b686f31639276de205c66ba2e521291a",
+      "disposition": "identical",
+      "stable_sha256": "ff67a8ce491c669486b9066861adb935b686f31639276de205c66ba2e521291a",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "product/control-plane/src/home_center/device_management_failed_enrollment_cleanup_execution_runtime.py",
+      "approved_sha256": "9971f667a21cfe08717aa64b28524e423bc970ef87500e1d2d1735c16d4c70c7",
+      "disposition": "identical",
+      "stable_sha256": "9971f667a21cfe08717aa64b28524e423bc970ef87500e1d2d1735c16d4c70c7",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "product/control-plane/src/home_center/device_management_failed_enrollment_cleanup_runtime.py",
+      "approved_sha256": "7d41217f4dabe3e6ed23a3c675d3989f33e6889772f453fccfa6a2b7fa0fe4b4",
+      "disposition": "identical",
+      "stable_sha256": "7d41217f4dabe3e6ed23a3c675d3989f33e6889772f453fccfa6a2b7fa0fe4b4",
       "reason": "approved-byte-copy"
     },
     {
@@ -2563,16 +2773,23 @@
     },
     {
       "path": "product/control-plane/src/home_center/runtime.py",
-      "approved_sha256": "bf16a878754ae6ebad968cd23d603a3de0ac2f0797971608939406fe6eb10c65",
+      "approved_sha256": "2bdfe595bafcc1ea9c9c7ea36192c713c24c8b2dc2efaa3edc6c132dc3ad3cb0",
       "disposition": "identical",
-      "stable_sha256": "bf16a878754ae6ebad968cd23d603a3de0ac2f0797971608939406fe6eb10c65",
+      "stable_sha256": "2bdfe595bafcc1ea9c9c7ea36192c713c24c8b2dc2efaa3edc6c132dc3ad3cb0",
       "reason": "approved-byte-copy"
     },
     {
       "path": "product/control-plane/src/home_center/server.py",
-      "approved_sha256": "a159ec5e81ef8cee87ffb4fc2413012c814100ba2900fc19f4524fc1bdad7d50",
+      "approved_sha256": "0c5df6a8558ea045af4efb2be85eae75cee2512aeed11cffaad4471587877dcd",
       "disposition": "identical",
-      "stable_sha256": "a159ec5e81ef8cee87ffb4fc2413012c814100ba2900fc19f4524fc1bdad7d50",
+      "stable_sha256": "0c5df6a8558ea045af4efb2be85eae75cee2512aeed11cffaad4471587877dcd",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "product/control-plane/src/home_center/step_up.py",
+      "approved_sha256": "a2133cfd3f76abe3789e60503141676a78673041b5fd4611c3218f379510a6f9",
+      "disposition": "identical",
+      "stable_sha256": "a2133cfd3f76abe3789e60503141676a78673041b5fd4611c3218f379510a6f9",
       "reason": "approved-byte-copy"
     },
     {
@@ -2668,9 +2885,9 @@
     },
     {
       "path": "product/web/static/index.html",
-      "approved_sha256": "9c5c01d7efa1b7097de3aa7cbf9b7d82b187aa81e2a234efde5c9037fff965c6",
+      "approved_sha256": "ccc0f2cf9ee4549d570652eeedd3a011a35c0f1a7400c06b2f43b0dd0a689359",
       "disposition": "adapted",
-      "stable_sha256": "f40f410d58a20044184d0fee87fc0a993469ea5a23bb8a67d03716734404fa53",
+      "stable_sha256": "8fbba382021106d5825228e2255e0436ee321062c8beb640c4f505d49f987ca2",
       "reason": "hardened-stable-integration"
     },
     {
@@ -2689,9 +2906,9 @@
     },
     {
       "path": "pyproject.toml",
-      "approved_sha256": "1ae356562db0ff90e3a21296a7a8082c813aaf4098394c04caba917211b4637b",
+      "approved_sha256": "53b8ee55cbc2a405e12e2a949052b60f6a15e62d9d1abbe40c54574e1342f589",
       "disposition": "identical",
-      "stable_sha256": "1ae356562db0ff90e3a21296a7a8082c813aaf4098394c04caba917211b4637b",
+      "stable_sha256": "53b8ee55cbc2a405e12e2a949052b60f6a15e62d9d1abbe40c54574e1342f589",
       "reason": "approved-byte-copy"
     },
     {
@@ -2731,7 +2948,21 @@
     },
     {
       "path": "scripts/qualify_release_artifact.py",
-      "approved_sha256": "0df88758f1892cd1194bfe6238a1b04d7d16f4e7b8ab24e35112338ff4269dc3",
+      "approved_sha256": "48b53a4cd11e614f13ad30cc378ff34ea4165438e9ccdd6fb6e7e88e1e7ab588",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/conftest.py",
+      "approved_sha256": "dc57053eb41477d8249ebe8ccdd80635b1439275e1606805564696ae46effc4c",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_api_v5_cleanup_execution_route.py",
+      "approved_sha256": "3448d1348c5ce522ceee824620886651e4e13e4cf122c530a47e6f5f3f980c7e",
       "disposition": "excluded",
       "stable_sha256": null,
       "reason": "stable-public-surface"
@@ -2849,6 +3080,27 @@
       "reason": "stable-public-surface"
     },
     {
+      "path": "tests/test_device_management_deenrollment.py",
+      "approved_sha256": "e47c8beb45303f9b406ef984f54b584e5a1f96cde4c3d5b9b9d6c54ed8651d9c",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_device_management_deenrollment_execution_runtime.py",
+      "approved_sha256": "8b3ab1a8c6edbfaf9172847052df902e0f4a193b2714de2440fae3305b3fd3ff",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_device_management_deenrollment_runtime.py",
+      "approved_sha256": "d82f598a884ce35a6799b97031c0f47455c6181e49389cb7ef0b6f3be0df1dc8",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
       "path": "tests/test_device_management_enrollment_adapter_registry_fail_closed.py",
       "approved_sha256": "be4c00a60b5837356143a5ef5b61d9d7419ce108b6fab593013157ab44649924",
       "disposition": "excluded",
@@ -2872,6 +3124,48 @@
     {
       "path": "tests/test_device_management_enrollment_execution_replay_safety.py",
       "approved_sha256": "f80c471354cba9f114f91ca620d0c1880a3337b87383104cc81257ee367ca13f",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_device_management_enrollment_post_condition_runtime.py",
+      "approved_sha256": "35f03a558f25709412eb7f9138fb56bcb032457e35f563785f7e67e36d543723",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_device_management_enrollment_verification.py",
+      "approved_sha256": "78b4430bc90adbfb8e3f1585f81a77d9de9abf2dd4f7a188a7f9f24749fa07cf",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_device_management_enrollment_verification_contract.py",
+      "approved_sha256": "26ccab84175a2c1e49eaf42353382c2b5d0029ba6cf9ba3035415b40924d89c4",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_device_management_failed_enrollment_cleanup_execution_runtime.py",
+      "approved_sha256": "eba7b5d9d2171630e831b37b205dfe5e964d0a0e86a0bebbf5ab64548da28309",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_device_management_failed_enrollment_cleanup_runtime.py",
+      "approved_sha256": "06c5bd0caee27804268e8edc8e44f836ed5700578637b62020e225f0cfbf3517",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_device_management_openapi_058.py",
+      "approved_sha256": "804638f266b0d2552b02dc5344539b4443cd3ff36a650671515950fb6094bd38",
       "disposition": "excluded",
       "stable_sha256": null,
       "reason": "stable-public-surface"
@@ -3536,7 +3830,7 @@
     },
     {
       "path": "tests/test_release_057_source_preparation.py",
-      "approved_sha256": "fe51a21b2d2cdf93f2ab040bb02c8d92bade4214daa6b4f2a5a20f1c14a90f2a",
+      "approved_sha256": "cdfde17e904a010bdccbea00c8557a1cd006aaa1d153cb2a9e34855ef821b8ae",
       "disposition": "excluded",
       "stable_sha256": null,
       "reason": "stable-public-surface"
@@ -3544,6 +3838,48 @@
     {
       "path": "tests/test_release_057_upgrade_restart_qualification.py",
       "approved_sha256": "a4f6fb6ba1bbb9e8d80c1871bcb64c98c47182a4891053956ba4246f5cb9b361",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_release_058_artifact_backup_membership.py",
+      "approved_sha256": "38b9f84a57029f6fdcd066c2ac54871cea2e1932c18978152477f5991bc1912e",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_release_058_contract_schemas.py",
+      "approved_sha256": "920430a758fc8d829378063a8011924af976aa1481b677659813d3bb5c1c620b",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_release_058_deenrollment_contract_schemas.py",
+      "approved_sha256": "e2a666392d43065b88d03017d603fa6a087693de80a082eec6f64a6154de0cea",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_release_058_hosted_systemd_upgrade.py",
+      "approved_sha256": "d874a0ac239099dcdcce9ad045d0f30c0f9a0525cd3467a5f38633a42b6aa9ab",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_release_058_hosted_upgrade_drill.py",
+      "approved_sha256": "79e726304e37dbe1d7df337477115ec512bcdff372589695d1af31b1ae78bab6",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_release_058_source_preparation.py",
+      "approved_sha256": "e7094c634680638de9cf091894ed80ada15b63e4d39e6b9555a432fadf34c7e9",
       "disposition": "excluded",
       "stable_sha256": null,
       "reason": "stable-public-surface"
@@ -3565,6 +3901,13 @@
     {
       "path": "tests/test_runbook_state.py",
       "approved_sha256": "6473b711ca030815b6a95c17b920ab307859516fee8bd8946b28c6648ac81882",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_step_up.py",
+      "approved_sha256": "888278568e7003b5cddcfeb82b8b9df36502fec6c51bce48ce12096228ad24e6",
       "disposition": "excluded",
       "stable_sha256": null,
       "reason": "stable-public-surface"
