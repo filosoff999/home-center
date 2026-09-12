@@ -58,8 +58,9 @@ SOURCE_ARCHIVE = f"home-center-{VERSION}-source.tar.gz"
 SBOM_NAME = f"home-center-{VERSION}.spdx.json"
 ACCEPTANCE_NAME = f"home-center-{VERSION}.acceptance.json"
 RELEASE_MANIFEST_NAME = f"home-center-{VERSION}.release-manifest.json"
+PROVENANCE_NAME = f"home-center-{VERSION}.public-provenance.v2.json"
 CHECKSUMS_NAME = "SHA256SUMS"
-PAYLOAD_NAMES = (RUNTIME_ARCHIVE, SOURCE_ARCHIVE, SBOM_NAME, ACCEPTANCE_NAME, RELEASE_MANIFEST_NAME)
+PAYLOAD_NAMES = (RUNTIME_ARCHIVE, SOURCE_ARCHIVE, SBOM_NAME, ACCEPTANCE_NAME, RELEASE_MANIFEST_NAME, PROVENANCE_NAME)
 RELEASE_NAMES = (*PAYLOAD_NAMES, CHECKSUMS_NAME)
 MAX_JSON_BYTES = 16 * 1024 * 1024
 MAX_ARCHIVE_MEMBERS = 20_000
@@ -711,6 +712,7 @@ MEDIA_TYPES = {
     SOURCE_ARCHIVE: "application/gzip",
     SBOM_NAME: "application/spdx+json",
     ACCEPTANCE_NAME: "application/vnd.home-center.acceptance+json",
+    PROVENANCE_NAME: "application/vnd.home-center.provenance+json",
 }
 
 
@@ -770,6 +772,88 @@ def verify_checksums(root: Path) -> None:
     _require(sums == expected, "checksums_mismatch")
 
 
+
+PROVENANCE_KEYS = {
+    "schema",
+    "product",
+    "version",
+    "source_identity_sha256",
+    "release_boundary_identity_sha256",
+    "approved_manifest_sha256",
+    "summary",
+    "files",
+}
+PROVENANCE_FILE_KEYS = {"path", "approved_sha256", "disposition", "stable_sha256", "reason"}
+PROVENANCE_DISPOSITIONS = {"identical", "adapted", "excluded"}
+
+
+def validate_public_provenance(path: Path) -> dict[str, object]:
+    value = read_json(path)
+    _require(isinstance(value, dict) and set(value) == PROVENANCE_KEYS, "public_provenance_invalid")
+    _require(
+        value.get("schema") == "home-center.public-stable-provenance.v2"
+        and value.get("product") == PRODUCT
+        and value.get("version") == VERSION,
+        "public_provenance_identity_mismatch",
+    )
+    for key in ("source_identity_sha256", "release_boundary_identity_sha256", "approved_manifest_sha256"):
+        _require(isinstance(value.get(key), str) and HEX64.fullmatch(str(value[key])) is not None, "public_provenance_digest_invalid")
+
+    summary = value.get("summary")
+    _require(isinstance(summary, dict) and set(summary) == {"total", "identical", "adapted", "excluded"}, "public_provenance_summary_invalid")
+    for key in ("total", "identical", "adapted", "excluded"):
+        _require(isinstance(summary.get(key), int) and not isinstance(summary.get(key), bool) and int(summary[key]) >= 0, "public_provenance_summary_invalid")
+    _require(summary["total"] == summary["identical"] + summary["adapted"] + summary["excluded"], "public_provenance_summary_invalid")
+
+    records = value.get("files")
+    _require(isinstance(records, list) and len(records) == summary["total"], "public_provenance_files_invalid")
+    paths: list[str] = []
+    counts = {"identical": 0, "adapted": 0, "excluded": 0}
+    for record in records:
+        _require(isinstance(record, dict) and set(record) == PROVENANCE_FILE_KEYS, "public_provenance_file_invalid")
+        name = record.get("path")
+        _require(isinstance(name, str), "public_provenance_file_invalid")
+        _safe_relative(name, "public_provenance_file_invalid")
+        approved = record.get("approved_sha256")
+        _require(isinstance(approved, str) and HEX64.fullmatch(approved) is not None, "public_provenance_file_invalid")
+        disposition = record.get("disposition")
+        _require(disposition in PROVENANCE_DISPOSITIONS, "public_provenance_file_invalid")
+        counts[str(disposition)] += 1
+        stable = record.get("stable_sha256")
+        if disposition == "excluded":
+            _require(stable is None, "public_provenance_file_invalid")
+        else:
+            _require(isinstance(stable, str) and HEX64.fullmatch(stable) is not None, "public_provenance_file_invalid")
+        paths.append(name)
+    _require(paths == sorted(set(paths)), "public_provenance_files_invalid")
+    _require(all(summary[key] == counts[key] for key in counts), "public_provenance_summary_invalid")
+
+    payload = path.read_bytes()
+    for forbidden in (b'"approved_repository"', b'"approved_revision"', b'"stable_release_boundary_revision"'):
+        _require(forbidden not in payload, "public_provenance_identity_leak")
+    _require(payload == canonical_json(value), "public_provenance_not_canonical")
+    return value
+
+
+def generate_public_provenance(source_root: Path, output_path: Path) -> None:
+    tool = source_root / "scripts/export_public_stable_provenance.py"
+    mapping = source_root / "APPROVED-SOURCE.json"
+    _regular(tool, "public_provenance_exporter_rejected")
+    _regular(mapping, "public_provenance_mapping_rejected")
+    try:
+        completed = subprocess.run(
+            [sys.executable, str(tool), "--input", str(mapping), "--output", str(output_path)],
+            cwd=source_root,
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+    except (OSError, subprocess.SubprocessError) as exc:
+        raise PublicReleaseError("public_provenance_export_failed") from exc
+    _require(completed.returncode == 0, "public_provenance_export_failed")
+    validate_public_provenance(output_path)
+
 def build_candidate(source_root: Path, output_root: Path, revision: str, epoch: int) -> None:
     require_exact_public_head(source_root, revision)
     _require(not output_root.exists() and not output_root.is_symlink(), "output_must_not_exist")
@@ -786,6 +870,7 @@ def build_candidate(source_root: Path, output_root: Path, revision: str, epoch: 
         shutil.copyfile(source_a, output_root / SOURCE_ARCHIVE)
         generate_spdx(output_root / RUNTIME_ARCHIVE, output_root / SBOM_NAME, revision, epoch)
         generate_acceptance(output_root, runtime_a, runtime_b, source_a, source_b, revision, epoch)
+        generate_public_provenance(source_root, output_root / PROVENANCE_NAME)
         generate_release_manifest(output_root, revision, epoch)
         generate_checksums(output_root)
     verify_bundle(output_root, revision, epoch)
@@ -809,6 +894,7 @@ def verify_bundle(root: Path, revision: str, epoch: int, release_json: Path | No
     verify_source_archive(root / SOURCE_ARCHIVE, revision, epoch)
     validate_spdx(root / SBOM_NAME, root / RUNTIME_ARCHIVE, revision, epoch)
     validate_acceptance(root / ACCEPTANCE_NAME, root, revision, epoch)
+    validate_public_provenance(root / PROVENANCE_NAME)
     validate_release_manifest(root / RELEASE_MANIFEST_NAME, root, revision, epoch)
     if release_json is not None:
         verify_release_json(release_json)
