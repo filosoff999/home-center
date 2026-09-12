@@ -1,0 +1,135 @@
+name: Repair Stable approved-source drift
+
+on:
+  push:
+    branches:
+      - tooling/0.57-promotion-v10-b1
+    paths:
+      - .github/workflows/repair-approved-source-drift.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: repair-home-center-stable-approved-source-drift
+  cancel-in-progress: false
+
+jobs:
+  repair:
+    if: github.repository == 'ControlCenterSoft/home-center-stable'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - name: Checkout exact tooling branch
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Repair provenance against exact Stable files
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA" || { echo EXACT_HEAD_MISMATCH >&2; exit 66; }
+          helper=.github/workflows/repair-approved-source-drift.yml
+          rm -f "$helper"
+          python3 - <<'PY'
+          from collections import Counter
+          from pathlib import Path
+          import hashlib, json, os
+
+          root = Path.cwd()
+          provenance_path = root / 'APPROVED-SOURCE.json'
+          value = json.loads(provenance_path.read_text(encoding='utf-8'))
+
+          def sha256(path: Path) -> str:
+              return hashlib.sha256(path.read_bytes()).hexdigest()
+
+          for item in value['files']:
+              path = root / item['path']
+              if item['disposition'] == 'excluded':
+                  if path.exists():
+                      raise SystemExit(f'EXCLUDED_SOURCE_PATH_PRESENT:{item["path"]}')
+                  item['stable_sha256'] = None
+                  continue
+              if not path.is_file() or path.is_symlink():
+                  raise SystemExit(f'MAPPED_STABLE_FILE_MISSING:{item["path"]}')
+              actual = sha256(path)
+              item['stable_sha256'] = actual
+              if actual == item['approved_sha256']:
+                  item['disposition'] = 'identical'
+                  item['reason'] = 'approved-byte-copy'
+              else:
+                  item['disposition'] = 'adapted'
+                  item['reason'] = 'hardened-stable-integration'
+
+          files = value['files']
+          if [item['path'] for item in files] != sorted({item['path'] for item in files}):
+              raise SystemExit('APPROVED_SOURCE_PATH_SET_INVALID')
+          rows = ''.join(
+              f'{item["approved_sha256"]}  {item["path"]}\n' for item in files
+          ).encode('utf-8')
+          value['approved_manifest_sha256'] = hashlib.sha256(rows).hexdigest()
+          counts = Counter(item['disposition'] for item in files)
+          value['summary'] = {
+              'total': len(files),
+              'identical': counts['identical'],
+              'adapted': counts['adapted'],
+              'excluded': counts['excluded'],
+          }
+          provenance_path.write_text(
+              json.dumps(value, indent=2, ensure_ascii=True) + '\n',
+              encoding='utf-8',
+          )
+
+          manifest = root / 'SOURCE-MANIFEST.sha256'
+          manifest.unlink(missing_ok=True)
+          ignored = {'.git', '__pycache__'}
+          forbidden = {'.hc-dev', '.idea', '.vscode', 'dist', 'docs', 'ops', 'secrets'}
+          records = []
+          for directory, names, filenames in os.walk(root, topdown=True, followlinks=False):
+              base = Path(directory)
+              rel_dir = base.relative_to(root)
+              names[:] = sorted(name for name in names if name not in ignored)
+              if set(rel_dir.parts) & forbidden:
+                  raise SystemExit(f'FORBIDDEN_SOURCE_DIRECTORY:{rel_dir.as_posix()}')
+              for name in sorted(filenames):
+                  path = base / name
+                  rel = path.relative_to(root)
+                  if name == 'SOURCE-MANIFEST.sha256' or set(rel.parts) & ignored:
+                      continue
+                  if set(rel.parts) & forbidden:
+                      raise SystemExit(f'FORBIDDEN_SOURCE_PATH:{rel.as_posix()}')
+                  if path.is_symlink() or not path.is_file() or path.suffix in {'.pyc', '.pyo'}:
+                      raise SystemExit(f'SPECIAL_SOURCE_FILE:{rel.as_posix()}')
+                  records.append((rel.as_posix(), sha256(path)))
+          records.sort(key=lambda item: item[0])
+          manifest.write_text(
+              ''.join(f'{digest}  {rel}\n' for rel, digest in records),
+              encoding='ascii',
+          )
+          PY
+
+      - name: Qualify repaired Stable tree
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 deploy/scripts/build-release.py verify-source --source-root .
+          PYTHONPATH=product/control-plane/src python3 -m unittest discover -v -s tests -p 'test_*.py'
+          python3 tests/security_gate_public_release.py
+          PYTHONPATH=product/control-plane/src python3 -c 'import home_center.actions, home_center.api, home_center.module_admission, home_center.server'
+
+      - name: Commit provenance repair only
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          git restore --source=HEAD -- .github/workflows/repair-approved-source-drift.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add APPROVED-SOURCE.json SOURCE-MANIFEST.sha256
+          git diff --cached --check
+          git diff --cached --quiet && { echo NO_PROVENANCE_DELTA >&2; exit 66; }
+          git commit -m 'release: repair Stable approved-source provenance drift'
+          git push origin "HEAD:$GITHUB_REF_NAME"
