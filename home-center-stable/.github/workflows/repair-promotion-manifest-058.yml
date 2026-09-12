@@ -1,0 +1,83 @@
+name: Repair 0.58 promotion tooling manifest
+
+on:
+  push:
+    branches:
+      - tooling/restore-promotion-v10-for-058
+
+permissions:
+  contents: write
+
+concurrency:
+  group: home-center-stable-058-tooling-manifest-repair
+  cancel-in-progress: false
+
+jobs:
+  repair:
+    if: github.repository == 'ControlCenterSoft/home-center-stable'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact tooling branch
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+          ref: ${{ github.sha }}
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+          cache: ''
+
+      - name: Regenerate exact source manifest and qualify tooling
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test -f .github/workflows/promote-qualified-stable-v10.yml
+          test -f tests/test_stable_promotion_v10_contract.py
+          rm -f .github/workflows/repair-promotion-manifest-058.yml SOURCE-MANIFEST.sha256
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib, os
+          root = Path.cwd()
+          ignored = {'.git', '__pycache__'}
+          forbidden = {'.hc-dev', '.idea', '.vscode', 'dist', 'docs', 'ops', 'secrets'}
+          records = []
+          for directory, names, files in os.walk(root, topdown=True, followlinks=False):
+              base = Path(directory)
+              rel_dir = base.relative_to(root)
+              names[:] = sorted(name for name in names if name not in ignored)
+              if set(rel_dir.parts) & forbidden:
+                  raise SystemExit(f'FORBIDDEN_SOURCE_DIRECTORY:{rel_dir.as_posix()}')
+              for name in sorted(files):
+                  path = base / name
+                  rel = path.relative_to(root)
+                  if name == 'SOURCE-MANIFEST.sha256' or set(rel.parts) & ignored:
+                      continue
+                  if set(rel.parts) & forbidden:
+                      raise SystemExit(f'FORBIDDEN_SOURCE_PATH:{rel.as_posix()}')
+                  if path.is_symlink() or not path.is_file() or path.suffix in {'.pyc', '.pyo'}:
+                      raise SystemExit(f'SPECIAL_SOURCE_FILE:{rel.as_posix()}')
+                  records.append((rel.as_posix(), hashlib.sha256(path.read_bytes()).hexdigest()))
+          records.sort(key=lambda item: item[0])
+          Path('SOURCE-MANIFEST.sha256').write_text(
+              ''.join(f'{digest}  {rel}\n' for rel, digest in records),
+              encoding='ascii',
+          )
+          PY
+          python3 deploy/scripts/build-release.py verify-source --source-root .
+          python3 -m unittest -v tests.test_stable_promotion_v10_contract
+          python3 tests/security_gate_public_release.py
+
+      - name: Commit exact manifest repair
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git diff --cached --check
+          git commit -m 'stable: bind 0.58 promotion tooling into source manifest'
+          git push origin HEAD:tooling/restore-promotion-v10-for-058
