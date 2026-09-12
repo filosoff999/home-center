@@ -1,30 +1,11 @@
-# Release 0.56.0
+# Релиз Home Center 0.56.0
 
-The release set contains the Linux runtime archive, source archive, canonical
-SPDX 2.3 document, acceptance record, release manifest, and `SHA256SUMS`. Both
-archives contain `VERSION`, `REVISION`, and an internal `MANIFEST.sha256`.
-Verify the complete set before installation and require the published
-`v0.56.0` tag and release artifacts to agree with the release manifest.
+Официальный release set содержит Linux runtime archive, source archive, SPDX 2.3 SBOM, acceptance evidence, release manifest, `SHA256SUMS` и отдельный checksum sidecar для Linux-архива. Архивы содержат `VERSION`, `REVISION` и внутренний `MANIFEST.sha256`.
 
-This promotion incorporates the approved Home Center development source at
-canonical revision `980e9d84736b64a6e1558bae524e4da2a1c8115a` (`v0.56.0`).
-The checked-in `APPROVED-SOURCE.json` records that canonical revision, approved
-manifest digest `f82f1d80515fab27f320a69341e1cd137154faf6ad0281c2bd5349bd5c002958`,
-the stable release-boundary revision
-`c9a9c2ab5c5ccd76369409aed5d0b906bafb77b7`, and the per-file disposition
-(`identical`, `adapted`, or `excluded`).
+Перед установкой проверяйте полный набор: опубликованный tag `v0.56.0`, release assets, release manifest, checksums, SBOM и acceptance evidence должны согласовываться между собой. Любое расхождение release identity или контрольных сумм является блокирующим.
 
-The published public `v0.56.0` annotated tag resolves to stable release commit
-`006cbf824c2a3a894a98d1619daadd0029c636b5`. This SHA intentionally differs
-from the canonical development SHA because the public stable tree applies the
-approved hardened/sanitized export mapping. Commit equality between canonical
-and public repositories is not a release requirement; the version, approved
-source mapping, manifests, checksums, SBOM and acceptance evidence are the
-authoritative link.
+Публичный annotated tag `v0.56.0` соответствует опубликованному Stable-релизу. Связь релиза с утверждённым исходным набором фиксируется машиночитаемым approved-source/provenance evidence и per-file disposition. Пользователю не требуется сравнивать SHA с внутренними контурами подготовки релиза; источником истины являются публичная release identity и опубликованный evidence set.
 
-For subsequent stable releases, `VERSION` is the canonical publication
-identity. The release branch must be exactly `release/<VERSION>`, the annotated
-tag is `v<VERSION>`, and `VERSION`, Python package metadata, and the runtime
-version must agree. Publication is permitted only through the stable release
-procedure; current documentation updates do not mutate an already published
-tag or GitHub Release.
+Для последующих Stable-релизов `VERSION` является канонической пользовательской publication identity. Tag имеет форму `v<VERSION>`, а `VERSION`, package metadata и runtime version должны совпадать. Публикация допускается только через отдельную Stable release procedure и явное release authority; изменение текущей документации не изменяет уже опубликованный tag или GitHub Release.
+
+Важно: checksum подтверждает целостность конкретного артефакта, но не подменяет qualification install/upgrade path. Для особенностей updater-path версии 0.56.0 см. [UPGRADE.md](UPGRADE.md).
