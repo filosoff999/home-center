@@ -1,6 +1,6 @@
 [Unit]
 Description=Home Center control plane and node inventory
-Documentation=https://github.com/ControlCenterSoft/home-center-development
+Documentation=https://github.com/ControlCenterSoft/home-center-stable
 After=network-online.target time-sync.target
 Wants=network-online.target time-sync.target
 
