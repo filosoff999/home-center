@@ -1,27 +1,33 @@
-# Home Center 0.56.0 — Stable
+# Home Center 0.56.0
 
-Home Center — локальная платформа управления домашней инфраструктурой. Этот репозиторий является официальным публичным Stable-каналом продукта.
+Home Center is a local-first control plane for managed home infrastructure. It
+provides authenticated administration, typed read-only infrastructure
+inventory, deterministic discovery and health aggregation, safe node
+maintenance planning, backup, resource and intent planning, module admission,
+and a bounded helper for local credential rotation. Version 0.15 supports
+validated deployment profiles containing one to 64 nodes while retaining the
+two-node, single-writer profile as a conservative deployment example.
 
-**Текущая стабильная версия: 0.56.0.**
+## Release channels
 
-Home Center поддерживает аутентифицированное администрирование, read-only инвентаризацию инфраструктуры, детерминированное обнаружение и агрегацию health, безопасное планирование обслуживания узлов, backup/recovery, управление ресурсами и пользовательскими намерениями, проверку совместимости модулей и выбор provider с явным подтверждением пользователя. Неизвестное или неподтверждённое состояние не должно отображаться как Healthy или Success.
+This repository is the **stable channel**. Version `0.56.0` is the current
+qualified PUBLIC STABLE RELEASE.
 
-Single-node является полноценным поддерживаемым режимом. Multi-node/HA используется только в тех границах, для которых подтверждены согласованность, recovery и безопасный порядок операций. External publication, NAT/port-forwarding и удалённый доступ не включаются неявно.
+The official canonical/source line is published separately in
+[`ControlCenterSoft/home-center-development`](https://github.com/ControlCenterSoft/home-center-development),
+where the latest officially published source release is also `0.56.0`.
 
-## Установка и первый вход
+Canonical source and public stable use separate release identities. The
+checked-in `APPROVED-SOURCE.json` records the approved canonical revision and
+its mapping into this hardened public stable tree; commit SHA equality between
+the two repositories is therefore not required.
 
-Начните с [INSTALL.md](INSTALL.md), затем настройте систему по [CONFIGURATION.md](CONFIGURATION.md).
+Features added after stable `0.56.0` must not be treated as available in this
+stable channel until the corresponding stable package is separately qualified
+and published here.
 
-После чистой установки создаётся локальный пользователь `admin` с первоначальным паролем `admin`. При первом входе пароль необходимо сменить; до успешной смены обычная работа с системой запрещена. Обновление не сбрасывает установленный пользователем пароль.
+## Start here
 
-## Обновление
-
-Для существующей установки используйте только квалифицированный путь из [UPGRADE.md](UPGRADE.md). Для Public Stable 0.56.0 наличие корректной контрольной суммы само по себе не доказывает совместимость любого автоматического updater-path; проверки release identity, health, parity и rollback обходить нельзя.
-
-В multi-node конфигурации обновляйте по одному узлу с обязательной проверкой health, peer connectivity, согласованности применимых данных и сервисов перед переходом к следующему узлу.
-
-## Граница Stable
-
-Возможности, разработанные после 0.56.0, не считаются доступными пользователю, пока соответствующий Stable-релиз отдельно не квалифицирован и не опубликован в этом канале.
-
-Состав и целостность релиза описаны в [RELEASE.md](RELEASE.md). Также доступны [SECURITY.md](SECURITY.md), [ARCHITECTURE.md](ARCHITECTURE.md), [OPERATIONS.md](OPERATIONS.md), [API.md](API.md) и [CERTIFICATES.md](CERTIFICATES.md).
+Start with [INSTALL.md](INSTALL.md), then tailor the examples described in
+[CONFIGURATION.md](CONFIGURATION.md). Release identity and integrity files are
+described in [RELEASE.md](RELEASE.md).
