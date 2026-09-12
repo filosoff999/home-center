@@ -1,7 +1,7 @@
 (() => {
   const stableReleases = 'https://github.com/ControlCenterSoft/home-center-stable/releases';
-  const stableVersion = '0.22.3';
-  const previousStableVersion = '0.15.0';
+  const stableVersion = '0.56.0';
+  const legacyStableVersion = '0.15.0';
 
   // Старые публичные ссылки автоматически переводим в актуальный stable-канал.
   for (const link of document.querySelectorAll('a[href]')) {
@@ -14,23 +14,36 @@
       continue;
     }
 
-    if (href.includes(`/home-center-stable/releases/tag/v${previousStableVersion}`)) {
-      link.href = href.replace(`v${previousStableVersion}`, `v${stableVersion}`);
+    if (href.includes(`/home-center-stable/releases/tag/v${legacyStableVersion}`)) {
+      link.href = href.replace(`v${legacyStableVersion}`, `v${stableVersion}`);
     }
   }
 
-  // До статической синхронизации страниц не показываем пользователю устаревший Stable.
+  // До статической синхронизации страниц не показываем пользователю устаревший Stable
+  // и не направляем чистую установку 0.56.0 на устаревший runtime/updater path.
   const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
   let node;
   while ((node = walker.nextNode())) {
     const value = node.nodeValue || '';
     const updated = value
-      .replaceAll(previousStableVersion, stableVersion)
+      .replaceAll('home-center-0.15.0-linux-amd64.tar.gz', 'home-center-0.56.0-source.tar.gz')
+      .replaceAll(legacyStableVersion, stableVersion)
       .replaceAll('0.15 stable', `${stableVersion} stable`)
-      .replaceAll('Опубликован 9 сентября 2026 года.', 'Опубликован 11 сентября 2026 года.');
+      .replaceAll('Опубликован 9 сентября 2026 года.', 'Опубликован 12 сентября 2026 года.')
+      .replaceAll('docs/INSTALL-AND-UPDATE.md', 'INSTALL.md');
     if (updated !== value) {
       node.nodeValue = updated;
     }
+  }
+
+  const downloadText = document.querySelector('#download p');
+  if (downloadText) {
+    downloadText.textContent = 'Для чистой установки Home Center 0.56.0 скачайте официальный исходный архив и SHA256SUMS из того же stable-релиза.';
+  }
+
+  const updateText = document.querySelector('#update p');
+  if (updateText) {
+    updateText.innerHTML = 'Перед обновлением сделайте backup, скачайте новый официальный Stable, проверьте <code>SHA256SUMS</code> и следуйте <code>UPGRADE.md</code> именно этого релиза. Для multi-node обновляйте по одному узлу и останавливайтесь при любой проблеме со здоровьем, репликацией или сервисами.';
   }
 
   const header = document.querySelector('[data-header]');
