@@ -8,8 +8,8 @@
   "stable_release_boundary_revision": "ae92aa1e65019cf05f6fb83655f4454dcc5383bf",
   "summary": {
     "total": 445,
-    "identical": 270,
-    "adapted": 7,
+    "identical": 269,
+    "adapted": 8,
     "excluded": 168
   },
   "files": [
@@ -66,7 +66,7 @@
       "path": "README.md",
       "approved_sha256": "93657b2ac76192cc2b457c7019c3a7b82afba5d8ee0a50d9a796234de3788814",
       "disposition": "adapted",
-      "stable_sha256": "f0626c27f6a6932603b4eab8785d46212e3ec5c85a0842581259d88eaf69e1aa",
+      "stable_sha256": "abc71fc0659cab2acd1613b4f6aaed86a7c711bdbecc759a25c6fc6ee935a3a4",
       "reason": "hardened-stable-integration"
     },
     {
@@ -1171,9 +1171,9 @@
     {
       "path": "deploy/systemd/home-center.service",
       "approved_sha256": "8517619921d0feaf33528be9ea13af2e663db9949ac234f27c1b042de526e965",
-      "disposition": "identical",
-      "stable_sha256": "8517619921d0feaf33528be9ea13af2e663db9949ac234f27c1b042de526e965",
-      "reason": "approved-byte-copy"
+      "disposition": "adapted",
+      "stable_sha256": "438dae7f568ed5be6c36a38c32f207215b2a8b28f22bf2b4a5178005a2e00a25",
+      "reason": "hardened-stable-integration"
     },
     {
       "path": "docs/architecture/cozy-interface.md",
