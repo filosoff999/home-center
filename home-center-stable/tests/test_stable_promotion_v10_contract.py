@@ -33,7 +33,11 @@ class StablePromotionV10ContractTests(unittest.TestCase):
 
     def test_generated_candidate_drops_promotion_tooling_and_requalifies_public_surface(self) -> None:
         text = WORKFLOW.read_text(encoding="utf-8")
+        self.assertIn("Qualify promotion tooling contract before candidate sanitization", text)
+        self.assertIn("python3 -m unittest -v tests.test_stable_promotion_v10_contract", text)
         self.assertIn("'promote-qualified-stable-v10.yml'", text)
+        self.assertIn("tests/test_stable_promotion_v10_contract.py", text)
+        self.assertIn("promotion_contract_test.unlink()", text)
         self.assertIn("python3 deploy/scripts/build-release.py verify-source --source-root .", text)
         self.assertIn("python3 tests/security_gate_public_release.py", text)
         self.assertIn("python3 -m unittest discover -v -s tests -p 'test_*.py'", text)
