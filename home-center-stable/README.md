@@ -1,33 +1,28 @@
 # Home Center 0.56.0
 
-Home Center is a local-first control plane for managed home infrastructure. It
-provides authenticated administration, typed read-only infrastructure
-inventory, deterministic discovery and health aggregation, safe node
-maintenance planning, backup, resource and intent planning, module admission,
-and a bounded helper for local credential rotation. Version 0.15 supports
-validated deployment profiles containing one to 64 nodes while retaining the
-two-node, single-writer profile as a conservative deployment example.
+Home Center — локальная платформа управления домашней инфраструктурой. Она предоставляет аутентифицированное администрирование, типизированную инвентаризацию, обнаружение и агрегацию состояния, безопасное планирование обслуживания узлов, резервное копирование, управление ресурсами и намерениями, а также подключение модулей через контролируемые границы.
 
-## Release channels
+## Stable-канал
 
-This repository is the **stable channel**. Version `0.56.0` is the current
-qualified PUBLIC STABLE RELEASE.
+Этот репозиторий является официальным публичным Stable-каналом Home Center.
 
-The official canonical/source line is published separately in
-[`ControlCenterSoft/home-center-development`](https://github.com/ControlCenterSoft/home-center-development),
-where the latest officially published source release is also `0.56.0`.
+**Текущая стабильная версия: 0.56.0.**
 
-Canonical source and public stable use separate release identities. The
-checked-in `APPROVED-SOURCE.json` records the approved canonical revision and
-its mapping into this hardened public stable tree; commit SHA equality between
-the two repositories is therefore not required.
+Функции, разработанные после 0.56.0, не считаются доступными в Stable до отдельной квалификации и публикации соответствующего выпуска.
 
-Features added after stable `0.56.0` must not be treated as available in this
-stable channel until the corresponding stable package is separately qualified
-and published here.
+## Первый запуск
 
-## Start here
+После чистой установки создаётся локальный пользователь `admin` с первоначальным паролем `admin`. При первом входе обязательна смена пароля; до неё обычная работа с системой запрещена. Обновление существующей установки не сбрасывает установленный пользователем пароль.
 
-Start with [INSTALL.md](INSTALL.md), then tailor the examples described in
-[CONFIGURATION.md](CONFIGURATION.md). Release identity and integrity files are
-described in [RELEASE.md](RELEASE.md).
+## С чего начать
+
+1. [INSTALL.md](INSTALL.md) — чистая установка и первый запуск.
+2. [UPGRADE.md](UPGRADE.md) — обновление, проверки совместимости и rollback.
+3. [CONFIGURATION.md](CONFIGURATION.md) — конфигурация и безопасные значения.
+4. [OPERATIONS.md](OPERATIONS.md) — эксплуатация, health, backup и recovery.
+5. [SECURITY.md](SECURITY.md) — требования безопасности.
+6. [ARCHITECTURE.md](ARCHITECTURE.md) — публичная архитектура продукта.
+7. [API.md](API.md) и [CERTIFICATES.md](CERTIFICATES.md) — API и сертификаты.
+8. [RELEASE.md](RELEASE.md) — идентичность релиза и проверка целостности.
+
+Проверяйте release identity и контрольные суммы перед установкой или обновлением. Публикация релиза сама по себе не является разрешением обходить health, backup, rollback или другие обязательные проверки.
