@@ -336,7 +336,14 @@ def _content_manifest(root: Path) -> None:
     _write_text(target, "\n".join(rows) + "\n")
 
 
-def _archive(root: Path, target: Path, epoch: int, prefix: str | None = None) -> None:
+def _archive(
+    root: Path,
+    target: Path,
+    epoch: int,
+    prefix: str | None = None,
+    *,
+    dot_prefix: bool = False,
+) -> None:
     _require(epoch >= 1, "source_date_epoch_rejected")
     _require(not target.exists() and not target.is_symlink(), "archive_collision")
     try:
@@ -347,8 +354,9 @@ def _archive(root: Path, target: Path, epoch: int, prefix: str | None = None) ->
                     for relative, path in iter_source_files(root):
                         name = f"{prefix}/{relative}" if prefix else relative
                         _safe_relative(name, "archive_path_rejected")
+                        archive_name = f"./{name}" if dot_prefix else name
                         payload = path.read_bytes()
-                        member = tarfile.TarInfo(name)
+                        member = tarfile.TarInfo(archive_name)
                         member.size = len(payload)
                         member.mode = 0o644
                         member.uid = member.gid = 0
@@ -359,7 +367,7 @@ def _archive(root: Path, target: Path, epoch: int, prefix: str | None = None) ->
         raise PublicReleaseError("archive_build_failed") from exc
 
 
-def _archive_files(path: Path) -> tuple[dict[str, bytes], int]:
+def _archive_files(path: Path, *, require_dot_prefix: bool = False) -> tuple[dict[str, bytes], int]:
     _regular(path, "archive_rejected")
     result: dict[str, bytes] = {}
     common_epoch: int | None = None
@@ -369,9 +377,15 @@ def _archive_files(path: Path) -> tuple[dict[str, bytes], int]:
             members = archive.getmembers()
             _require(0 < len(members) <= MAX_ARCHIVE_MEMBERS, "archive_member_count_rejected")
             for member in members:
-                _safe_relative(member.name, "archive_member_path_rejected")
+                archive_name = member.name
+                if require_dot_prefix:
+                    _require(archive_name.startswith("./"), "archive_dot_prefix_required")
+                    name = archive_name[2:]
+                else:
+                    name = archive_name
+                _safe_relative(name, "archive_member_path_rejected")
                 _require(member.isfile() and not member.issym() and not member.islnk(), "archive_member_type_rejected")
-                _require(member.name not in result, "archive_duplicate_member")
+                _require(name not in result, "archive_duplicate_member")
                 _require(0 <= member.size <= MAX_ARCHIVE_MEMBER_BYTES, "archive_member_size_rejected")
                 expanded_bytes += member.size
                 _require(expanded_bytes <= MAX_ARCHIVE_EXPANDED_BYTES, "archive_expanded_size_rejected")
@@ -390,7 +404,7 @@ def _archive_files(path: Path) -> tuple[dict[str, bytes], int]:
                     remaining -= len(chunk)
                 _require(stream.read(1) == b"", "archive_member_size_mismatch")
                 payload = b"".join(chunks)
-                result[member.name] = payload
+                result[name] = payload
     except (OSError, tarfile.TarError) as exc:
         raise PublicReleaseError("archive_rejected") from exc
     _require(common_epoch is not None, "archive_empty")
@@ -408,11 +422,32 @@ def _verify_embedded_manifest(files: Mapping[str, bytes]) -> None:
 
 
 def verify_runtime_archive(path: Path, revision: str, epoch: int) -> dict[str, bytes]:
-    files, actual_epoch = _archive_files(path)
+    files, actual_epoch = _archive_files(path, require_dot_prefix=True)
     _require(actual_epoch == epoch, "runtime_epoch_mismatch")
     _verify_embedded_manifest(files)
     _require(files.get("VERSION") == (VERSION + "\n").encode("ascii"), "runtime_version_mismatch")
     _require(files.get("REVISION") == (revision + "\n").encode("ascii"), "runtime_revision_mismatch")
+    try:
+        deployment = json.loads(files.get("DEPLOYMENT-ARTIFACT.json", b"").decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise PublicReleaseError("runtime_deployment_metadata_invalid") from exc
+    _require(
+        deployment
+        == {
+            "revision": revision,
+            "schema": "home-center.deployment-artifact.v1",
+            "topology_bindings": "external",
+            "version": VERSION,
+        },
+        "runtime_deployment_metadata_mismatch",
+    )
+    for required in (
+        "deploy/bootstrap-two-node.sh",
+        "deploy/install-node.sh",
+        "deploy/rollback-node.sh",
+        "deploy/home-center.service",
+    ):
+        _require(required in files, "runtime_updater_entry_missing")
     return files
 
 
@@ -445,6 +480,12 @@ RUNTIME_FILE_MAPPINGS = (
     ("deploy/runtime/recover-local-admin.py", "recover-local-admin.py"),
     ("deploy/scripts/install.sh", "deploy/scripts/install.sh"),
     ("deploy/scripts/verify-artifact.sh", "deploy/scripts/verify-artifact.sh"),
+    ("deploy/scripts/bootstrap-two-node.sh", "deploy/bootstrap-two-node.sh"),
+    ("deploy/scripts/install-node.sh", "deploy/install-node.sh"),
+    ("deploy/scripts/rollback-node.sh", "deploy/rollback-node.sh"),
+    ("deploy/systemd/home-center.service", "deploy/home-center.service"),
+    ("deploy/systemd/home-center-backup.service", "deploy/home-center-backup.service"),
+    ("deploy/systemd/home-center-backup.timer", "deploy/home-center-backup.timer"),
 )
 
 
@@ -471,9 +512,18 @@ def build_archives(source_root: Path, output_root: Path, revision: str, epoch: i
             _write(runtime_root / target_name, source.read_bytes())
         _write_text(runtime_root / "VERSION", VERSION + "\n")
         _write_text(runtime_root / "REVISION", revision + "\n")
+        write_json(
+            runtime_root / "DEPLOYMENT-ARTIFACT.json",
+            {
+                "revision": revision,
+                "schema": "home-center.deployment-artifact.v1",
+                "topology_bindings": "external",
+                "version": VERSION,
+            },
+        )
         _content_manifest(runtime_root)
         runtime_path = output_root / RUNTIME_ARCHIVE
-        _archive(runtime_root, runtime_path, epoch)
+        _archive(runtime_root, runtime_path, epoch, dot_prefix=True)
 
         source_stage = temporary / "source"
         _copy_tree(source_root, source_stage)
