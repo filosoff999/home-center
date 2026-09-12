@@ -1,7 +1,7 @@
 # Home Center contracts
 
 These closed JSON Schema and OpenAPI documents define the public Home Center
-0.56.0 request, response, configuration, deployment-profile, infrastructure
+0.57.0 request, response, configuration, deployment-profile, infrastructure
 inventory, discovery, planning, helper, module, health, resource, backup, and
 release records. Consumers must reject unknown fields and schema identities
 they do not support. Release acceptance, source provenance, and publication
