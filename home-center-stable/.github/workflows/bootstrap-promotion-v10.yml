@@ -1,0 +1,106 @@
+name: Bootstrap guarded Home Center stable promotion v10
+
+on:
+  push:
+    branches:
+      - tooling/0.57-promotion-v10-b1
+
+permissions:
+  contents: write
+
+concurrency:
+  group: bootstrap-home-center-stable-promotion-v10
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    if: github.repository == 'ControlCenterSoft/home-center-stable'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      LEGACY_COMMIT: 23c7919f3c9540d4892558bf831ef5155b8fb922
+      LEGACY_BLOB: 5875ae19714586a557db2c1c03b1619fe9e8ddd2
+      LEGACY_PATH: .github/workflows/promote-qualified-stable-v9.yml
+      TARGET_PATH: .github/workflows/promote-qualified-stable-v10.yml
+    steps:
+      - name: Checkout exact tooling branch
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Restore previously qualified promotion logic as v10
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA" || { echo EXACT_HEAD_MISMATCH >&2; exit 66; }
+          git fetch --no-tags origin "$LEGACY_COMMIT"
+          test "$(git rev-parse "$LEGACY_COMMIT:$LEGACY_PATH")" = "$LEGACY_BLOB" || {
+            echo LEGACY_PROMOTION_BLOB_MISMATCH >&2
+            exit 66
+          }
+          git show "$LEGACY_COMMIT:$LEGACY_PATH" > "$TARGET_PATH"
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('.github/workflows/promote-qualified-stable-v10.yml')
+          text = path.read_text(encoding='utf-8')
+          text = text.replace('stable promotion v9', 'stable promotion v10')
+          text = text.replace('promotion-v9-', 'promotion-v10-')
+          text = text.replace('promote9r2/', 'promote10r2/')
+          text = text.replace('promote9/', 'promote10/')
+          text = text.replace("'promote-qualified-stable-v9.yml',", "'promote-qualified-stable-v9.yml','promote-qualified-stable-v10.yml',")
+          if 'promote10/' not in text or 'promote-qualified-stable-v10.yml' not in text:
+              raise SystemExit('PROMOTION_V10_TRANSFORM_FAILED')
+          path.write_text(text, encoding='utf-8')
+          PY
+          grep -Fq "startsWith(github.ref_name, 'promote10/')" "$TARGET_PATH"
+          grep -Fq "'promote-qualified-stable-v10.yml'" "$TARGET_PATH"
+
+      - name: Remove bootstrap and regenerate source manifest
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          rm -f .github/workflows/bootstrap-promotion-v10.yml SOURCE-MANIFEST.sha256
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib, os
+          root = Path.cwd()
+          ignored = {'.git', '__pycache__'}
+          forbidden = {'.hc-dev', '.idea', '.vscode', 'dist', 'docs', 'ops', 'secrets'}
+          records = []
+          for directory, names, files in os.walk(root, topdown=True, followlinks=False):
+              base = Path(directory)
+              rel_dir = base.relative_to(root)
+              names[:] = sorted(name for name in names if name not in ignored)
+              if set(rel_dir.parts) & forbidden:
+                  raise SystemExit(f'FORBIDDEN_SOURCE_DIRECTORY:{rel_dir.as_posix()}')
+              for name in sorted(files):
+                  path = base / name
+                  rel = path.relative_to(root)
+                  if name == 'SOURCE-MANIFEST.sha256' or set(rel.parts) & ignored:
+                      continue
+                  if set(rel.parts) & forbidden:
+                      raise SystemExit(f'FORBIDDEN_SOURCE_PATH:{rel.as_posix()}')
+                  if path.is_symlink() or not path.is_file() or path.suffix in {'.pyc', '.pyo'}:
+                      raise SystemExit(f'SPECIAL_SOURCE_FILE:{rel.as_posix()}')
+                  records.append((rel.as_posix(), hashlib.sha256(path.read_bytes()).hexdigest()))
+          records.sort(key=lambda item: item[0])
+          Path('SOURCE-MANIFEST.sha256').write_text(
+              ''.join(f'{digest}  {rel}\n' for rel, digest in records),
+              encoding='ascii',
+          )
+          PY
+          python3 deploy/scripts/build-release.py verify-source --source-root .
+          git diff --check
+
+      - name: Commit exact tooling state
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git diff --cached --check
+          git diff --cached --quiet && { echo NO_TOOLING_DELTA >&2; exit 66; }
+          git commit -m 'release: restore guarded stable promotion v10 for 0.57'
+          git push origin "HEAD:$GITHUB_REF_NAME"
