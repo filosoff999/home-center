@@ -39,6 +39,25 @@ if grep -Eq '(^/|(^|/)\.\.(/|$))' <<<"$archive_list"; then
   echo UNSAFE_ARCHIVE_PATH >&2
   exit 66
 fi
+if ! python3 - "$ARTIFACT" <<'PY'
+import sys
+import tarfile
+
+try:
+    with tarfile.open(sys.argv[1], "r:gz") as archive:
+        members = archive.getmembers()
+        names = [member.name for member in members]
+        if len(names) != len(set(names)):
+            raise SystemExit(1)
+        if any(not (member.isfile() or member.isdir()) for member in members):
+            raise SystemExit(1)
+except (OSError, tarfile.TarError):
+    raise SystemExit(1)
+PY
+then
+  echo UNSAFE_ARCHIVE_ENTRY_TYPE >&2
+  exit 66
+fi
 for required in ./VERSION ./REVISION ./MANIFEST.sha256 ./run.py ./home_center ./web ./deploy/home-center.service; do
   grep -Eq "^${required//./\.}(/|$)" <<<"$archive_list" || { echo "REQUIRED_ENTRY_MISSING:$required" >&2; exit 66; }
 done
@@ -67,6 +86,10 @@ RELEASE=/opt/home-center/releases/${VERSION}-${REVISION:0:12}-${SHA256:0:12}
 BACKUP=/var/backups/home-center-deploy/${TRANSACTION_ID}-${NODE_NAME}
 TRANSACTION_DIR=/var/lib/home-center-deploy/transactions
 TRANSACTION_FILE=$TRANSACTION_DIR/${TRANSACTION_ID}-${NODE_NAME}.json
+if [[ -e "$BACKUP" || -L "$BACKUP" || -e "$TRANSACTION_FILE" || -L "$TRANSACTION_FILE" ]]; then
+  echo TRANSACTION_ID_ALREADY_USED >&2
+  exit 66
+fi
 STAGE=$(mktemp -d /opt/home-center/releases/.stage.XXXXXX)
 cleanup() { rm -rf -- "$STAGE"; }
 trap cleanup EXIT
@@ -79,6 +102,12 @@ for unit in home-center.service home-center-backup.service home-center-backup.ti
   if [[ -f "/etc/systemd/system/$unit" && ! -L "/etc/systemd/system/$unit" ]]; then
     cp -a "/etc/systemd/system/$unit" "$BACKUP/$unit"
     : >"$BACKUP/$unit.existed"
+  fi
+  if systemctl is-enabled --quiet "$unit" 2>/dev/null; then
+    : >"$BACKUP/$unit.enabled"
+  fi
+  if systemctl is-active --quiet "$unit" 2>/dev/null; then
+    : >"$BACKUP/$unit.active"
   fi
 done
 
@@ -119,7 +148,7 @@ tar -xzf "$ARTIFACT" -C "$STAGE"
 
 rollback() {
   set +e
-  systemctl stop home-center.service >/dev/null 2>&1 || true
+  systemctl stop home-center-backup.timer home-center-backup.service home-center.service >/dev/null 2>&1 || true
   if [[ -f "$BACKUP/state-db.path" && -f "$BACKUP/state.sqlite3" ]]; then
     restore_state=$(cat "$BACKUP/state-db.path")
     install -m 0640 -o home-center -g home-center "$BACKUP/state.sqlite3" "$restore_state" >/dev/null 2>&1 || true
@@ -128,12 +157,28 @@ rollback() {
   for unit in home-center.service home-center-backup.service home-center-backup.timer; do
     if [[ -f "$BACKUP/$unit.existed" ]]; then
       install -m 0644 -o root -g root "$BACKUP/$unit" "/etc/systemd/system/$unit" >/dev/null 2>&1 || true
+    else
+      systemctl disable "$unit" >/dev/null 2>&1 || true
+      rm -f "/etc/systemd/system/$unit" >/dev/null 2>&1 || true
     fi
   done
   ln -sfn "$previous" /opt/home-center/.current.rollback
   mv -Tf /opt/home-center/.current.rollback "$CURRENT" >/dev/null 2>&1 || true
   systemctl daemon-reload >/dev/null 2>&1 || true
-  systemctl start home-center.service >/dev/null 2>&1 || true
+  for unit in home-center.service home-center-backup.service home-center-backup.timer; do
+    if [[ -f "$BACKUP/$unit.enabled" ]]; then
+      systemctl enable "$unit" >/dev/null 2>&1 || true
+    else
+      systemctl disable "$unit" >/dev/null 2>&1 || true
+    fi
+  done
+  for unit in home-center.service home-center-backup.service home-center-backup.timer; do
+    if [[ -f "$BACKUP/$unit.active" ]]; then
+      systemctl start "$unit" >/dev/null 2>&1 || true
+    else
+      systemctl stop "$unit" >/dev/null 2>&1 || true
+    fi
+  done
   set -e
 }
 
@@ -146,6 +191,20 @@ if [[ ! -e "$RELEASE" ]]; then
   STAGE=$(mktemp -d /opt/home-center/releases/.stage.XXXXXX)
 else
   [[ -d "$RELEASE" && ! -L "$RELEASE" ]] || { echo TARGET_RELEASE_PATH_UNSAFE >&2; exit 66; }
+  for identity_file in VERSION REVISION MANIFEST.sha256; do
+    [[ -f "$RELEASE/$identity_file" && ! -L "$RELEASE/$identity_file" ]] || { echo TARGET_RELEASE_IDENTITY_MISSING >&2; exit 66; }
+  done
+  [[ "$(tr -d '\r\n' <"$RELEASE/VERSION")" == "$VERSION" ]] || { echo TARGET_RELEASE_VERSION_MISMATCH >&2; exit 66; }
+  [[ "$(tr -d '\r\n' <"$RELEASE/REVISION")" == "$REVISION" ]] || { echo TARGET_RELEASE_REVISION_MISMATCH >&2; exit 66; }
+  cmp -s "$STAGE/MANIFEST.sha256" "$RELEASE/MANIFEST.sha256" || { echo TARGET_RELEASE_MANIFEST_IDENTITY_MISMATCH >&2; exit 66; }
+  if find "$RELEASE" \( -type l -o -type b -o -type c -o -type p -o -type s \) -print -quit | grep -q .; then
+    echo TARGET_RELEASE_ENTRY_TYPE_UNSAFE >&2
+    exit 66
+  fi
+  (
+    cd "$RELEASE"
+    sha256sum -c MANIFEST.sha256 >/dev/null
+  ) || { echo TARGET_RELEASE_MANIFEST_MISMATCH >&2; exit 66; }
 fi
 
 systemctl stop home-center.service

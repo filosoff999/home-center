@@ -1,21 +1,28 @@
 {
   "schema": "home-center.approved-source-provenance.v1",
   "product": "home-center",
-  "version": "0.56.0",
+  "version": "0.57.0",
   "approved_repository": "ControlCenterSoft/home-center-development",
-  "approved_revision": "bce0e4ea44c8bc677e90e1663b1bf0095db2d213",
-  "approved_manifest_sha256": "ea9eb0124ef630dfe5546dfab8891eff6be425d29c27b29fcef07924149272d3",
-  "stable_release_boundary_revision": "ae92aa1e65019cf05f6fb83655f4454dcc5383bf",
+  "approved_revision": "60f4c34f82a8335f9eec36bf2c303bb382efdca6",
+  "approved_manifest_sha256": "fa628c03890b3032192e9e2571ec7eb10ae801bf930b39016cef0cebeb7c0748",
+  "stable_release_boundary_revision": "64f17a2baac644e8ae6962f4f07a7a396f3843db",
   "summary": {
-    "total": 445,
-    "identical": 269,
-    "adapted": 8,
-    "excluded": 168
+    "total": 511,
+    "identical": 292,
+    "adapted": 9,
+    "excluded": 210
   },
   "files": [
     {
       "path": ".github/workflows/ci.yml",
-      "approved_sha256": "2cced2afbcce3d487e7cae380eec730862a4fb58fc2681ebf61b13b9ea219067",
+      "approved_sha256": "112ae12ca73aac64f1d0c775375f4484e5387d54300314b55e6f512d7ec6b8c5",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-release-boundary"
+    },
+    {
+      "path": ".github/workflows/codeql.yml",
+      "approved_sha256": "776fdfb5f8995c0301eb09f7f794f71de13971b47277c3376aaa8628d57e5bfc",
       "disposition": "excluded",
       "stable_sha256": null,
       "reason": "stable-release-boundary"
@@ -66,21 +73,21 @@
       "path": "README.md",
       "approved_sha256": "93657b2ac76192cc2b457c7019c3a7b82afba5d8ee0a50d9a796234de3788814",
       "disposition": "adapted",
-      "stable_sha256": "abc71fc0659cab2acd1613b4f6aaed86a7c711bdbecc759a25c6fc6ee935a3a4",
+      "stable_sha256": "9020f7ae6a1842297f0b309a115b6c6aa6e537236f9c3150745442423eba00b9",
       "reason": "hardened-stable-integration"
     },
     {
       "path": "VERSION",
-      "approved_sha256": "3fea81d177087f5d3380893d95b86573a803b34ed45419ec381bdd776f526cee",
+      "approved_sha256": "732a28434aa873bdb52464b39e12ee5f81781dc1c81eb4eb8867f660842a40ab",
       "disposition": "identical",
-      "stable_sha256": "3fea81d177087f5d3380893d95b86573a803b34ed45419ec381bdd776f526cee",
+      "stable_sha256": "732a28434aa873bdb52464b39e12ee5f81781dc1c81eb4eb8867f660842a40ab",
       "reason": "approved-byte-copy"
     },
     {
       "path": "contracts/README.md",
       "approved_sha256": "a1e587c06ad129fe7fdc66ffc2f7aa25b06ab560fe1e8977525956cebb6be6a0",
       "disposition": "adapted",
-      "stable_sha256": "723fce79f47b2b5d9fb9dd658fa8ece77c71aaf3f37b9ce2e3202c5f090f6f6e",
+      "stable_sha256": "b19c80da7c40c4d4b57714ac193eb5714ceca9acee9f6f772d7a78fd729124d6",
       "reason": "hardened-stable-integration"
     },
     {
@@ -459,6 +466,76 @@
       "approved_sha256": "d9493fc14d20871520e08a88ea45962687b1e1d271eeca3a2f01a422423bc54f",
       "disposition": "identical",
       "stable_sha256": "d9493fc14d20871520e08a88ea45962687b1e1d271eeca3a2f01a422423bc54f",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "contracts/devices/device-management-enrollment-adapter-cancel-result.v1.schema.json",
+      "approved_sha256": "893af7714a9de76c867625d4b9d6c70445ebbf18aa1f9d18fcc5a45395865102",
+      "disposition": "identical",
+      "stable_sha256": "893af7714a9de76c867625d4b9d6c70445ebbf18aa1f9d18fcc5a45395865102",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "contracts/devices/device-management-enrollment-adapter-start-request.v1.schema.json",
+      "approved_sha256": "87041d593949b13ad4bffc12b8176d4e3462ea5c315ff285b44b2a05565347d3",
+      "disposition": "identical",
+      "stable_sha256": "87041d593949b13ad4bffc12b8176d4e3462ea5c315ff285b44b2a05565347d3",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "contracts/devices/device-management-enrollment-adapter-start-result.v1.schema.json",
+      "approved_sha256": "51295f6f811c15c75a0d19cc6fa6e16259e2f62a9f6e3b74bccc138f3fcd7f65",
+      "disposition": "identical",
+      "stable_sha256": "51295f6f811c15c75a0d19cc6fa6e16259e2f62a9f6e3b74bccc138f3fcd7f65",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "contracts/devices/device-management-enrollment-cancel-receipt.v1.schema.json",
+      "approved_sha256": "a18f81acb5dcbf7d0f446c8f8b0ae23bcbc309652a551d4c77e46e159e7aeb4f",
+      "disposition": "identical",
+      "stable_sha256": "a18f81acb5dcbf7d0f446c8f8b0ae23bcbc309652a551d4c77e46e159e7aeb4f",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "contracts/devices/device-management-enrollment-execution-cancel-request.v1.schema.json",
+      "approved_sha256": "2069562ec4a74260aa4c2ec5e637d685d85a26162584f03bc73a849f7475a373",
+      "disposition": "identical",
+      "stable_sha256": "2069562ec4a74260aa4c2ec5e637d685d85a26162584f03bc73a849f7475a373",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "contracts/devices/device-management-enrollment-execution-plan-request.v1.schema.json",
+      "approved_sha256": "fec1007d0d1abed7579c4667d44a4392071152a6bbed5cf18e62033e0052e997",
+      "disposition": "identical",
+      "stable_sha256": "fec1007d0d1abed7579c4667d44a4392071152a6bbed5cf18e62033e0052e997",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "contracts/devices/device-management-enrollment-execution-plan.v1.schema.json",
+      "approved_sha256": "4d783a9e94b835833b231dc0c6fb392476617c01bdd3cd48d711a1f25e16ccb1",
+      "disposition": "identical",
+      "stable_sha256": "4d783a9e94b835833b231dc0c6fb392476617c01bdd3cd48d711a1f25e16ccb1",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "contracts/devices/device-management-enrollment-execution-receipt.v1.schema.json",
+      "approved_sha256": "9e167bd4c4e93f489df110bb372b4e9f3ac4d4da27ee2fdf7ef43f9219b33cad",
+      "disposition": "identical",
+      "stable_sha256": "9e167bd4c4e93f489df110bb372b4e9f3ac4d4da27ee2fdf7ef43f9219b33cad",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "contracts/devices/device-management-enrollment-execution-retry-request.v1.schema.json",
+      "approved_sha256": "f4a5c01ef33448f851e089c3a8099437882de5d035511a2695fbaee4e5f476f7",
+      "disposition": "identical",
+      "stable_sha256": "f4a5c01ef33448f851e089c3a8099437882de5d035511a2695fbaee4e5f476f7",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "contracts/devices/device-management-enrollment-execution-start-request.v1.schema.json",
+      "approved_sha256": "16e038ff812db31656fb2913d2824f5b3fdba7d033758bd8345fdfe72fe0f469",
+      "disposition": "identical",
+      "stable_sha256": "16e038ff812db31656fb2913d2824f5b3fdba7d033758bd8345fdfe72fe0f469",
       "reason": "approved-byte-copy"
     },
     {
@@ -987,8 +1064,57 @@
       "reason": "approved-byte-copy"
     },
     {
+      "path": "contracts/releases/commercial-release-evidence.v1.schema.json",
+      "approved_sha256": "680fa5c30b6a956eb387074a783bb2c81d13795c088bc141e9379da89519dff1",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "contracts/releases/commercial-release-qualification.v1.schema.json",
+      "approved_sha256": "a1e1399c229319603bc799b24d80f61b873c520497d97ad49f14be0a828bbd51",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
       "path": "contracts/releases/dsse-envelope.v1.schema.json",
       "approved_sha256": "f12ac056f465765d11abd618bae93aed8c63379f442b0e2fe12a66f790de499d",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "contracts/releases/provider-adapter-evidence.v1.schema.json",
+      "approved_sha256": "809e32417f5c47ad69d30c65ab5be5672a99cf1a95bb6cd199d7fcd856d7bdb5",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "contracts/releases/provider-adapter-qualification.v1.schema.json",
+      "approved_sha256": "01dd1cf88e969a5b337f15b0b21cb3ec28df5af79437ec9b057f9791d298bba0",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "contracts/releases/public-stable-provenance.v2.schema.json",
+      "approved_sha256": "9a3cdf9f2920eb3cb2dc02820106a8da32ffa6533849f868332646550b995bbe",
+      "disposition": "identical",
+      "stable_sha256": "9a3cdf9f2920eb3cb2dc02820106a8da32ffa6533849f868332646550b995bbe",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "contracts/releases/real-environment-evidence.v1.schema.json",
+      "approved_sha256": "dffaeac5d629fc27dd1742d92a1b6f808ddafa2574800dea2befdbfc3abd7f27",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "contracts/releases/real-environment-qualification.v1.schema.json",
+      "approved_sha256": "fdd09e7cbb7cde2fd8a3916045960f6779a6118fc333ee182c7a1db9edf96ea3",
       "disposition": "excluded",
       "stable_sha256": null,
       "reason": "stable-public-surface"
@@ -1010,6 +1136,13 @@
     {
       "path": "contracts/releases/release-ledger.v1.schema.json",
       "approved_sha256": "339d1b1ca5474f21124d9225be605ea23569585862e04a980771fb007b4fec15",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "contracts/releases/release-promotion-decision.v1.schema.json",
+      "approved_sha256": "082e323ecda915789c546289091340f01e0eca5907ba96cfb8a2e592d92bd6ef",
       "disposition": "excluded",
       "stable_sha256": null,
       "reason": "stable-public-surface"
@@ -1038,6 +1171,27 @@
     {
       "path": "contracts/releases/release-verification-result.v1.schema.json",
       "approved_sha256": "57ccfb0bf43b8fc4c428320a00cfeb597051420fa65cdb0d211e0e4abfa70764",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "contracts/releases/target-node-evidence.v1.schema.json",
+      "approved_sha256": "085714c8d14195eca85ae36d73b835392b824f0f9ec2d9cfdb3c90328cb1cee0",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "contracts/releases/target-node-qualification.v1.schema.json",
+      "approved_sha256": "724e3d523b913fa178850967cc464c770f4d3d8c9c5b6abfe3c4321e3ed9e81a",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "contracts/releases/technical-stable-profile-decision.v1.schema.json",
+      "approved_sha256": "0ea8f85b9ab4638fd3a8bf04a07f883872ebb26f00cd55abf14088b44a3a7f8d",
       "disposition": "excluded",
       "stable_sha256": null,
       "reason": "stable-public-surface"
@@ -1128,16 +1282,16 @@
     },
     {
       "path": "deploy/scripts/install-node.sh",
-      "approved_sha256": "11635582c87ce3a033acebd30353c449b90a2fe580546985ae54f0504418be8d",
+      "approved_sha256": "95dd37e60330ac311ed28fc770bdabd53dfe43ab638b378b89e59aab9dee4143",
       "disposition": "identical",
-      "stable_sha256": "11635582c87ce3a033acebd30353c449b90a2fe580546985ae54f0504418be8d",
+      "stable_sha256": "95dd37e60330ac311ed28fc770bdabd53dfe43ab638b378b89e59aab9dee4143",
       "reason": "approved-byte-copy"
     },
     {
       "path": "deploy/scripts/rollback-node.sh",
-      "approved_sha256": "9e6fe0467a2c4c01d7446e64e4e7887379521ec51f5d85c28dc1ad8a4e8132a6",
+      "approved_sha256": "7a2d2169027fd929d17dbbcdc9c4ff2942d0f390ca55314d93ae8f1c72f8b014",
       "disposition": "identical",
-      "stable_sha256": "9e6fe0467a2c4c01d7446e64e4e7887379521ec51f5d85c28dc1ad8a4e8132a6",
+      "stable_sha256": "7a2d2169027fd929d17dbbcdc9c4ff2942d0f390ca55314d93ae8f1c72f8b014",
       "reason": "approved-byte-copy"
     },
     {
@@ -1491,10 +1645,31 @@
       "reason": "stable-release-documentation"
     },
     {
+      "path": "docs/releases/0.57-evidence-tooling-qualification.md",
+      "approved_sha256": "ceb33e97eab99de318cbcb903420f14994b1891b0c92ffd2eaf4978c48e178ed",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-release-documentation"
+    },
+    {
+      "path": "docs/releases/0.57-single-node-stable-profile.md",
+      "approved_sha256": "f7a9e23e608bc4dc4389b26b189c499b782efdb43a4b8e462f2c1431194def0b",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-release-documentation"
+    },
+    {
+      "path": "docs/releases/0.57.0.md",
+      "approved_sha256": "489e470167378855309e776df17f63488d2832be898b5e719d7c6f2741bd6d9a",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-release-documentation"
+    },
+    {
       "path": "product/control-plane/src/home_center/__init__.py",
-      "approved_sha256": "344b375975f23d94d2b22f8dbcbb7863a3e1c0c97e33aae21e40de84b3863da0",
+      "approved_sha256": "e55258f490c6b69bf10583a490ca35d9e1e9996c9f41624e4741dbaed272f54d",
       "disposition": "identical",
-      "stable_sha256": "344b375975f23d94d2b22f8dbcbb7863a3e1c0c97e33aae21e40de84b3863da0",
+      "stable_sha256": "e55258f490c6b69bf10583a490ca35d9e1e9996c9f41624e4741dbaed272f54d",
       "reason": "approved-byte-copy"
     },
     {
@@ -1527,9 +1702,9 @@
     },
     {
       "path": "product/control-plane/src/home_center/api.py",
-      "approved_sha256": "28a6bb08a17637e64a6fe60d3aa28a43bae8166c5d854991b7fcd6ab3b96c487",
+      "approved_sha256": "1b3a9a334fe886395c747731fbad69eeb1613e6f3c32444afb2f93be25056a54",
       "disposition": "identical",
-      "stable_sha256": "28a6bb08a17637e64a6fe60d3aa28a43bae8166c5d854991b7fcd6ab3b96c487",
+      "stable_sha256": "1b3a9a334fe886395c747731fbad69eeb1613e6f3c32444afb2f93be25056a54",
       "reason": "approved-byte-copy"
     },
     {
@@ -1537,6 +1712,13 @@
       "approved_sha256": "066c823652b1bbfcd4d6def062b68d39aa7f1c6611a06b2c432085c4de1d2f49",
       "disposition": "identical",
       "stable_sha256": "066c823652b1bbfcd4d6def062b68d39aa7f1c6611a06b2c432085c4de1d2f49",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "product/control-plane/src/home_center/api_v3.py",
+      "approved_sha256": "9a25c1c30d102124ec28e383180bfb9db1716384698867a363c28bb5079a102c",
+      "disposition": "identical",
+      "stable_sha256": "9a25c1c30d102124ec28e383180bfb9db1716384698867a363c28bb5079a102c",
       "reason": "approved-byte-copy"
     },
     {
@@ -1583,9 +1765,9 @@
     },
     {
       "path": "product/control-plane/src/home_center/backup.py",
-      "approved_sha256": "d95c1c662f67906718c651d4f10549385888524cc90703727938ce85ac6dcd88",
+      "approved_sha256": "c24ffa6e895e9835f182af5c2c411fe85a5150699b5096a795b7f0a41f76279e",
       "disposition": "identical",
-      "stable_sha256": "d95c1c662f67906718c651d4f10549385888524cc90703727938ce85ac6dcd88",
+      "stable_sha256": "c24ffa6e895e9835f182af5c2c411fe85a5150699b5096a795b7f0a41f76279e",
       "reason": "approved-byte-copy"
     },
     {
@@ -1621,6 +1803,13 @@
       "approved_sha256": "d1468936c0fc147de433dca1b3458ec3956eea0fbc9f4e423b55b7d11a0339b5",
       "disposition": "identical",
       "stable_sha256": "d1468936c0fc147de433dca1b3458ec3956eea0fbc9f4e423b55b7d11a0339b5",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "product/control-plane/src/home_center/commercial_release_qualification.py",
+      "approved_sha256": "5d602ef82ec80f6fd0f8c3ee02ce4dde448006700fbcdbf6836c561f1d20f37f",
+      "disposition": "identical",
+      "stable_sha256": "5d602ef82ec80f6fd0f8c3ee02ce4dde448006700fbcdbf6836c561f1d20f37f",
       "reason": "approved-byte-copy"
     },
     {
@@ -1768,6 +1957,34 @@
       "approved_sha256": "e472f4d700a732c3c3faa0d063f23513cf230e2eed724f5dbc31c0df7be2f96d",
       "disposition": "identical",
       "stable_sha256": "e472f4d700a732c3c3faa0d063f23513cf230e2eed724f5dbc31c0df7be2f96d",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "product/control-plane/src/home_center/device_management_enrollment_execution.py",
+      "approved_sha256": "39cf6cd422bdb316411994d62864d362da4e79e8f7084244bbc1b78befb1e923",
+      "disposition": "identical",
+      "stable_sha256": "39cf6cd422bdb316411994d62864d362da4e79e8f7084244bbc1b78befb1e923",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "product/control-plane/src/home_center/device_management_enrollment_execution_recovery.py",
+      "approved_sha256": "8b76ebe50c3960ab510b5894736555aea89434269cf81ef0101b42f0497e5c5e",
+      "disposition": "identical",
+      "stable_sha256": "8b76ebe50c3960ab510b5894736555aea89434269cf81ef0101b42f0497e5c5e",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "product/control-plane/src/home_center/device_management_enrollment_execution_runtime.py",
+      "approved_sha256": "303b726d1710910d307760b2d513a4db48f5c59f07103da91e599d97704aa410",
+      "disposition": "identical",
+      "stable_sha256": "303b726d1710910d307760b2d513a4db48f5c59f07103da91e599d97704aa410",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "product/control-plane/src/home_center/device_management_enrollment_execution_runtime_safe.py",
+      "approved_sha256": "bf3d0051de65b4f76912202cae3dcda0130a99539b5c2e996b624c405b1cab34",
+      "disposition": "identical",
+      "stable_sha256": "bf3d0051de65b4f76912202cae3dcda0130a99539b5c2e996b624c405b1cab34",
       "reason": "approved-byte-copy"
     },
     {
@@ -2282,11 +2499,25 @@
       "reason": "hardened-stable-integration"
     },
     {
+      "path": "product/control-plane/src/home_center/provider_adapter_qualification.py",
+      "approved_sha256": "ba8b5bfffc9efa12a9fc2ea0c24b364c8d19c7a2425b6fa1bf037fc99e9f3860",
+      "disposition": "identical",
+      "stable_sha256": "ba8b5bfffc9efa12a9fc2ea0c24b364c8d19c7a2425b6fa1bf037fc99e9f3860",
+      "reason": "approved-byte-copy"
+    },
+    {
       "path": "product/control-plane/src/home_center/qualification_0140.py",
       "approved_sha256": "2eaf0284c7e085bde69d1b67f787ad4748fea85f54829eb4751a4c63891a45c7",
       "disposition": "excluded",
       "stable_sha256": null,
       "reason": "stable-public-surface"
+    },
+    {
+      "path": "product/control-plane/src/home_center/real_environment_qualification.py",
+      "approved_sha256": "dbdcf634f52d1c74f697bf4bee977ed6b9d50fa45dfcc21d49a00f15e1142cf7",
+      "disposition": "identical",
+      "stable_sha256": "dbdcf634f52d1c74f697bf4bee977ed6b9d50fa45dfcc21d49a00f15e1142cf7",
+      "reason": "approved-byte-copy"
     },
     {
       "path": "product/control-plane/src/home_center/reconcile.py",
@@ -2300,6 +2531,13 @@
       "approved_sha256": "557b13094972f39a291cb69ee5c3105c767ad1c8d2f1b7af5fabfcbe44072ff6",
       "disposition": "identical",
       "stable_sha256": "557b13094972f39a291cb69ee5c3105c767ad1c8d2f1b7af5fabfcbe44072ff6",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "product/control-plane/src/home_center/release_promotion_gate.py",
+      "approved_sha256": "4dda5ce5843912bfeceefca37959ef9d89562bef17d0530d3c57ce7fb22ef622",
+      "disposition": "identical",
+      "stable_sha256": "4dda5ce5843912bfeceefca37959ef9d89562bef17d0530d3c57ce7fb22ef622",
       "reason": "approved-byte-copy"
     },
     {
@@ -2325,16 +2563,16 @@
     },
     {
       "path": "product/control-plane/src/home_center/runtime.py",
-      "approved_sha256": "cff181cef9b06385b913660ded1dfa7039935ff6859f68e34611404561dfa79d",
+      "approved_sha256": "bf16a878754ae6ebad968cd23d603a3de0ac2f0797971608939406fe6eb10c65",
       "disposition": "identical",
-      "stable_sha256": "cff181cef9b06385b913660ded1dfa7039935ff6859f68e34611404561dfa79d",
+      "stable_sha256": "bf16a878754ae6ebad968cd23d603a3de0ac2f0797971608939406fe6eb10c65",
       "reason": "approved-byte-copy"
     },
     {
       "path": "product/control-plane/src/home_center/server.py",
-      "approved_sha256": "c6f3d2c4166646b779e133b59f8fde5d4ad8b45ba4c6348914cb5c7834211892",
+      "approved_sha256": "a159ec5e81ef8cee87ffb4fc2413012c814100ba2900fc19f4524fc1bdad7d50",
       "disposition": "identical",
-      "stable_sha256": "c6f3d2c4166646b779e133b59f8fde5d4ad8b45ba4c6348914cb5c7834211892",
+      "stable_sha256": "a159ec5e81ef8cee87ffb4fc2413012c814100ba2900fc19f4524fc1bdad7d50",
       "reason": "approved-byte-copy"
     },
     {
@@ -2342,6 +2580,20 @@
       "approved_sha256": "3b6ff88bc1179aceaddfda6c86f78f1435998b23659c327b76af0f34e3e18e4d",
       "disposition": "identical",
       "stable_sha256": "3b6ff88bc1179aceaddfda6c86f78f1435998b23659c327b76af0f34e3e18e4d",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "product/control-plane/src/home_center/target_node_qualification.py",
+      "approved_sha256": "f98aacf9c3dd07cce523db52e3ac9654fbbaab741c9dcce9a7d0981f12aa756d",
+      "disposition": "identical",
+      "stable_sha256": "f98aacf9c3dd07cce523db52e3ac9654fbbaab741c9dcce9a7d0981f12aa756d",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "product/control-plane/src/home_center/technical_stable_profile.py",
+      "approved_sha256": "cebcddebdc277dd6df2957890b522546b4a96041717fb9495bfe47b04069c2bb",
+      "disposition": "identical",
+      "stable_sha256": "cebcddebdc277dd6df2957890b522546b4a96041717fb9495bfe47b04069c2bb",
       "reason": "approved-byte-copy"
     },
     {
@@ -2416,9 +2668,9 @@
     },
     {
       "path": "product/web/static/index.html",
-      "approved_sha256": "b592d4d39bcc40158fc032c8daed42cb4c7cd1540a979cfb8f9b59ba290a6c3b",
+      "approved_sha256": "9c5c01d7efa1b7097de3aa7cbf9b7d82b187aa81e2a234efde5c9037fff965c6",
       "disposition": "adapted",
-      "stable_sha256": "4dd9aa488be7b761bb1d2486ac84c24bbd00055ec2c2028d2ece45c2455191cf",
+      "stable_sha256": "f40f410d58a20044184d0fee87fc0a993469ea5a23bb8a67d03716734404fa53",
       "reason": "hardened-stable-integration"
     },
     {
@@ -2437,21 +2689,56 @@
     },
     {
       "path": "pyproject.toml",
-      "approved_sha256": "9ed8abb72e9b5482fd333406c1018c4a7cb321d4a13dd2090169cf6dc9852a5c",
+      "approved_sha256": "1ae356562db0ff90e3a21296a7a8082c813aaf4098394c04caba917211b4637b",
       "disposition": "identical",
-      "stable_sha256": "9ed8abb72e9b5482fd333406c1018c4a7cb321d4a13dd2090169cf6dc9852a5c",
+      "stable_sha256": "1ae356562db0ff90e3a21296a7a8082c813aaf4098394c04caba917211b4637b",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "scripts/evaluate_commercial_release_evidence.py",
+      "approved_sha256": "6a53072d8fec0af5e07a569212608bc092dd73fc4a56a0061536889c6a866eb5",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "scripts/evaluate_provider_adapter_evidence.py",
+      "approved_sha256": "05887cc2ec842ae1a2a9310ad6840737ba4cccccd6b1c664e1fa475293f19088",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "scripts/evaluate_real_environment_evidence.py",
+      "approved_sha256": "9aa337ac8b20131ca86efa70aca14b247790ea184eca638155be33552b6e4634",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "scripts/evaluate_target_node_evidence.py",
+      "approved_sha256": "272f4d5cb1d68caf03207a3806a96357b4e616e14d053ba921e94045dedb37ba",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "scripts/export_public_stable_provenance.py",
+      "approved_sha256": "ce8959b800518823ea016b54d164ac79747b5bfc943e68269b79b66ba29ad7b1",
+      "disposition": "identical",
+      "stable_sha256": "ce8959b800518823ea016b54d164ac79747b5bfc943e68269b79b66ba29ad7b1",
       "reason": "approved-byte-copy"
     },
     {
       "path": "scripts/qualify_release_artifact.py",
-      "approved_sha256": "48124b33b1e5edd616fd8ae91aff6e301a9d9d69ba91dba74e41bc4f3cbbd258",
+      "approved_sha256": "0df88758f1892cd1194bfe6238a1b04d7d16f4e7b8ab24e35112338ff4269dc3",
       "disposition": "excluded",
       "stable_sha256": null,
       "reason": "stable-public-surface"
     },
     {
       "path": "tests/test_auto_update_deployment.py",
-      "approved_sha256": "5d210a11e4c985164fbc0a3149f2394bc473ee189cd07be462d2a9f4a67960ac",
+      "approved_sha256": "80c15f5d880740590cb7346e58d8019ebb9f6bd1f433b89dd8e2231ec8947dce",
       "disposition": "excluded",
       "stable_sha256": null,
       "reason": "stable-public-surface"
@@ -2506,6 +2793,20 @@
       "reason": "stable-public-surface"
     },
     {
+      "path": "tests/test_commercial_release_evidence_cli.py",
+      "approved_sha256": "58afffe995fabcf4bbf74354a046519e473383373d50ad1fd75ad47530c94a74",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_commercial_release_qualification.py",
+      "approved_sha256": "89230a52f092d29941ab1501a0bc1265e73dd8b87bea3987acaac332345393da",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
       "path": "tests/test_compute_capacity.py",
       "approved_sha256": "9baf9c1f23810f45ba7211bffc27a305790381079121d0e8c5bb90506c807a1b",
       "disposition": "excluded",
@@ -2543,6 +2844,34 @@
     {
       "path": "tests/test_cozy_ui_release.py",
       "approved_sha256": "bf10c829d82687a2fa43e23ee635152bcece6f00704907d981d5fa180b03f61b",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_device_management_enrollment_adapter_registry_fail_closed.py",
+      "approved_sha256": "be4c00a60b5837356143a5ef5b61d9d7419ce108b6fab593013157ab44649924",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_device_management_enrollment_execution.py",
+      "approved_sha256": "437956169259f96c17ecef6c817e9a67cd57d2e8f91a14704c6d2db691d57c7a",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_device_management_enrollment_execution_recovery_state.py",
+      "approved_sha256": "8aea95a09853ea5a1edb37004272b1d73b7b1dece94826380bcd8cd623068b0a",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_device_management_enrollment_execution_replay_safety.py",
+      "approved_sha256": "f80c471354cba9f114f91ca620d0c1880a3337b87383104cc81257ee367ca13f",
       "disposition": "excluded",
       "stable_sha256": null,
       "reason": "stable-public-surface"
@@ -2725,6 +3054,13 @@
     {
       "path": "tests/test_household_store.py",
       "approved_sha256": "d4178bb3ab38e58423a299272ae13bf785677b84b2adade9048c34d82f79a439",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_manual_rollback_systemd_state.py",
+      "approved_sha256": "7acc99138ffe3f5890523d745a3bf36795267c3819e0ad3c4e61beb46cd365ff",
       "disposition": "excluded",
       "stable_sha256": null,
       "reason": "stable-public-surface"
@@ -2982,6 +3318,41 @@
       "reason": "stable-public-surface"
     },
     {
+      "path": "tests/test_provider_adapter_evidence_cli.py",
+      "approved_sha256": "84e34ae7c1209d918886ea24d9c2ebb5fffa7a18ce718c1092e25d70b85e000c",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_provider_adapter_qualification.py",
+      "approved_sha256": "2e57e5e336cbdbc4a34daa0adcc2c4b5d7465152bbc5195162ec885b7e78d036",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_public_stable_provenance.py",
+      "approved_sha256": "089faf9d623d4b89ba777aa44c05c7ca63495db94a3502edf5753e919e5a6029",
+      "disposition": "adapted",
+      "stable_sha256": "29fdf3b625e884b142d1abaa8b9baa329311d3467baed208427d77e72c40bcad",
+      "reason": "hardened-stable-integration"
+    },
+    {
+      "path": "tests/test_real_environment_evidence_cli.py",
+      "approved_sha256": "71e483dc8d18e4682bd14d9671bf26f82469a1c59fa69690567d195aa8d19149",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_real_environment_qualification.py",
+      "approved_sha256": "c24fe80136e86c7c1c572ad9e3b8fc9a1b2c3d633d8e18ee5113567a67cabca3",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
       "path": "tests/test_release_015_qualification.py",
       "approved_sha256": "a427bf0749f6bd65dba96a1f8491694b4d93217523feb1d7bfab48497abbe843",
       "disposition": "excluded",
@@ -3116,7 +3487,77 @@
     },
     {
       "path": "tests/test_release_056_source_preparation.py",
-      "approved_sha256": "2cbb7d039426485fc6dcbc0c979ed0f418decd0a48e7f03468f92dfdc0027453",
+      "approved_sha256": "a69ac26198d0083279518c007f5804aa587938a7045d1a59a4bd138d98dfafc1",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_release_057_contract_schemas.py",
+      "approved_sha256": "8ded20125bc29ea87b71969e5fc5400177574acc7c6162949b8b1f5dfefda9fa",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_release_057_hosted_systemd_upgrade.py",
+      "approved_sha256": "d6309034cd3a4cb1d873aac3f7b803e264e6f11b17139c7243af30b4a5aa3a79",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_release_057_hosted_upgrade_drill.py",
+      "approved_sha256": "53d63e62188758de9ac92535622e2fc1aa1b42ca62ce07f493d9926e7d253207",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_release_057_installer_fail_closed_security.py",
+      "approved_sha256": "eb09a658178fca9ab5d6592a5d16f3d74c145714b1dd5157088eec27fb7b8020",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_release_057_installer_replay_integrity.py",
+      "approved_sha256": "fcc9c69b10d92f8f948d79d927b6f8bc147dd3915c6bafa33c20e5bde7b7b424",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_release_057_live_runtime_readiness.py",
+      "approved_sha256": "ad921e14c6181505ed277be226b5327791ed64f35adca80d14d86dd8b53146a7",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_release_057_source_preparation.py",
+      "approved_sha256": "fe51a21b2d2cdf93f2ab040bb02c8d92bade4214daa6b4f2a5a20f1c14a90f2a",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_release_057_upgrade_restart_qualification.py",
+      "approved_sha256": "a4f6fb6ba1bbb9e8d80c1871bcb64c98c47182a4891053956ba4246f5cb9b361",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_release_promotion_decision_schema_blockers.py",
+      "approved_sha256": "481261905d93089fdaddcb2cf7bdbb8bb4c89fe5335dcc5f17d73bf2d7cd6be9",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_release_promotion_gate.py",
+      "approved_sha256": "81a062ea3aad04487d586d7ddb1c7109f7ed7e79f1927bb3389e4a729801a296",
       "disposition": "excluded",
       "stable_sha256": null,
       "reason": "stable-public-surface"
@@ -3124,6 +3565,27 @@
     {
       "path": "tests/test_runbook_state.py",
       "approved_sha256": "6473b711ca030815b6a95c17b920ab307859516fee8bd8946b28c6648ac81882",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_target_node_evidence_cli.py",
+      "approved_sha256": "9ce06fa1d7c2d80b7e86175de5a7c204e44a5278cf3449ace256cf91ee683035",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_target_node_qualification.py",
+      "approved_sha256": "2d3293949148e3b70675e34315c7a00adca228204efb2ff17ef955cc9dc5c877",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_technical_stable_profile.py",
+      "approved_sha256": "09c3a8a0e5eebd28a7ddd13feedbc6d2c326b2d1bd776e0a796577fde75367a2",
       "disposition": "excluded",
       "stable_sha256": null,
       "reason": "stable-public-surface"
