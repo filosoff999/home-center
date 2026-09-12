@@ -1,10 +1,9 @@
-# Operations
+# Эксплуатация и восстановление
 
-Monitor the authenticated health, typed infrastructure inventory, TLS, backup,
-and audit views. Treat inventory identity inconsistencies as unavailable state;
-the API intentionally does not expose rejected persisted facts.
-Keep two independently verified backups and test restore regularly. Use the
-backup timer for scheduled copies. Local-administrator provisioning and
-recovery entrypoints require a local root-controlled console. Treat degraded
-peer health, incomplete release identity, audit-chain failure, and malformed
-configuration as blocking conditions.
+Контролируйте аутентифицированные health-представления, типизированную инфраструктурную инвентаризацию, TLS, backup и Audit. Несогласованность identity инвентаризации трактуйте как unavailable/unknown: отклонённые или неподтверждённые факты не должны отображаться как достоверное состояние.
+
+Храните не менее двух независимо проверяемых backup для критичных данных и регулярно выполняйте restore drill. Наличие backup без проверенного восстановления не считается достаточным доказательством защиты данных.
+
+Provisioning и recovery локального администратора выполняются только через локальный root-controlled контур. Пароль пользователя `admin`, установленный после обязательной смены при первом входе, должен сохраняться при обновлении.
+
+Degraded peer health, неполная release identity, ошибка Audit integrity, повреждённая/некорректная конфигурация или неуспешная post-condition verification являются блокирующими состояниями. Не продолжайте rolling update на следующий узел, пока предыдущий узел не прошёл health/peer/replication/services verification или не был безопасно восстановлен.
