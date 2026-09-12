@@ -1,7 +1,9 @@
-# Security
+# Безопасность
 
-Keep credentials and key material outside source control. Use least privilege,
-root-controlled configuration and secret files, TLS for all network listeners,
-and the fixed-action helper boundary. Report a vulnerability to the repository
-owner through a confidential channel and do not place sensitive detail in a
-public issue.
+Храните credentials, private keys и другой секретный материал вне исходного кода и release-архивов. Используйте принцип минимальных привилегий, root-controlled файлы конфигурации/секретов и TLS для всех сетевых listeners.
+
+Административные действия должны проходить через типизированные и ограниченные product boundaries; произвольная shell-команда не является штатным административным API. Unknown/Stale/Degraded состояния не должны трактоваться как Healthy или Success.
+
+После чистой установки `admin/admin` допускается только как bootstrap-учётная запись: первый вход обязан потребовать смену пароля, а до смены обычная работа запрещена. Обновление не должно сбрасывать установленный пользователем пароль.
+
+При обнаружении уязвимости передавайте детали владельцу продукта по конфиденциальному каналу. Не публикуйте секреты, персональные данные, инфраструктурные детали или эксплуатационные сведения об уязвимости в открытом issue.
