@@ -36,6 +36,12 @@ jobs:
           python-version: "3.12"
           cache: ""
 
+      - name: Qualify promotion tooling contract before candidate sanitization
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 -m unittest -v tests.test_stable_promotion_v10_contract
+
       - name: Resolve canonical identity
         id: identity
         shell: bash
@@ -194,6 +200,9 @@ jobs:
               path = root / '.github/workflows' / wf
               if path.is_file():
                   path.unlink()
+          promotion_contract_test = root / 'tests/test_stable_promotion_v10_contract.py'
+          if promotion_contract_test.is_file():
+              promotion_contract_test.unlink()
           if (root / 'VERSION').read_text(encoding='ascii').strip() != version:
               raise SystemExit('PUBLIC_VERSION_MISMATCH')
           PY
