@@ -1,12 +1,23 @@
-# Installation
+# Установка Home Center
 
-Home Center 0.56.0 requires Linux, systemd, Python 3.12 or newer, SQLite, and
-operator-provided TLS identities. Verify `SHA256SUMS`, unpack the runtime, then
-run `sudo bash deploy/scripts/install.sh --config /path/to/config.json` to stage
-an immutable versioned directory. Add `--activate` only after reviewing the
-configuration, service units, certificate paths, and rollback prerequisites.
-The activation mode changes the `current` symlink atomically and restores the
-previous target if the services do not start successfully.
+Home Center 0.56.0 предназначен для Linux с systemd, Python 3.12 или новее и SQLite. TLS-идентичности для Web и межузлового взаимодействия предоставляет администратор.
 
-Never deploy the documentation values unchanged. Publication of a release does
-not authorize production activation.
+## Проверка релиза
+
+Перед установкой проверьте опубликованный tag `v0.56.0`, `SHA256SUMS`, release manifest, acceptance evidence и SPDX SBOM. Контрольная сумма подтверждает целостность файла, но сама по себе не подтверждает совместимость конкретного upgrade/updater path.
+
+Для **чистой установки 0.56.0** используйте официальный source-архив Stable-релиза и штатный скрипт:
+
+```bash
+sudo bash deploy/scripts/install.sh --config /path/to/config.json
+```
+
+Сначала выполняйте staging без активации. `--activate` добавляйте только после проверки конфигурации, systemd units, путей сертификатов, состояния backup и готовности rollback. При активации указатель `current` переключается атомарно; если сервисы не запускаются успешно, установщик должен восстановить предыдущую цель.
+
+## Первый вход
+
+После чистой установки создаётся локальный пользователь `admin` с первоначальным паролем `admin`. При первом входе пароль **обязательно** меняется; до успешной смены обычная работа с системой запрещена. При последующих обновлениях установленный пользователем пароль не должен сбрасываться к `admin`.
+
+## Важно
+
+Не переносите примерные значения конфигурации в рабочую среду без проверки. Публикация релиза не является разрешением на production activation. Для существующей установки используйте только квалифицированный для её исходной версии путь из [UPGRADE.md](UPGRADE.md); не обходите release-identity, parity, health или rollback проверки вручную.
