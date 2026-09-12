@@ -144,6 +144,7 @@ class PublicReleaseTests(unittest.TestCase):
             "approved-source-provenance.v1.schema.json": "home-center.approved-source-provenance.v1",
             "public-release-acceptance.v1.schema.json": "home-center.public-release-acceptance.v1",
             "public-release-manifest.v1.schema.json": "home-center.public-release-manifest.v1",
+            "public-stable-provenance.v2.schema.json": "home-center.public-stable-provenance.v2",
         }
         release_contracts = ROOT / "contracts/releases"
         self.assertEqual({path.name for path in release_contracts.iterdir()}, set(expected))

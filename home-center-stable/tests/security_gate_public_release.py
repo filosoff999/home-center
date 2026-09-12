@@ -49,6 +49,7 @@ def main() -> int:
         "approved-source-provenance.v1.schema.json",
         "public-release-acceptance.v1.schema.json",
         "public-release-manifest.v1.schema.json",
+        "public-stable-provenance.v2.schema.json",
     }
     require(
         {path.name for path in (ROOT / "contracts/releases").iterdir()} == release_contracts,
