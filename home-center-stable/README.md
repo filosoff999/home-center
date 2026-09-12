@@ -1,17 +1,33 @@
 # Home Center 0.56.0
 
-Home Center — локальная платформа управления домашней инфраструктурой. Она предоставляет аутентифицированное администрирование, типизированную read-only инвентаризацию, детерминированное обнаружение узлов и агрегацию состояния, безопасное планирование обслуживания, backup/recovery, управление ресурсами и пользовательскими намерениями, а также контролируемые границы для модулей и административных операций.
+Home Center is a local-first control plane for managed home infrastructure. It
+provides authenticated administration, typed read-only infrastructure
+inventory, deterministic discovery and health aggregation, safe node
+maintenance planning, backup, resource and intent planning, module admission,
+and a bounded helper for local credential rotation. Version 0.15 supports
+validated deployment profiles containing one to 64 nodes while retaining the
+two-node, single-writer profile as a conservative deployment example.
 
-Single-node является полноценным поддерживаемым режимом. Multi-node используется только в тех профилях, где для соответствующих ролей и функций подтверждены необходимые условия отказоустойчивости и восстановления.
+## Release channels
 
-## Канал релизов
+This repository is the **stable channel**. Version `0.56.0` is the current
+qualified PUBLIC STABLE RELEASE.
 
-Этот репозиторий является официальным **Stable-каналом**. Версия `0.56.0` — текущий квалифицированный PUBLIC STABLE RELEASE.
+The official canonical/source line is published separately in
+[`ControlCenterSoft/home-center-development`](https://github.com/ControlCenterSoft/home-center-development),
+where the latest officially published source release is also `0.56.0`.
 
-Наличие более новой разработки, кандидата или документа не делает функцию доступной пользователю. Возможность считается выпущенной только после отдельной квалификации и публикации в Stable-канале.
+Canonical source and public stable use separate release identities. The
+checked-in `APPROVED-SOURCE.json` records the approved canonical revision and
+its mapping into this hardened public stable tree; commit SHA equality between
+the two repositories is therefore not required.
 
-Связь опубликованного Stable с утверждённым исходным набором подтверждается машиночитаемыми release/provenance evidence, manifest, checksums, SBOM и acceptance-данными. Совпадение commit SHA между различными контурами подготовки и публикации не является пользовательским критерием релиза.
+Features added after stable `0.56.0` must not be treated as available in this
+stable channel until the corresponding stable package is separately qualified
+and published here.
 
-## С чего начать
+## Start here
 
-Начните с [INSTALL.md](INSTALL.md), затем настройте систему по [CONFIGURATION.md](CONFIGURATION.md). Правила проверки идентичности и целостности релиза описаны в [RELEASE.md](RELEASE.md), безопасного обновления — в [UPGRADE.md](UPGRADE.md), а эксплуатации и восстановления — в [OPERATIONS.md](OPERATIONS.md).
+Start with [INSTALL.md](INSTALL.md), then tailor the examples described in
+[CONFIGURATION.md](CONFIGURATION.md). Release identity and integrity files are
+described in [RELEASE.md](RELEASE.md).
