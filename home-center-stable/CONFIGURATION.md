@@ -1,15 +1,9 @@
-# Configuration
+# Конфигурация
 
-Copy one of the files under `deploy/config` and replace every example value.
-The current configuration is closed by `home-center.config.v5` and defines
-cluster and node identity, management addresses, Web and peer ports, state and
-backup paths, local-administrator storage, optional directory authentication,
-TLS files, an external-access boundary, and zero to 63 explicit peer endpoints.
-The runtime also accepts the 0.14 `home-center.config.v4` single-peer shape for
-staged upgrades. Addresses in
-`192.0.2.0/24` and names below `example.invalid` are documentation values.
+Скопируйте подходящий пример из `deploy/config` и замените **все** примерные значения. Текущая конфигурация описывается закрытым контрактом `home-center.config.v5` и включает identity кластера и узла, management addresses, Web/peer ports, пути state и backup, хранилище локального администратора, опциональную directory authentication, TLS-файлы, границу external access и до 63 явно заданных peer endpoints.
 
-The v1 profile under `deploy/profiles` is a two-node example. The v2 profile
-under `deploy/examples` demonstrates the portable one-to-64-node planning
-shape. Keep automatic failover disabled unless the deployment has an
-independently proven fencing design.
+Runtime также принимает single-peer форму `home-center.config.v4` для поддерживаемого staged upgrade. Адреса из `192.0.2.0/24` и имена в `example.invalid` являются только документационными примерами и не должны переноситься в рабочую среду.
+
+Профиль v1 в `deploy/profiles` — пример двухузловой конфигурации. Профиль v2 в `deploy/examples` демонстрирует переносимую модель планирования от одного до 64 узлов. Single-node остаётся полноценным режимом.
+
+Не включайте automatic failover, пока для конкретного deployment/provider не доказаны fencing, split-brain prevention и recovery semantics. External publication, NAT/port-forwarding и удалённый доступ не должны включаться неявно конфигурацией обычного локального сервиса.
