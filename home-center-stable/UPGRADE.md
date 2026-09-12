@@ -1,11 +1,19 @@
-# Upgrade
+# Обновление и откат
 
-For every upgrade, verify `SHA256SUMS`, the embedded `MANIFEST.sha256`, release
-identity, the SPDX document, acceptance record, and release manifest. Stage the
-new version in a new directory, retain the previous immutable directory, and
-change the current pointer only after local validation. Upgrade one node at a
-time while preserving the profile's minimum ready-node requirement and the
-single-writer role where applicable. Version 0.15 accepts the v4 single-peer
-configuration during migration; convert to v5 before adding more peers. Roll
-back by restoring the previous pointer and rechecking health and release
-identity.
+Перед каждым обновлением проверьте `SHA256SUMS`, встроенный `MANIFEST.sha256`, release identity, SPDX SBOM, acceptance evidence и release manifest. Новую версию сначала размещайте в отдельном immutable-каталоге, сохраняя предыдущий каталог для rollback. Указатель `current` переключайте только после локальной проверки.
+
+## Особенность Public Stable 0.56.0
+
+Опубликованный `v0.56.0` содержит checksum sidecar и полный release evidence, однако его runtime-архив был опубликован до исправления canonical archive-shape contract для fail-closed node updater. Поэтому наличие корректной контрольной суммы **не означает**, что любой автоматический updater-path к 0.56.0 квалифицирован.
+
+Используйте только тот install/upgrade path, для которого подтверждена совместимость с вашей исходной release identity. Если такой путь для конкретной исходной версии не подтверждён, не обходите проверку вручную: выполните отдельное безопасное выравнивание по документированной процедуре либо оставайтесь на текущей Stable до появления квалифицированного пути.
+
+## Multi-node
+
+Обновляйте не более одного узла за раз. Перед переходом к следующему узлу проверяйте health, peer connectivity, replication/согласованность применимых данных и состояние сервисов. Сохраняйте минимально допустимое число готовых узлов и single-writer semantics там, где профиль их требует.
+
+Перед автоматическим rolling rollout все участвующие узлы должны иметь одинаковую подтверждённую исходную release identity. При version/revision drift сначала выровняйте отстающий узел отдельным квалифицированным alignment/update path. Fail-closed parity check обходить нельзя.
+
+## Rollback
+
+При неуспехе остановите дальнейший rollout, восстановите предыдущий immutable-каталог/указатель, затем повторно проверьте release identity, health, сервисы и состояние данных. Объявлять rollback успешным только по факту запуска процесса запрещено: необходима post-condition verification.
