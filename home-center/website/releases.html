@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Версии Home Center — стабильный канал и возможности продукта</title>
-  <meta name="description" content="Стабильный канал Home Center, правила проверки релиза, известные ограничения и связь возможностей продукта с версиями и модулями.">
+  <meta name="description" content="Стабильный канал Home Center, правила проверки релиза, security corrections и связь возможностей продукта с версиями и модулями.">
   <meta name="theme-color" content="#f7faf8">
   <link rel="canonical" href="https://home.control-center.pro/releases.html">
   <link rel="icon" href="/assets/logo.svg" type="image/svg+xml">
@@ -25,7 +25,7 @@
         <a href="/docs.html">Установка</a>
         <a class="current" href="/releases.html">Версии</a>
       </nav>
-      <a class="version-chip" href="/releases.html">Stable 0.61.0</a>
+      <a class="version-chip" href="/releases.html">Stable 0.61.2</a>
     </div>
   </header>
 
@@ -34,7 +34,7 @@
       <div class="shell">
         <span class="kicker">Версии и каналы</span>
         <h1>Продукт развивается постоянно.<br>Стабильный канал остаётся проверяемым.</h1>
-        <p>Главная страница описывает функциональный контур Home Center. Эта страница показывает текущий официальный Stable, его подтверждённую границу и известные ограничения, которые важно учитывать до установки или включения отдельных функций.</p>
+        <p>Главная страница описывает функциональный контур Home Center. Эта страница показывает текущий официальный Stable, его подтверждённую границу и security corrections, которые важно учитывать до установки или включения отдельных функций.</p>
       </div>
     </section>
 
@@ -43,11 +43,11 @@
         <div class="release-hero-card reveal">
           <div>
             <span class="badge">ТЕКУЩИЙ STABLE</span>
-            <h2>Home Center 0.61.0</h2>
-            <p>Опубликован 13 сентября 2026 года. Доступны Linux и source artifacts, отдельный SHA-256 sidecar для Linux-архива, SHA256SUMS, acceptance/release manifests, public provenance v2 и SPDX SBOM.</p>
+            <h2>Home Center 0.61.2</h2>
+            <p>Опубликован 13 сентября 2026 года как корректирующий Stable 0.61-линии. Доступны Linux/source artifacts, отдельный SHA-256 sidecar для Linux-архива, SHA256SUMS, acceptance/release manifests, public provenance v2 и SPDX SBOM.</p>
           </div>
           <div class="hero-actions" style="margin-top:0">
-            <a class="button primary" href="https://github.com/ControlCenterSoft/home-center-stable/releases/tag/v0.61.0">Скачать 0.61.0</a>
+            <a class="button primary" href="https://github.com/ControlCenterSoft/home-center-stable/releases/tag/v0.61.2">Скачать 0.61.2</a>
             <a class="button secondary" href="/docs.html">Как установить</a>
           </div>
         </div>
@@ -57,11 +57,11 @@
     <section class="section" id="security-note">
       <div class="shell">
         <div class="section-head reveal">
-          <span class="kicker">Известное ограничение 0.61.0</span>
-          <h2>Не используйте split routing до корректирующего Stable-патча.</h2>
-          <p>В опубликованном 0.61.0 обнаружено несоответствие fail-closed правилам для split routing. До появления исправляющего релиза в официальном Stable-канале этот режим следует считать недоступным. Не отключайте kill switch и не ослабляйте parental DENY в попытке обойти ограничение.</p>
+          <span class="kicker">Security correction</span>
+          <h2>0.61.2 заменяет 0.61.0 для split-routing policy.</h2>
+          <p>В 0.61.0 был обнаружен fail-closed defect: для split routing direct fallback мог быть выбран без повторной проверки deny/kill-switch policy. 0.61.2 исправляет эту границу, синхронизирует Cozy/Full projection и строгую проверку route/reason evidence. Пользователям 0.61.0 следует перейти на 0.61.2 перед использованием split routing.</p>
         </div>
-        <div class="callout warning"><strong>Ограничение относится именно к split routing.</strong><p>Сам Stable-профиль остаётся bounded <code>single-node-core</code>: concrete VPN/network execution, multi-node HA/automatic failover и commercial launch clearance не заявлены без отдельной qualification.</p></div>
+        <div class="callout"><strong>Release profile остаётся bounded.</strong><p>Наличие исправленной route-decision модели не означает автоматическую production qualification concrete VPN/network mutation, multi-node HA/automatic failover или commercial launch capabilities.</p></div>
       </div>
     </section>
 
@@ -108,15 +108,15 @@
         <div class="story-list">
           <article class="story reveal"><div class="story-number">01</div><div><h3>Скачайте из Stable-канала</h3><p>Используйте только официальный пользовательский release и его артефакты.</p></div></article>
           <article class="story reveal"><div class="story-number">02</div><div><h3>Проверьте SHA-256</h3><p>Не продолжайте установку, если контрольная сумма скачанного файла не совпадает.</p></div></article>
-          <article class="story reveal"><div class="story-number">03</div><div><h3>Проверьте ограничения версии</h3><p>Не включайте capability, если для текущего Stable опубликовано ограничение или она не входит в квалифицированный release profile.</p></div></article>
+          <article class="story reveal"><div class="story-number">03</div><div><h3>Проверьте границу release profile</h3><p>Не включайте capability только потому, что она упомянута в roadmap или интерфейсе: нужна qualification именно для установленного Stable/profile/provider.</p></div></article>
         </div>
       </div>
     </section>
 
     <section class="section cta-section">
       <div class="shell cta">
-        <div><span class="kicker">Установка</span><h2>Начните с официального Stable.</h2><p>Текущий stable-релиз — Home Center 0.61.0. Для чистой установки следуйте инструкции конкретного релиза.</p></div>
-        <div class="hero-actions"><a class="button primary" href="/docs.html">Инструкция</a><a class="button secondary" href="https://github.com/ControlCenterSoft/home-center-stable/releases/tag/v0.61.0">Открыть Stable 0.61.0</a></div>
+        <div><span class="kicker">Установка</span><h2>Начните с официального Stable.</h2><p>Текущий stable-релиз — Home Center 0.61.2. Для чистой установки следуйте инструкции конкретного релиза.</p></div>
+        <div class="hero-actions"><a class="button primary" href="/docs.html">Инструкция</a><a class="button secondary" href="https://github.com/ControlCenterSoft/home-center-stable/releases/tag/v0.61.2">Открыть Stable 0.61.2</a></div>
       </div>
     </section>
   </main>
