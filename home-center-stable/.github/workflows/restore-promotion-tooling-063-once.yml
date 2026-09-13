@@ -30,7 +30,7 @@ jobs:
         run: |
           set -Eeuo pipefail
           test "$GITHUB_REF_NAME" = "qualification/hc063-stable-promotion-tooling-b1-20260913"
-          base="$(git rev-parse HEAD^)"
+          base="$(git rev-parse HEAD^^)"
           main_record="$(git ls-remote --exit-code origin refs/heads/main)"
           [[ "$main_record" == "$base"$'\trefs/heads/main' ]] || { echo STABLE_BASE_DRIFT >&2; exit 66; }
 
@@ -43,6 +43,27 @@ jobs:
           git show FETCH_HEAD:.github/workflows/promote-qualified-stable-v10.yml > .github/workflows/promote-qualified-stable-v10.yml
           git show FETCH_HEAD:tests/test_stable_promotion_v10_contract.py > tests/test_stable_promotion_v10_contract.py
           rm -f .github/workflows/restore-promotion-tooling-063-once.yml
+
+      - name: Reconcile approved-source metadata after bounded public-doc translation
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib, json
+          path = Path('contracts/README.md')
+          actual = hashlib.sha256(path.read_bytes()).hexdigest()
+          provenance_path = Path('APPROVED-SOURCE.json')
+          data = json.loads(provenance_path.read_text(encoding='utf-8'))
+          matches = [item for item in data.get('files', []) if item.get('path') == 'contracts/README.md']
+          if len(matches) != 1:
+              raise SystemExit('CONTRACTS_README_PROVENANCE_CARDINALITY')
+          item = matches[0]
+          if item.get('disposition') != 'adapted' or item.get('reason') != 'hardened-stable-integration':
+              raise SystemExit('CONTRACTS_README_PROVENANCE_BOUNDARY_CHANGED')
+          item['stable_sha256'] = actual
+          provenance_path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + '\n', encoding='utf-8')
+          PY
 
       - name: Rebuild exact source manifest
         shell: bash
@@ -87,7 +108,7 @@ jobs:
           PYTHONPATH=product/control-plane/src python3 -m unittest discover -v -s tests -p 'test_*.py'
           python3 tests/security_gate_public_release.py
           PYTHONPATH=product/control-plane/src python3 -c 'import home_center.actions, home_center.api, home_center.module_admission, home_center.server'
-          test -z "$(git status --porcelain=v1 --untracked-files=all | grep -vE "^( M|M |A | D|D |\?\?) (SOURCE-MANIFEST\.sha256|\.github/workflows/promote-qualified-stable-v10\.yml|tests/test_stable_promotion_v10_contract\.py|\.github/workflows/restore-promotion-tooling-063-once\.yml)$" || true)" || { git status --short >&2; exit 66; }
+          test -z "$(git status --porcelain=v1 --untracked-files=all | grep -vE "^( M|M |A | D|D |\?\?) (SOURCE-MANIFEST\.sha256|APPROVED-SOURCE\.json|\.github/workflows/promote-qualified-stable-v10\.yml|tests/test_stable_promotion_v10_contract\.py|\.github/workflows/restore-promotion-tooling-063-once\.yml)$" || true)" || { git status --short >&2; exit 66; }
 
       - name: Commit final self-contained tooling tree
         shell: bash
@@ -95,7 +116,7 @@ jobs:
           set -Eeuo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A SOURCE-MANIFEST.sha256 .github/workflows tests/test_stable_promotion_v10_contract.py
+          git add -A SOURCE-MANIFEST.sha256 APPROVED-SOURCE.json .github/workflows tests/test_stable_promotion_v10_contract.py
           git diff --cached --check
           git commit -m "HC 0.63: restore guarded Stable promotion tooling"
           git push origin "HEAD:$GITHUB_REF_NAME"
