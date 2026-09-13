@@ -86,28 +86,30 @@ for marker in POSITIONING_MARKERS:
     if marker.casefold() not in homepage.casefold():
         fail(f"home product positioning marker is absent: {marker}")
 
-if "Home Center 0.61.2" not in releases:
+if "Home Center 0.62.1" not in releases:
     fail("current Stable identity is absent from releases page")
 if "Возможность продукта и stable-пакет" not in releases:
     fail("product-vs-stable availability explanation is absent")
 if "0.61.2 заменяет 0.61.0" not in releases:
     fail("0.61.2 split-routing security correction notice is absent from releases page")
-if "0.61.2 заменяет 0.61.0" not in docs:
-    fail("0.61.2 split-routing security correction notice is absent from install documentation")
+if "Исправление 0.61.2 входит в текущую линию 0.62.1" not in docs:
+    fail("0.61.x split-routing security correction inheritance is absent from install documentation")
 if "ControlCenterSoft/home-center-stable/releases" not in docs:
     fail("public stable installation channel is absent from installation page")
 if "ControlCenterSoft/home-center-free" in docs:
     fail("retired public installer channel is still present in installation page")
-if "home-center-0.61.2-source.tar.gz" not in docs:
-    fail("0.61.2 clean-install source artifact is absent from installation page")
+if "home-center-0.62.1-source.tar.gz" not in docs:
+    fail("0.62.1 clean-install source artifact is absent from installation page")
 if "deploy/scripts/install.sh" not in docs:
-    fail("authoritative 0.61.2 install command is absent")
+    fail("authoritative 0.62.1 install command is absent")
+if "0.61.2" not in docs or "0.62.1" not in docs:
+    fail("supported 0.61.2 to 0.62.1 upgrade boundary is absent")
 if "UPGRADE.md" not in docs:
     fail("release-specific upgrade instruction is absent")
-if "const stableVersion = '0.61.2';" not in app_js:
-    fail("rendered public Stable identity is not pinned to 0.61.2")
-if "home-center-0.61.2-source.tar.gz" not in app_js:
-    fail("legacy homepage mapping does not target the 0.61.2 clean-install source artifact")
+if "const stableVersion = '0.62.1';" not in app_js:
+    fail("rendered public Stable identity is not pinned to 0.62.1")
+if "home-center-0.62.1-source.tar.gz" not in app_js:
+    fail("legacy homepage mapping does not target the 0.62.1 clean-install source artifact")
 
 for pattern in FORBIDDEN:
     if re.search(pattern, combined, flags=re.IGNORECASE):
