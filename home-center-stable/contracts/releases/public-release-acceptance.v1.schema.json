@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ControlCenterSoft/home-center-stable/contracts/releases/public-release-acceptance.v1.schema.json",
+  "title": "Home Center public release acceptance",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "product",
+    "version",
+    "revision",
+    "source_date_epoch",
+    "generated_at",
+    "status",
+    "checks",
+    "artifacts",
+    "qualification_id"
+  ],
+  "properties": {
+    "schema": {"const": "home-center.public-release-acceptance.v1"},
+    "product": {"const": "home-center"},
+    "version": {"type": "string", "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"},
+    "revision": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "source_date_epoch": {"type": "integer", "minimum": 1},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "status": {"const": "PASS"},
+    "checks": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "exact_public_head",
+        "hash_cycle_free",
+        "runtime_manifest",
+        "runtime_reproducible",
+        "source_manifest",
+        "source_reproducible",
+        "spdx_2_3"
+      ],
+      "properties": {
+        "exact_public_head": {"const": true},
+        "hash_cycle_free": {"const": true},
+        "runtime_manifest": {"const": true},
+        "runtime_reproducible": {"const": true},
+        "source_manifest": {"const": true},
+        "source_reproducible": {"const": true},
+        "spdx_2_3": {"const": true}
+      }
+    },
+    "artifacts": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": {"$ref": "#/$defs/artifact"}
+    },
+    "qualification_id": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
+  },
+  "$defs": {
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "sha256", "size"],
+      "properties": {
+        "name": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,159}$"},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "size": {"type": "integer", "minimum": 1}
+      }
+    }
+  }
+}
