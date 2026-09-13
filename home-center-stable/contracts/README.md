@@ -1,9 +1,7 @@
-# Home Center contracts
+# Публичные контракты Home Center
 
-These closed JSON Schema and OpenAPI documents define the public Home Center
-0.62.1 request, response, configuration, deployment-profile, infrastructure
-inventory, discovery, planning, helper, module, health, resource, backup, and
-release records. Consumers must reject unknown fields and schema identities
-they do not support. Release acceptance, source provenance, and publication
-schemas are version-neutral contracts; each record carries and validates its
-own semantic product version.
+Закрытые JSON Schema и OpenAPI в этом каталоге определяют публичные контракты Home Center 0.62.1 для запросов и ответов API, конфигурации, deployment profile, инвентаризации инфраструктуры, обнаружения, планирования, вспомогательных объектов, модулей, health, ресурсов, резервного копирования и release records.
+
+Потребитель обязан отклонять неизвестные поля и неподдерживаемые schema identity. Схемы release acceptance, source provenance и publication являются version-neutral: каждая запись содержит и валидирует собственную семантическую версию продукта.
+
+Текущий Public Stable — 0.62.1. Наличие контракта в этом каталоге само по себе не расширяет квалифицированный release profile и не означает поддержку multi-node HA, automatic failover, неподтверждённого provider execution или иных возможностей, которые не заявлены для конкретной Stable release identity.
