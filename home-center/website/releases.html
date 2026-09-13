@@ -25,7 +25,7 @@
         <a href="/docs.html">Установка</a>
         <a class="current" href="/releases.html">Версии</a>
       </nav>
-      <a class="version-chip" href="/releases.html">Stable 0.62.1</a>
+      <a class="version-chip" href="/releases.html">Stable 0.63.0</a>
     </div>
   </header>
 
@@ -43,11 +43,11 @@
         <div class="release-hero-card reveal">
           <div>
             <span class="badge">ТЕКУЩИЙ STABLE</span>
-            <h2>Home Center 0.62.1</h2>
-            <p>Опубликован 13 сентября 2026 года как текущий Public Stable и завершение линии 0.62. Доступны Linux/source artifacts, отдельный SHA-256 sidecar для Linux-архива, SHA256SUMS, acceptance/release manifests, public provenance v2 и SPDX SBOM.</p>
+            <h2>Home Center 0.63.0</h2>
+            <p>Опубликован 13 сентября 2026 года как текущий Public Stable и завершение линии QR guest/device onboarding. Доступны Linux/source artifacts, отдельный SHA-256 sidecar для Linux-архива, SHA256SUMS, acceptance/release manifests, public provenance v2 и SPDX SBOM.</p>
           </div>
           <div class="hero-actions" style="margin-top:0">
-            <a class="button primary" href="https://github.com/ControlCenterSoft/home-center-stable/releases/tag/v0.62.1">Скачать 0.62.1</a>
+            <a class="button primary" href="https://github.com/ControlCenterSoft/home-center-stable/releases/tag/v0.63.0">Скачать 0.63.0</a>
             <a class="button secondary" href="/docs.html">Как установить</a>
           </div>
         </div>
@@ -58,10 +58,10 @@
       <div class="shell">
         <div class="section-head reveal">
           <span class="kicker">Граница релиза</span>
-          <h2>0.62.1 развивает безопасное управление семейными учётными записями и профилями.</h2>
-          <p>Линия 0.62 добавляет confirmation-gated role-driven identity/account provisioning и переносимые домашние каталоги/профили через доступные providers. Поддерживаемый Public Stable profile остаётся <code>single-node-core</code>: typed contracts и проверка результата не означают универсальное разрешение любого concrete identity-provider execution или любого provider-specific portable-profile режима.</p>
+          <h2>0.63.0 добавляет безопасный QR onboarding гостя или устройства.</h2>
+          <p>Приглашения короткоживущие и одноразовые, привязаны к точному Household и выбранному гостю/устройству, поддерживают отзыв и защищённое однократное использование. Исполнение проходит через типизированную операцию с долговечным состоянием и обязательным повторным чтением результата: пользовательский успех отображается только после подтверждённой post-condition, а неопределённый результат не повторяется автоматически.</p>
         </div>
-        <div class="callout"><strong>Неподтверждённые возможности остаются выключенными.</strong><p>Multi-node HA/automatic failover, универсальное concrete provider execution и commercial capabilities требуют отдельной qualification и не становятся доступными только из-за установки 0.62.1.</p></div>
+        <div class="callout"><strong>Release profile остаётся bounded <code>single-node-core</code>.</strong><p>Provider execution, произвольные инфраструктурные изменения, внешняя публикация, неподтверждённый multi-node HA/automatic failover и commercial capabilities требуют отдельной qualification и не становятся доступными только из-за установки 0.63.0.</p></div>
       </div>
     </section>
 
@@ -69,10 +69,10 @@
       <div class="shell">
         <div class="section-head reveal">
           <span class="kicker">Security correction</span>
-          <h2>0.61.2 заменяет 0.61.0 для split-routing policy; исправление входит в 0.62.1.</h2>
-          <p>В 0.61.0 был обнаружен fail-closed defect: для split routing direct fallback мог быть выбран без повторной проверки deny/kill-switch policy. 0.61.2 исправил эту границу, синхронизировал «Уютный»/«Полный» projection и строгую проверку route/reason evidence. Текущий 0.62.1 следует после исправленной 0.61.2-линии. Пользователям 0.61.0 не следует использовать split routing до перехода на исправленный Stable.</p>
+          <h2>0.61.2 заменяет 0.61.0 для split-routing policy; исправление входит в 0.63.0.</h2>
+          <p>В 0.61.0 был обнаружен fail-closed defect: для split routing direct fallback мог быть выбран без повторной проверки deny/kill-switch policy. 0.61.2 исправил эту границу и строгую проверку route/reason evidence. Текущий 0.63.0 наследует исправленную линию. Пользователям 0.61.0 не следует использовать split routing до перехода на поддерживаемый исправленный Stable.</p>
         </div>
-        <div class="callout"><strong>Release profile остаётся bounded.</strong><p>Наличие исправленной route-decision модели не означает автоматическую production qualification concrete VPN/network mutation, multi-node HA/automatic failover или commercial launch capabilities.</p></div>
+        <div class="callout"><strong>Исправление policy не расширяет release profile.</strong><p>Наличие исправленной route-decision модели не означает автоматическую production qualification concrete VPN/network mutation, multi-node HA/automatic failover или commercial launch capabilities.</p></div>
       </div>
     </section>
 
@@ -126,8 +126,8 @@
 
     <section class="section cta-section">
       <div class="shell cta">
-        <div><span class="kicker">Установка</span><h2>Начните с официального Stable.</h2><p>Текущий stable-релиз — Home Center 0.62.1. Для чистой установки следуйте инструкции конкретного релиза.</p></div>
-        <div class="hero-actions"><a class="button primary" href="/docs.html">Инструкция</a><a class="button secondary" href="https://github.com/ControlCenterSoft/home-center-stable/releases/tag/v0.62.1">Открыть Stable 0.62.1</a></div>
+        <div><span class="kicker">Установка</span><h2>Начните с официального Stable.</h2><p>Текущий stable-релиз — Home Center 0.63.0. Для чистой установки следуйте инструкции конкретного релиза.</p></div>
+        <div class="hero-actions"><a class="button primary" href="/docs.html">Инструкция</a><a class="button secondary" href="https://github.com/ControlCenterSoft/home-center-stable/releases/tag/v0.63.0">Открыть Stable 0.63.0</a></div>
       </div>
     </section>
   </main>
