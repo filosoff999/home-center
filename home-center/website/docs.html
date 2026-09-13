@@ -25,7 +25,7 @@
         <a class="current" href="/docs.html">Установка</a>
         <a href="/releases.html">Версии</a>
       </nav>
-      <a class="version-chip" href="/releases.html">Stable 0.61.0</a>
+      <a class="version-chip" href="/releases.html">Stable 0.61.2</a>
     </div>
   </header>
 
@@ -34,9 +34,9 @@
       <div class="shell">
         <span class="kicker">Установка</span>
         <h1>Установите Home Center и начните с простого интерфейса.</h1>
-        <p>Пользовательская установка выполняется из официального stable-канала. Текущий stable-релиз — Home Center 0.61.0.</p>
+        <p>Пользовательская установка выполняется из официального stable-канала. Текущий stable-релиз — Home Center 0.61.2.</p>
         <div class="hero-actions">
-          <a class="button primary" href="https://github.com/ControlCenterSoft/home-center-stable/releases/tag/v0.61.0">Открыть Stable 0.61.0</a>
+          <a class="button primary" href="https://github.com/ControlCenterSoft/home-center-stable/releases/tag/v0.61.2">Открыть Stable 0.61.2</a>
           <a class="button secondary" href="#requirements">Что понадобится</a>
         </div>
       </div>
@@ -52,7 +52,7 @@
           <a href="#unpack">3. Распаковать</a>
           <a href="#install">4. Установить</a>
           <a href="#first-login">Первый вход</a>
-          <a href="#security-note">Ограничение 0.61.0</a>
+          <a href="#security-note">Исправление 0.61.2</a>
           <a href="#interfaces">Два интерфейса</a>
           <a href="#update">Обновление</a>
         </aside>
@@ -68,17 +68,17 @@
           <section class="doc-section" id="download">
             <span class="step-label">Шаг 1</span>
             <h2>Скачайте официальный source-архив и SHA256SUMS</h2>
-            <p>Для чистой установки 0.61.0 используйте официальный source-архив Stable-релиза. Скачайте его вместе с <code>SHA256SUMS</code> из того же релиза.</p>
+            <p>Для чистой установки 0.61.2 используйте официальный source-архив Stable-релиза. Скачайте его вместе с <code>SHA256SUMS</code> из того же релиза.</p>
             <div class="download-card">
-              <div><small>Текущий Stable</small><strong>home-center-0.61.0-source.tar.gz</strong><span>и SHA256SUMS из релиза v0.61.0</span></div>
-              <a class="button primary" href="https://github.com/ControlCenterSoft/home-center-stable/releases/tag/v0.61.0">Скачать</a>
+              <div><small>Текущий Stable</small><strong>home-center-0.61.2-source.tar.gz</strong><span>и SHA256SUMS из релиза v0.61.2</span></div>
+              <a class="button primary" href="https://github.com/ControlCenterSoft/home-center-stable/releases/tag/v0.61.2">Скачать</a>
             </div>
           </section>
 
           <section class="doc-section" id="verify">
             <span class="step-label">Шаг 2</span>
             <h2>Проверьте релиз и контрольные суммы</h2>
-            <p>Перед установкой проверьте, что вы используете tag <code>v0.61.0</code>, а в релизе присутствуют <code>SHA256SUMS</code>, release manifest, acceptance evidence и SPDX SBOM. Затем в каталоге со скачанными файлами выполните:</p>
+            <p>Перед установкой проверьте, что вы используете tag <code>v0.61.2</code>, а в релизе присутствуют <code>SHA256SUMS</code>, release manifest, acceptance evidence и SPDX SBOM. Затем в каталоге со скачанными файлами выполните:</p>
             <div class="code-block"><pre><code>sha256sum -c SHA256SUMS --ignore-missing</code></pre></div>
             <div class="callout warning"><strong>Продолжайте только после результата OK.</strong><p>Контрольная сумма подтверждает целостность файла, но не заменяет проверку поддерживаемого install/upgrade path для вашей исходной версии.</p></div>
           </section>
@@ -86,9 +86,9 @@
           <section class="doc-section" id="unpack">
             <span class="step-label">Шаг 3</span>
             <h2>Распакуйте source-архив</h2>
-            <div class="code-block"><pre><code>mkdir -p home-center-0.61.0
-tar -xzf home-center-0.61.0-source.tar.gz -C home-center-0.61.0
-cd home-center-0.61.0</code></pre></div>
+            <div class="code-block"><pre><code>mkdir -p home-center-0.61.2
+tar -xzf home-center-0.61.2-source.tar.gz -C home-center-0.61.2
+cd home-center-0.61.2</code></pre></div>
           </section>
 
           <section class="doc-section" id="install">
@@ -107,9 +107,9 @@ cd home-center-0.61.0</code></pre></div>
           </section>
 
           <section class="doc-section" id="security-note">
-            <span class="step-label">Известное ограничение</span>
-            <h2>В Stable 0.61.0 не используйте split routing</h2>
-            <div class="callout warning"><strong>Режим split routing в 0.61.0 имеет известное несоответствие fail-closed правилам.</strong><p>До публикации корректирующего Stable-патча не включайте и не используйте split routing. Это ограничение не является разрешением обходить kill switch, parental DENY или другие политики безопасности. Конкретное VPN/network execution в bounded Stable-профиле также не заявляется как квалифицированная production-capability.</p></div>
+            <span class="step-label">Security correction</span>
+            <h2>0.61.2 заменяет 0.61.0 для split-routing сценариев</h2>
+            <div class="callout"><strong>Используйте 0.61.2 вместо 0.61.0.</strong><p>В 0.61.2 исправлена fail-closed обработка split routing: direct fallback не должен использоваться, если политика явно его не разрешает. Пользователям 0.61.0 следует перейти на текущий Stable 0.61.2 перед использованием split-routing policy. Concrete VPN/network execution, multi-node HA/automatic failover и commercial launch capabilities по-прежнему не следует считать автоматически квалифицированными только из-за наличия route-decision contracts.</p></div>
           </section>
 
           <section class="doc-section" id="interfaces">
@@ -124,8 +124,8 @@ cd home-center-0.61.0</code></pre></div>
 
           <section class="doc-section" id="update">
             <span class="step-label">Обновление</span>
-            <h2>Используйте только квалифицированный путь из UPGRADE.md</h2>
-            <p>Перед обновлением сделайте backup, скачайте официальный Stable-релиз, проверьте <code>SHA256SUMS</code> и следуйте <code>UPGRADE.md</code> именно этого релиза. Не обходите release-identity, parity, health или rollback проверки вручную.</p>
+            <h2>Используйте только квалифицированный путь из релиза</h2>
+            <p>Перед обновлением сделайте backup, скачайте официальный Stable-релиз, проверьте <code>SHA256SUMS</code> и следуйте <code>UPGRADE.md</code> и release notes именно этого релиза. Не обходите release-identity, health или rollback проверки вручную. Multi-node/HA update используйте только для отдельно опубликованного квалифицированного профиля.</p>
             <div class="update-facts">
               <div><strong>1. Backup</strong><span>до изменения установленной системы</span></div>
               <div><strong>2. Stable release</strong><span>только официальный канал</span></div>
