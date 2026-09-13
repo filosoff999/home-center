@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Установка Home Center — установка и первый запуск</title>
+  <meta name="description" content="Установка Home Center из официального stable-канала, проверка релиза, первый вход, обновление и безопасные ограничения текущей версии.">
+  <meta name="theme-color" content="#f7faf8">
+  <link rel="canonical" href="https://home.control-center.pro/docs.html">
+  <link rel="icon" href="/assets/logo.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/assets/simple.css">
+  <script defer src="/assets/app.js"></script>
+</head>
+<body>
+  <a class="skip" href="#content">К содержимому</a>
+  <header class="site-header" data-header>
+    <div class="shell header-inner">
+      <a class="brand" href="/"><img src="/assets/logo.svg" alt="" width="34" height="34"><span>Home Center</span></a>
+      <button class="menu-button" type="button" aria-expanded="false" aria-controls="site-nav" data-menu-button><span></span><span></span><span></span><span class="sr-only">Меню</span></button>
+      <nav id="site-nav" class="site-nav" data-menu>
+        <a href="/">Главная</a>
+        <a href="/#cozy">Уютный</a>
+        <a href="/#family">Семья</a>
+        <a href="/#platform">Платформа</a>
+        <a class="current" href="/docs.html">Установка</a>
+        <a href="/releases.html">Версии</a>
+      </nav>
+      <a class="version-chip" href="/releases.html">Stable 0.63.0</a>
+    </div>
+  </header>
+
+  <main id="content">
+    <section class="page-hero">
+      <div class="shell">
+        <span class="kicker">Установка</span>
+        <h1>Установите Home Center и начните с простого интерфейса.</h1>
+        <p>Пользовательская установка выполняется из официального stable-канала. Текущий stable-релиз — Home Center 0.63.0.</p>
+        <div class="hero-actions">
+          <a class="button primary" href="https://github.com/ControlCenterSoft/home-center-stable/releases/tag/v0.63.0">Открыть Stable 0.63.0</a>
+          <a class="button secondary" href="#requirements">Что понадобится</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="shell page-grid">
+        <aside class="doc-nav">
+          <strong>По шагам</strong>
+          <a href="#requirements">Что понадобится</a>
+          <a href="#download">1. Скачать</a>
+          <a href="#verify">2. Проверить</a>
+          <a href="#unpack">3. Распаковать</a>
+          <a href="#install">4. Установить</a>
+          <a href="#first-login">Первый вход</a>
+          <a href="#release-boundary">Граница 0.63.0</a>
+          <a href="#security-note">Безопасность 0.61.x</a>
+          <a href="#interfaces">Два интерфейса</a>
+          <a href="#update">Обновление</a>
+        </aside>
+
+        <div class="doc-content">
+          <section class="doc-section" id="requirements">
+            <span class="step-label">Перед началом</span>
+            <h2>Что понадобится</h2>
+            <p>64-битный Linux-сервер с systemd, Python 3.12 или новее, SQLite, административный доступ и стандартные утилиты <code>tar</code> и <code>sha256sum</code>. TLS-идентичности для Web-доступа предоставляет администратор. Для важных данных заранее подготовьте резервную копию.</p>
+            <div class="callout"><strong>Home Center не должен самовольно перестраивать домашнюю сеть.</strong><p>Маршрутизация, NAT, port-forwarding, firewall и внешний доступ включаются только отдельными управляемыми действиями и только там, где соответствующая возможность квалифицирована.</p></div>
+          </section>
+
+          <section class="doc-section" id="download">
+            <span class="step-label">Шаг 1</span>
+            <h2>Скачайте официальный source-архив и SHA256SUMS</h2>
+            <p>Для чистой установки 0.63.0 используйте официальный source-архив Stable-релиза. Скачайте его вместе с <code>SHA256SUMS</code> из того же релиза.</p>
+            <div class="download-card">
+              <div><small>Текущий Stable</small><strong>home-center-0.63.0-source.tar.gz</strong><span>и SHA256SUMS из релиза v0.63.0</span></div>
+              <a class="button primary" href="https://github.com/ControlCenterSoft/home-center-stable/releases/tag/v0.63.0">Скачать</a>
+            </div>
+          </section>
+
+          <section class="doc-section" id="verify">
+            <span class="step-label">Шаг 2</span>
+            <h2>Проверьте релиз и контрольные суммы</h2>
+            <p>Перед установкой проверьте, что вы используете tag <code>v0.63.0</code>, а в релизе присутствуют <code>SHA256SUMS</code>, отдельный SHA-256 sidecar для Linux-архива, release manifest, acceptance evidence, public provenance и SPDX SBOM. Затем в каталоге со скачанными файлами выполните:</p>
+            <div class="code-block"><pre><code>sha256sum -c SHA256SUMS --ignore-missing</code></pre></div>
+            <div class="callout warning"><strong>Продолжайте только после результата OK.</strong><p>Контрольная сумма подтверждает целостность файла, но не заменяет проверку поддерживаемого install/upgrade path для вашей исходной версии.</p></div>
+          </section>
+
+          <section class="doc-section" id="unpack">
+            <span class="step-label">Шаг 3</span>
+            <h2>Распакуйте source-архив</h2>
+            <div class="code-block"><pre><code>mkdir -p home-center-0.63.0
+tar -xzf home-center-0.63.0-source.tar.gz -C home-center-0.63.0
+cd home-center-0.63.0</code></pre></div>
+          </section>
+
+          <section class="doc-section" id="install">
+            <span class="step-label">Шаг 4</span>
+            <h2>Сначала подготовьте установку, затем активируйте</h2>
+            <p>Авторитетная инструкция конкретного релиза находится в <code>INSTALL.md</code>. Штатный установщик запускается с вашей конфигурацией:</p>
+            <div class="code-block"><pre><code>sudo bash deploy/scripts/install.sh --config /path/to/config.json</code></pre></div>
+            <p>Сначала выполняйте staging без активации. <code>--activate</code> добавляйте только после проверки конфигурации, systemd units, путей сертификатов, состояния backup и готовности rollback. Не переносите примерные значения конфигурации в рабочую среду без проверки.</p>
+          </section>
+
+          <section class="doc-section" id="first-login">
+            <span class="step-label">Первый запуск</span>
+            <h2>Сразу смените первоначальный пароль</h2>
+            <p>После чистой установки создаётся локальная учётная запись <code>admin</code> с первоначальным паролем <code>admin</code>. При первом входе пароль обязательно меняется; до успешной смены обычная работа с системой запрещена. При обновлении уже установленный пользовательский пароль не должен сбрасываться.</p>
+            <div class="callout"><strong>Не откладывайте смену bootstrap-пароля.</strong><p>Первоначальные учётные данные предназначены только для первого входа.</p></div>
+          </section>
+
+          <section class="doc-section" id="release-boundary">
+            <span class="step-label">Текущий Stable</span>
+            <h2>Что подтверждает Home Center 0.63.0</h2>
+            <p>0.63.0 завершает release-линейку безопасного QR onboarding для гостя или устройства: короткоживущие одноразовые приглашения привязаны к точному состоянию Household и выбранному гостю/устройству, поддерживают отзыв и однократное использование, а результат действия считается успешным только после повторного чтения фактического состояния и проверки post-condition. Неопределённый или незавершённый результат не повторяется автоматически и не отображается как успех.</p>
+            <div class="callout"><strong>Поддерживаемый профиль остаётся <code>single-node-core</code>.</strong><p>Неподтверждённые provider execution, произвольные инфраструктурные изменения, внешняя публикация, multi-node HA/automatic failover и commercial capabilities не становятся доступными только из-за установки 0.63.0.</p></div>
+          </section>
+
+          <section class="doc-section" id="security-note">
+            <span class="step-label">Security correction</span>
+            <h2>Исправление 0.61.2 входит в текущую линию 0.63.0</h2>
+            <div class="callout"><strong>Не используйте 0.61.0 для split-routing.</strong><p>В 0.61.0 был обнаружен fail-closed дефект split routing: direct fallback мог выбираться без обязательной проверки deny/kill-switch policy. 0.61.2 исправил эту границу; текущий Stable 0.63.0 наследует исправленную линию. Если у вас установлен 0.61.0, не включайте split-routing до перехода на поддерживаемый исправленный Stable.</p></div>
+          </section>
+
+          <section class="doc-section" id="interfaces">
+            <span class="step-label">После входа</span>
+            <h2>Выберите удобный уровень управления</h2>
+            <div class="update-facts">
+              <div><strong>«Уютный»</strong><span>Домой, Семья, Мой дом. Минимум настроек и готовые безопасные сценарии для телефона.</span></div>
+              <div><strong>Полный</strong><span>Технические сведения и доступные административные функции без отдельного обходного пути безопасности.</span></div>
+            </div>
+            <p>Оба интерфейса управляют одной системой. «Уютный» не создаёт отдельную конфигурацию и не обходит общие правила авторизации, проверки результата и восстановления.</p>
+          </section>
+
+          <section class="doc-section" id="update">
+            <span class="step-label">Обновление</span>
+            <h2>Используйте только квалифицированный путь из релиза</h2>
+            <p>Для 0.63.0 квалифицирован переход с предыдущего Public Stable 0.62.1 и rollback обратно на 0.62.1. Перед обновлением сделайте backup, скачайте официальный Stable-релиз, проверьте <code>SHA256SUMS</code> и следуйте <code>UPGRADE.md</code> и release notes именно этого релиза. Не обходите release-identity, health или rollback проверки вручную. Multi-node/HA update используйте только для отдельно опубликованного квалифицированного профиля.</p>
+            <div class="update-facts">
+              <div><strong>1. Backup</strong><span>до изменения установленной системы</span></div>
+              <div><strong>2. Stable release</strong><span>только официальный канал</span></div>
+              <div><strong>3. SHA-256</strong><span>проверка до распаковки</span></div>
+              <div><strong>4. Health и rollback</strong><span>проверка до удаления предыдущей версии</span></div>
+            </div>
+          </section>
+
+          <section class="doc-section">
+            <span class="step-label">Важно</span>
+            <h2>Функции зависят от версии, профиля и модулей</h2>
+            <p>Главная страница описывает функциональный контур Home Center. Фактическая доступность определяется установленной версией Core, release profile, модулями и квалифицированными capabilities/providers. Неподтверждённые HA, provider execution и commercial capabilities не следует считать доступными только по описанию направления развития продукта.</p>
+            <div class="hero-actions"><a class="button primary" href="https://github.com/ControlCenterSoft/home-center-stable/releases">Stable-релизы</a><a class="button secondary" href="/releases.html">Версии и каналы</a></div>
+          </section>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="shell footer-inner"><div class="brand"><img src="/assets/logo.svg" alt="" width="30" height="30"><span>Home Center</span></div><p>Один центр для цифрового дома.</p><span>© 2026 Home Center</span></div>
+  </footer>
+</body>
+</html>

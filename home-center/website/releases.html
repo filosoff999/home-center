@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Версии Home Center — стабильный канал и возможности продукта</title>
+  <meta name="description" content="Стабильный канал Home Center, правила проверки релиза, security corrections и связь возможностей продукта с версиями и модулями.">
+  <meta name="theme-color" content="#f7faf8">
+  <link rel="canonical" href="https://home.control-center.pro/releases.html">
+  <link rel="icon" href="/assets/logo.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/assets/simple.css">
+  <script defer src="/assets/app.js"></script>
+</head>
+<body>
+  <a class="skip" href="#content">К содержимому</a>
+  <header class="site-header" data-header>
+    <div class="shell header-inner">
+      <a class="brand" href="/"><img src="/assets/logo.svg" alt="" width="34" height="34"><span>Home Center</span></a>
+      <button class="menu-button" type="button" aria-expanded="false" aria-controls="site-nav" data-menu-button><span></span><span></span><span></span><span class="sr-only">Меню</span></button>
+      <nav id="site-nav" class="site-nav" data-menu>
+        <a href="/">Главная</a>
+        <a href="/#cozy">Уютный</a>
+        <a href="/#family">Семья</a>
+        <a href="/#platform">Платформа</a>
+        <a href="/docs.html">Установка</a>
+        <a class="current" href="/releases.html">Версии</a>
+      </nav>
+      <a class="version-chip" href="/releases.html">Stable 0.63.0</a>
+    </div>
+  </header>
+
+  <main id="content">
+    <section class="page-hero">
+      <div class="shell">
+        <span class="kicker">Версии и каналы</span>
+        <h1>Продукт развивается постоянно.<br>Стабильный канал остаётся проверяемым.</h1>
+        <p>Главная страница описывает функциональный контур Home Center. Эта страница показывает текущий официальный Stable, его подтверждённую границу и security corrections, которые важно учитывать до установки или включения отдельных функций.</p>
+      </div>
+    </section>
+
+    <section class="section" style="padding-top:24px">
+      <div class="shell">
+        <div class="release-hero-card reveal">
+          <div>
+            <span class="badge">ТЕКУЩИЙ STABLE</span>
+            <h2>Home Center 0.63.0</h2>
+            <p>Опубликован 13 сентября 2026 года как текущий Public Stable и завершение линии QR guest/device onboarding. Доступны Linux/source artifacts, отдельный SHA-256 sidecar для Linux-архива, SHA256SUMS, acceptance/release manifests, public provenance v2 и SPDX SBOM.</p>
+          </div>
+          <div class="hero-actions" style="margin-top:0">
+            <a class="button primary" href="https://github.com/ControlCenterSoft/home-center-stable/releases/tag/v0.63.0">Скачать 0.63.0</a>
+            <a class="button secondary" href="/docs.html">Как установить</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="release-boundary">
+      <div class="shell">
+        <div class="section-head reveal">
+          <span class="kicker">Граница релиза</span>
+          <h2>0.63.0 добавляет безопасный QR onboarding гостя или устройства.</h2>
+          <p>Приглашения короткоживущие и одноразовые, привязаны к точному Household и выбранному гостю/устройству, поддерживают отзыв и защищённое однократное использование. Исполнение проходит через типизированную операцию с долговечным состоянием и обязательным повторным чтением результата: пользовательский успех отображается только после подтверждённой post-condition, а неопределённый результат не повторяется автоматически.</p>
+        </div>
+        <div class="callout"><strong>Release profile остаётся bounded <code>single-node-core</code>.</strong><p>Provider execution, произвольные инфраструктурные изменения, внешняя публикация, неподтверждённый multi-node HA/automatic failover и commercial capabilities требуют отдельной qualification и не становятся доступными только из-за установки 0.63.0.</p></div>
+      </div>
+    </section>
+
+    <section class="section" id="security-note">
+      <div class="shell">
+        <div class="section-head reveal">
+          <span class="kicker">Security correction</span>
+          <h2>0.61.2 заменяет 0.61.0 для split-routing policy; исправление входит в 0.63.0.</h2>
+          <p>В 0.61.0 был обнаружен fail-closed defect: для split routing direct fallback мог быть выбран без повторной проверки deny/kill-switch policy. 0.61.2 исправил эту границу и строгую проверку route/reason evidence. Текущий 0.63.0 наследует исправленную линию. Пользователям 0.61.0 не следует использовать split routing до перехода на поддерживаемый исправленный Stable.</p>
+        </div>
+        <div class="callout"><strong>Исправление policy не расширяет release profile.</strong><p>Наличие исправленной route-decision модели не означает автоматическую production qualification concrete VPN/network mutation, multi-node HA/automatic failover или commercial launch capabilities.</p></div>
+      </div>
+    </section>
+
+    <section class="section" id="channels">
+      <div class="shell">
+        <div class="section-head reveal">
+          <span class="kicker">Как читать сайт</span>
+          <h2>Возможность продукта и stable-пакет — не одно и то же.</h2>
+          <p>Home Center состоит из Core и подключаемых модулей. Конкретная функция доступна в установленной системе только тогда, когда она входит в установленный релиз, разрешена release profile и нужный модуль/provider квалифицирован для вашей инфраструктуры.</p>
+        </div>
+        <div class="three-benefits">
+          <article class="benefit reveal"><span>1</span><h3>Сайт</h3><p>Показывает продуктовый контур и направления: «Уютный», семья, умный дом, медиа, игры, MDM, сеть, HA, backup/recovery и другие возможности.</p></article>
+          <article class="benefit reveal"><span>2</span><h3>Stable-канал</h3><p>Содержит пользовательские пакеты с контрольными суммами, release evidence и точной границей поддерживаемых возможностей.</p></article>
+          <article class="benefit reveal"><span>3</span><h3>Модули и providers</h3><p>Часть возможностей доступна только при наличии соответствующего оборудования, операционной системы и отдельно квалифицированного provider.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section soft" id="product">
+      <div class="shell">
+        <div class="section-head reveal">
+          <span class="kicker">Функциональный контур</span>
+          <h2>Что относится к Home Center.</h2>
+          <p>Эти области рассматриваются как единый продуктовый контур. Их фактическая доступность зависит от версии и квалифицированных capabilities.</p>
+        </div>
+        <div class="feature-grid">
+          <article class="feature-card reveal"><span class="feature-icon">🏡</span><h3>«Уютный»</h3><p>Mobile-first интерфейс «Домой», «Семья» и «Мой дом» с intent-driven управлением и безопасными настройками.</p></article>
+          <article class="feature-card reveal"><span class="feature-icon">👨‍👩‍👧‍👦</span><h3>Семья</h3><p>Роли, профили, устройства, детский контроль, интернет-политики, VPN и гостевой доступ — по мере поддержки соответствующей версии.</p></article>
+          <article class="feature-card reveal"><span class="feature-icon">💡</span><h3>Дом и IoT</h3><p>ZigBee/MQTT, Yandex Smart Home, комнаты, устройства, сценарии и диагностика как часть дальнейшего продуктового контура.</p></article>
+          <article class="feature-card reveal"><span class="feature-icon">🎬</span><h3>Медиа и игры</h3><p>TorrServer, torrent client, Lampa и Minecraft Server входят в целевой контур модулей, но наличие на сайте не означает автоматическую доступность в каждом Stable.</p></article>
+          <article class="feature-card reveal"><span class="feature-icon">🖥️</span><h3>Компьютеры и MDM</h3><p>Windows deployment/software automation и Android MDM развиваются как управляемые capabilities с отдельными safety boundaries.</p></article>
+          <article class="feature-card reveal"><span class="feature-icon">🧩</span><h3>Платформа</h3><p>Single-node является полноценным режимом. Multi-node/HA, сеть, monitoring, capacity, backup и recovery заявляются только в реально квалифицированной границе.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="verify">
+      <div class="shell">
+        <div class="section-head reveal">
+          <span class="kicker">Перед установкой</span>
+          <h2>Проверяйте релиз, а не только номер версии.</h2>
+          <p>Для пользовательского пакета используйте страницу Stable-релиза и проверяйте SHA256SUMS, release manifest и acceptance evidence. После установки смотрите фактическую версию Core, release profile, список модулей и поддерживаемые capabilities/providers.</p>
+        </div>
+        <div class="story-list">
+          <article class="story reveal"><div class="story-number">01</div><div><h3>Скачайте из Stable-канала</h3><p>Используйте только официальный пользовательский release и его артефакты.</p></div></article>
+          <article class="story reveal"><div class="story-number">02</div><div><h3>Проверьте SHA-256</h3><p>Не продолжайте установку, если контрольная сумма скачанного файла не совпадает.</p></div></article>
+          <article class="story reveal"><div class="story-number">03</div><div><h3>Проверьте границу release profile</h3><p>Не включайте capability только потому, что она упомянута в roadmap или интерфейсе: нужна qualification именно для установленного Stable/profile/provider.</p></div></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section cta-section">
+      <div class="shell cta">
+        <div><span class="kicker">Установка</span><h2>Начните с официального Stable.</h2><p>Текущий stable-релиз — Home Center 0.63.0. Для чистой установки следуйте инструкции конкретного релиза.</p></div>
+        <div class="hero-actions"><a class="button primary" href="/docs.html">Инструкция</a><a class="button secondary" href="https://github.com/ControlCenterSoft/home-center-stable/releases/tag/v0.63.0">Открыть Stable 0.63.0</a></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="shell footer-inner"><div class="brand"><img src="/assets/logo.svg" alt="" width="30" height="30"><span>Home Center</span></div><p>Один центр для цифрового дома.</p><span>© 2026 Home Center</span></div>
+  </footer>
+</body>
+</html>
