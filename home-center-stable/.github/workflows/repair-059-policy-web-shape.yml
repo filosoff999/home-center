@@ -1,0 +1,108 @@
+name: Repair HC 0.59 public policy Web shape
+
+on:
+  push:
+    branches:
+      - fix/0.59-policy-web-shape-b1
+
+permissions:
+  contents: write
+
+concurrency:
+  group: hc-059-policy-web-shape-repair
+  cancel-in-progress: false
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout exact branch head
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.12"
+          cache: ""
+
+      - name: Extend bounded public Web shape and rebuild manifest
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path('tests/security_gate_public_release.py')
+          text = path.read_text(encoding='utf-8')
+          old = '    device_provider_resolution_web = device_enrollment_web | {"device-provider-resolution.js"}\n    actual_web = {path.name for path in (ROOT / "product/web/static").iterdir()}\n'
+          new = '    device_provider_resolution_web = device_enrollment_web | {"device-provider-resolution.js"}\n    policy_effective_state_web = device_provider_resolution_web | {"policy-effective-state.js"}\n    actual_web = {path.name for path in (ROOT / "product/web/static").iterdir()}\n'
+          if old not in text:
+              raise SystemExit('WEB_SHAPE_BASE_MARKER_MISSING')
+          text = text.replace(old, new, 1)
+          old = '        or actual_web == device_enrollment_web\n        or actual_web == device_provider_resolution_web,\n'
+          new = '        or actual_web == device_enrollment_web\n        or actual_web == device_provider_resolution_web\n        or actual_web == policy_effective_state_web,\n'
+          if old not in text:
+              raise SystemExit('WEB_SHAPE_ALLOWLIST_MARKER_MISSING')
+          text = text.replace(old, new, 1)
+          old = '    if actual_web == device_provider_resolution_web:\n        require(\'/static/device-provider-resolution.js\' in index_html, "device provider-resolution UI is not loaded")\n'
+          new = '    if actual_web in (device_provider_resolution_web, policy_effective_state_web):\n        require(\'/static/device-provider-resolution.js\' in index_html, "device provider-resolution UI is not loaded")\n    if actual_web == policy_effective_state_web:\n        require(\'/static/policy-effective-state.js\' in index_html, "policy effective-state UI is not loaded")\n'
+          if old not in text:
+              raise SystemExit('WEB_SHAPE_LOAD_MARKER_MISSING')
+          path.write_text(text.replace(old, new, 1), encoding='utf-8')
+          PY
+
+          rm -f .github/workflows/repair-059-policy-web-shape.yml
+          rm -f SOURCE-MANIFEST.sha256
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib, os
+          root = Path.cwd()
+          ignored = {'.git', '__pycache__'}
+          forbidden = {'.hc-dev', '.idea', '.vscode', 'dist', 'docs', 'ops', 'secrets'}
+          records = []
+          for directory, names, files in os.walk(root, topdown=True, followlinks=False):
+              base = Path(directory)
+              rel_dir = base.relative_to(root)
+              names[:] = sorted(name for name in names if name not in ignored)
+              if set(rel_dir.parts) & forbidden:
+                  raise SystemExit(f'FORBIDDEN_SOURCE_DIRECTORY:{rel_dir.as_posix()}')
+              for name in sorted(files):
+                  file_path = base / name
+                  rel = file_path.relative_to(root)
+                  if name == 'SOURCE-MANIFEST.sha256' or set(rel.parts) & ignored:
+                      continue
+                  if set(rel.parts) & forbidden:
+                      raise SystemExit(f'FORBIDDEN_SOURCE_PATH:{rel.as_posix()}')
+                  if file_path.is_symlink() or not file_path.is_file() or file_path.suffix in {'.pyc', '.pyo'}:
+                      raise SystemExit(f'SPECIAL_SOURCE_FILE:{rel.as_posix()}')
+                  records.append((rel.as_posix(), hashlib.sha256(file_path.read_bytes()).hexdigest()))
+          records.sort(key=lambda item: item[0])
+          Path('SOURCE-MANIFEST.sha256').write_text(
+              ''.join(f'{digest}  {rel}\n' for rel, digest in records),
+              encoding='ascii',
+          )
+          PY
+
+      - name: Qualify changed public boundary
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 deploy/scripts/build-release.py verify-source --source-root .
+          PYTHONPATH=product/control-plane/src python3 -m unittest discover -v -s tests -p 'test_*.py'
+          python3 tests/security_gate_public_release.py
+          git diff --check
+
+      - name: Commit exact repair
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git diff --cached --check
+          git commit -m 'HC 0.59: admit exact policy effective-state public Web shape'
+          git push origin HEAD:fix/0.59-policy-web-shape-b1
