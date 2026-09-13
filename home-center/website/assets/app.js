@@ -1,6 +1,6 @@
 (() => {
   const stableReleases = 'https://github.com/ControlCenterSoft/home-center-stable/releases';
-  const stableVersion = '0.61.0';
+  const stableVersion = '0.61.2';
   const legacyStableVersion = '0.15.0';
 
   // Старые публичные ссылки автоматически переводим в актуальный stable-канал.
@@ -25,7 +25,7 @@
   while ((node = walker.nextNode())) {
     const value = node.nodeValue || '';
     const updated = value
-      .replaceAll('home-center-0.15.0-linux-amd64.tar.gz', 'home-center-0.61.0-source.tar.gz')
+      .replaceAll('home-center-0.15.0-linux-amd64.tar.gz', 'home-center-0.61.2-source.tar.gz')
       .replaceAll(legacyStableVersion, stableVersion)
       .replaceAll('0.15 stable', `${stableVersion} stable`)
       .replaceAll('Опубликован 9 сентября 2026 года.', 'Опубликован 13 сентября 2026 года.')
@@ -37,12 +37,12 @@
 
   const downloadText = document.querySelector('#download p');
   if (downloadText) {
-    downloadText.textContent = 'Для чистой установки Home Center 0.61.0 скачайте официальный исходный архив и SHA256SUMS из того же stable-релиза.';
+    downloadText.textContent = 'Для чистой установки Home Center 0.61.2 скачайте официальный исходный архив и SHA256SUMS из того же stable-релиза.';
   }
 
   const updateText = document.querySelector('#update p');
   if (updateText) {
-    updateText.innerHTML = 'Перед обновлением сделайте backup, скачайте новый официальный Stable, проверьте <code>SHA256SUMS</code> и следуйте <code>UPGRADE.md</code> именно этого релиза. Для multi-node обновляйте по одному узлу и останавливайтесь при любой проблеме со здоровьем, репликацией или сервисами.';
+    updateText.innerHTML = 'Перед обновлением сделайте backup, скачайте новый официальный Stable, проверьте <code>SHA256SUMS</code> и следуйте <code>UPGRADE.md</code> именно этого релиза. Для multi-node используйте только отдельно квалифицированный профиль; неподтверждённый HA/rolling path не включайте вручную.';
   }
 
   const header = document.querySelector('[data-header]');
