@@ -1,7 +1,7 @@
 "use strict";
 
 window.HOME_CENTER_RELEASE = Object.freeze({
-  version: "0.62.1",
+  version: "0.63.0",
   revision: null,
 });
 

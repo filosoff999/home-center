@@ -1,14 +1,14 @@
 # Установка Home Center
 
-Home Center 0.62.1 предназначен для Linux с systemd, Python 3.12 или новее и SQLite. Текущий Public Stable квалифицирован в профиле **`single-node-core`**. Multi-node HA, automatic failover и межузловой production-profile для 0.62.1 не заявлены; не переносите инструкции будущих HA-профилей на этот релиз.
+Home Center 0.63.0 предназначен для Linux с systemd, Python 3.12 или новее и SQLite. Текущий Public Stable квалифицирован в профиле **`single-node-core`**. Multi-node HA, automatic failover и межузловой production-profile для 0.63.0 не заявлены; не переносите инструкции будущих HA-профилей на этот релиз.
 
 TLS-идентичности для Web-доступа предоставляет администратор. Требования к межузловым TLS-идентичностям применяются только к отдельно опубликованному и квалифицированному multi-node профилю.
 
 ## Проверка релиза
 
-Перед установкой проверьте опубликованный tag `v0.62.1`, `SHA256SUMS`, release manifest, acceptance evidence и SPDX SBOM. Контрольная сумма подтверждает целостность файла, но сама по себе не подтверждает совместимость конкретного upgrade/updater path.
+Перед установкой проверьте опубликованный tag `v0.63.0`, `SHA256SUMS`, release manifest, acceptance evidence и SPDX SBOM. Контрольная сумма подтверждает целостность файла, но сама по себе не подтверждает совместимость конкретного upgrade/updater path.
 
-Для **чистой установки 0.62.1** используйте официальный source-архив Stable-релиза и штатный скрипт:
+Для **чистой установки 0.63.0** используйте официальный source-архив Stable-релиза и штатный скрипт:
 
 ```bash
 sudo bash deploy/scripts/install.sh --config /path/to/config.json
