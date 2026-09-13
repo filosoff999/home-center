@@ -1,6 +1,6 @@
 (() => {
   const stableReleases = 'https://github.com/ControlCenterSoft/home-center-stable/releases';
-  const stableVersion = '0.62.1';
+  const stableVersion = '0.63.0';
   const legacyStableVersion = '0.15.0';
 
   // Старые публичные ссылки автоматически переводим в актуальный stable-канал.
@@ -19,13 +19,13 @@
     }
   }
 
-  // До полной статической синхронизации страниц не показываем пользователю устаревший Stable.
+  // До полной статической синхронизации главной страницы не показываем пользователю устаревший Stable.
   const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
   let node;
   while ((node = walker.nextNode())) {
     const value = node.nodeValue || '';
     const updated = value
-      .replaceAll('home-center-0.15.0-linux-amd64.tar.gz', 'home-center-0.62.1-source.tar.gz')
+      .replaceAll('home-center-0.15.0-linux-amd64.tar.gz', 'home-center-0.63.0-source.tar.gz')
       .replaceAll(legacyStableVersion, stableVersion)
       .replaceAll('0.15 stable', `${stableVersion} stable`)
       .replaceAll('Опубликован 9 сентября 2026 года.', 'Опубликован 13 сентября 2026 года.')
@@ -37,7 +37,7 @@
 
   const downloadText = document.querySelector('#download p');
   if (downloadText) {
-    downloadText.textContent = 'Для чистой установки Home Center 0.62.1 скачайте официальный исходный архив и SHA256SUMS из того же stable-релиза.';
+    downloadText.textContent = 'Для чистой установки Home Center 0.63.0 скачайте официальный исходный архив и SHA256SUMS из того же stable-релиза.';
   }
 
   const updateText = document.querySelector('#update p');
