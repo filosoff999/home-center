@@ -1,0 +1,90 @@
+name: Repair HC 0.60 Stable source manifest
+
+on:
+  push:
+    branches:
+      - qualification/hc060-stable-promotion-tooling-b3-20260913
+
+permissions:
+  contents: write
+
+concurrency:
+  group: hc060-stable-manifest-repair-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  repair:
+    if: github.repository == 'ControlCenterSoft/home-center-stable'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - name: Checkout exact repair branch
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+          ref: qualification/hc060-stable-promotion-tooling-b3-20260913
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.12"
+          cache: ""
+
+      - name: Regenerate exact manifest and qualify repaired tree
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          rm -f .github/workflows/hc060-manifest-repair.yml SOURCE-MANIFEST.sha256
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib
+          import os
+          import stat
+
+          root = Path.cwd()
+          excluded = {'.git', '__pycache__'}
+          forbidden = {'.hc-dev', '.idea', '.vscode', 'dist', 'docs', 'ops', 'secrets'}
+          records = []
+          for directory, names, files in os.walk(root, topdown=True, followlinks=False):
+              base = Path(directory)
+              rel_dir = base.relative_to(root)
+              names[:] = sorted(name for name in names if name not in excluded)
+              if set(rel_dir.parts) & forbidden:
+                  raise SystemExit(f'FORBIDDEN_SOURCE_DIRECTORY:{rel_dir.as_posix()}')
+              for name in sorted(files):
+                  path = base / name
+                  rel = path.relative_to(root)
+                  if name == 'SOURCE-MANIFEST.sha256' or set(rel.parts) & excluded:
+                      continue
+                  if set(rel.parts) & forbidden:
+                      raise SystemExit(f'FORBIDDEN_SOURCE_PATH:{rel.as_posix()}')
+                  info = path.lstat()
+                  if stat.S_ISLNK(info.st_mode) or not stat.S_ISREG(info.st_mode) or path.suffix in {'.pyc', '.pyo'}:
+                      raise SystemExit(f'SPECIAL_SOURCE_FILE:{rel.as_posix()}')
+                  digest = hashlib.sha256(path.read_bytes()).hexdigest()
+                  records.append((rel.as_posix(), digest))
+          records.sort(key=lambda item: item[0])
+          Path('SOURCE-MANIFEST.sha256').write_text(
+              ''.join(f'{digest}  {rel}\n' for rel, digest in records),
+              encoding='ascii',
+          )
+          PY
+          python3 deploy/scripts/build-release.py verify-source --source-root .
+          python3 -m unittest -v tests.test_stable_promotion_v10_contract
+          python3 tests/security_gate_public_release.py
+          test ! -e .github/workflows/hc060-manifest-repair.yml
+          git diff --check
+
+      - name: Commit exact repaired manifest and remove helper
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git diff --cached --quiet && { echo NO_REPAIR_DELTA >&2; exit 66; }
+          git commit -m 'ci(stable): bind HC 0.60 promotion tooling into source manifest'
+          git push origin HEAD:qualification/hc060-stable-promotion-tooling-b3-20260913
