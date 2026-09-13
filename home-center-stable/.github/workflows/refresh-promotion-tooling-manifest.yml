@@ -1,7 +1,9 @@
 name: Refresh stable promotion tooling manifest
 
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - qualification/hc062-stable-promotion-tooling-b3-20260913
 
 permissions:
   contents: write
@@ -66,7 +68,7 @@ jobs:
           python3 -m unittest -v tests.test_stable_promotion_v10_contract
           PYTHONPATH=product/control-plane/src python3 -m unittest discover -v -s tests -p 'test_*.py'
           python3 tests/security_gate_public_release.py
-          test -z "$(git status --porcelain=v1 --untracked-files=all | grep -v '^ M SOURCE-MANIFEST.sha256$' || true)" || true
+          PYTHONPATH=product/control-plane/src python3 -c 'import home_center.actions, home_center.api, home_center.module_admission, home_center.server'
 
       - name: Commit exact tooling restoration
         shell: bash
