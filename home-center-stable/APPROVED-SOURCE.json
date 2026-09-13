@@ -1,16 +1,16 @@
 {
   "schema": "home-center.approved-source-provenance.v1",
   "product": "home-center",
-  "version": "0.61.0",
+  "version": "0.61.2",
   "approved_repository": "ControlCenterSoft/home-center-development",
-  "approved_revision": "9376f16eaaf109085dc0e097e1a306cf6fa18468",
-  "approved_manifest_sha256": "08f66d91b73de9d97c12cf96679b891b6a4e7edda8c4db401b814f16e98d157d",
-  "stable_release_boundary_revision": "64d9a8296d30e68612573c4093296c2ebd3de154",
+  "approved_revision": "ff5ef0c7fb878ee28ff314cd5809c8cb0df2f726",
+  "approved_manifest_sha256": "99173747e526259d18458fa7d73fafa6d015b3154c220bac736fce52e40fd3c8",
+  "stable_release_boundary_revision": "40f096456e9739513b0ba4516d46d0bb61f11088",
   "summary": {
-    "total": 704,
+    "total": 706,
     "identical": 389,
     "adapted": 9,
-    "excluded": 306
+    "excluded": 308
   },
   "files": [
     {
@@ -73,21 +73,21 @@
       "path": "README.md",
       "approved_sha256": "93657b2ac76192cc2b457c7019c3a7b82afba5d8ee0a50d9a796234de3788814",
       "disposition": "adapted",
-      "stable_sha256": "61d29a9ddab3b41465aa8adc42ae260111502b1718c12358c75ba5c6309a8feb",
+      "stable_sha256": "4be5057ccf3f1a23f31021779a78223537abb779eb6254ffd9e509b4a29f89ea",
       "reason": "hardened-stable-integration"
     },
     {
       "path": "VERSION",
-      "approved_sha256": "0837d4f4ec7eb4fdc4eadb921b39fd917d565d4f76ecc2e424e01d3268050f19",
+      "approved_sha256": "d02656b09acd5fe9598ec0102a9af737bb94a2f5ce2b05ba888d18472294cecf",
       "disposition": "identical",
-      "stable_sha256": "0837d4f4ec7eb4fdc4eadb921b39fd917d565d4f76ecc2e424e01d3268050f19",
+      "stable_sha256": "d02656b09acd5fe9598ec0102a9af737bb94a2f5ce2b05ba888d18472294cecf",
       "reason": "approved-byte-copy"
     },
     {
       "path": "contracts/README.md",
       "approved_sha256": "a1e587c06ad129fe7fdc66ffc2f7aa25b06ab560fe1e8977525956cebb6be6a0",
       "disposition": "adapted",
-      "stable_sha256": "047bc74f400bed7a22ebc30b5e7a343025e7eca938212b425559f339e4195c7c",
+      "stable_sha256": "d30a7ef2c2066b1996f99657996991f4b2e8c83cad19345d645c8204ddf29452",
       "reason": "hardened-stable-integration"
     },
     {
@@ -1058,9 +1058,9 @@
     },
     {
       "path": "contracts/household/vpn-egress-route-decision.v1.schema.json",
-      "approved_sha256": "527123a9e2c8d78f10f17c69b88426295df3d666cd360a681a467f74bd3bcfb9",
+      "approved_sha256": "6cb28c4849b881ac0df6be9f39d06506c3c331af289a3999f77367160cfe8b05",
       "disposition": "identical",
-      "stable_sha256": "527123a9e2c8d78f10f17c69b88426295df3d666cd360a681a467f74bd3bcfb9",
+      "stable_sha256": "6cb28c4849b881ac0df6be9f39d06506c3c331af289a3999f77367160cfe8b05",
       "reason": "approved-byte-copy"
     },
     {
@@ -2226,10 +2226,24 @@
       "reason": "stable-release-documentation"
     },
     {
+      "path": "docs/releases/0.61.1.md",
+      "approved_sha256": "8da246a3ac8dadf56d039c7b1484b17c544d5dd5554d984e863e73fce58874e8",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-release-documentation"
+    },
+    {
+      "path": "docs/releases/0.61.2.md",
+      "approved_sha256": "3b6982ec7cb5211c5589889a62c41b2542800fd539397dd2bad6a0cce60bdfd7",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-release-documentation"
+    },
+    {
       "path": "product/control-plane/src/home_center/__init__.py",
-      "approved_sha256": "5d25dadf1f041b28d69e5b87e1d4282ae372a801c05f531f74ea3b4b26609daa",
+      "approved_sha256": "4b211be329255e2138af5307fe158e00c123f14d459c6ee4e8ebbe17d38329ad",
       "disposition": "identical",
-      "stable_sha256": "5d25dadf1f041b28d69e5b87e1d4282ae372a801c05f531f74ea3b4b26609daa",
+      "stable_sha256": "4b211be329255e2138af5307fe158e00c123f14d459c6ee4e8ebbe17d38329ad",
       "reason": "approved-byte-copy"
     },
     {
@@ -3438,23 +3452,23 @@
     },
     {
       "path": "product/control-plane/src/home_center/vpn_egress_policy.py",
-      "approved_sha256": "12cc6d43c65a6b7240735d507ce7d66233f9fa86489620544ee1b9791bf1f16a",
+      "approved_sha256": "fc8567ff4659cf8330c047b26227556b7b0be53ae7bc0fa24568a46a0e23e6d3",
       "disposition": "identical",
-      "stable_sha256": "12cc6d43c65a6b7240735d507ce7d66233f9fa86489620544ee1b9791bf1f16a",
+      "stable_sha256": "fc8567ff4659cf8330c047b26227556b7b0be53ae7bc0fa24568a46a0e23e6d3",
       "reason": "approved-byte-copy"
     },
     {
       "path": "product/control-plane/src/home_center/vpn_egress_policy_api.py",
-      "approved_sha256": "8970036b5f9f8b9aea93248ed8b7a80f47b7c987f291ebbb8eeaa6badc3deb16",
+      "approved_sha256": "44858a8baaf0aefbd79aedb2d769be13e0445fc6fea58e6888a3b026a4c9afcf",
       "disposition": "identical",
-      "stable_sha256": "8970036b5f9f8b9aea93248ed8b7a80f47b7c987f291ebbb8eeaa6badc3deb16",
+      "stable_sha256": "44858a8baaf0aefbd79aedb2d769be13e0445fc6fea58e6888a3b026a4c9afcf",
       "reason": "approved-byte-copy"
     },
     {
       "path": "product/control-plane/src/home_center/vpn_egress_policy_validation.py",
-      "approved_sha256": "cf83ecab07f6089d3e3a82272b84fbb536897e671df5c7bba69dd8ab80f4b8b2",
+      "approved_sha256": "a066448e75675c0d087b1a6a3092fa0873070a0daf49077fed009045f6b67e8e",
       "disposition": "identical",
-      "stable_sha256": "cf83ecab07f6089d3e3a82272b84fbb536897e671df5c7bba69dd8ab80f4b8b2",
+      "stable_sha256": "a066448e75675c0d087b1a6a3092fa0873070a0daf49077fed009045f6b67e8e",
       "reason": "approved-byte-copy"
     },
     {
@@ -3508,9 +3522,9 @@
     },
     {
       "path": "product/web/static/index.html",
-      "approved_sha256": "0929288c7e548afc5fa19466e3cc1df1fad40b88710b4288d658624ba25aae56",
+      "approved_sha256": "41aab891392c716397ef8fe20f1add2089f329ad311a534569c6beb299ae7878",
       "disposition": "adapted",
-      "stable_sha256": "72e7a5eddbfb6ff2da22d4e6c39c88bd3d2bc3995eff04208b444ce7e88193e0",
+      "stable_sha256": "b63b961009b9f7419390182f4a4694a543e0db16d9c4b132df3454c9b731ae0f",
       "reason": "hardened-stable-integration"
     },
     {
@@ -3536,9 +3550,9 @@
     },
     {
       "path": "pyproject.toml",
-      "approved_sha256": "94f0e10b10c088f15804ddefd5006a98429991e61b51771d1a7cb340b7be715c",
+      "approved_sha256": "4b07f165c3a8f466a6d1bc00d2a4bca9b9685d833e82779edd8df7349a855a9b",
       "disposition": "identical",
-      "stable_sha256": "94f0e10b10c088f15804ddefd5006a98429991e61b51771d1a7cb340b7be715c",
+      "stable_sha256": "4b07f165c3a8f466a6d1bc00d2a4bca9b9685d833e82779edd8df7349a855a9b",
       "reason": "approved-byte-copy"
     },
     {
@@ -4838,28 +4852,28 @@
     },
     {
       "path": "tests/test_release_061_hosted_systemd_upgrade.py",
-      "approved_sha256": "3fbdf4b43d9652f129b66d230b7ac44939e7b41f79385558aad87ef2ba8608cc",
+      "approved_sha256": "b12627b2ebb99d8c12718b4c346ed0d2c6d73f65e1a8b9d8092c60a6b4edeba9",
       "disposition": "excluded",
       "stable_sha256": null,
       "reason": "stable-public-surface"
     },
     {
       "path": "tests/test_release_061_hosted_upgrade_drill.py",
-      "approved_sha256": "8f83f266727415909cb3e4c5abd2c54091fadb77f32595a6a67c5d96beb36e03",
+      "approved_sha256": "ee91ec14bf491b3f8cf5620e62af0942e18766e05974fc906be564db1b4020be",
       "disposition": "excluded",
       "stable_sha256": null,
       "reason": "stable-public-surface"
     },
     {
       "path": "tests/test_release_061_source_preparation.py",
-      "approved_sha256": "06e222ef1de5d55ba31eb4caef62fb872d36d1e99e6713ce9dd8d7c07385118d",
+      "approved_sha256": "d1cae8f10b2e3eec30179f500c4f649887089c4e5d4e3628b4187f9f99427971",
       "disposition": "excluded",
       "stable_sha256": null,
       "reason": "stable-public-surface"
     },
     {
       "path": "tests/test_release_061_technical_stable_gate.py",
-      "approved_sha256": "25f369528478b462ce05b26b55255ca49584ae3330f9f7654cc7874bd74b6fcb",
+      "approved_sha256": "f8407bdf640cf11bbcee4401fc7f3179f253498e1b0eb44cda8552fdb32b3249",
       "disposition": "excluded",
       "stable_sha256": null,
       "reason": "stable-public-surface"
@@ -4922,21 +4936,21 @@
     },
     {
       "path": "tests/test_vpn_egress_policy.py",
-      "approved_sha256": "c55a1c2374ba2a1282cc2c46decb75875891d561c5e256249742c444a2a16b04",
+      "approved_sha256": "07b08af208fda87bba783f446d87984097bc9e60c38054925890e817a9ad8afb",
       "disposition": "excluded",
       "stable_sha256": null,
       "reason": "stable-public-surface"
     },
     {
       "path": "tests/test_vpn_egress_policy_api.py",
-      "approved_sha256": "3ad15486dd17ebfa1b6082b690ff27589a0428c03060d6e04de745fc6be3f990",
+      "approved_sha256": "e7a1dff6621fde6c830a943b1463e815b9d396af9764bd02592443401d8e91e6",
       "disposition": "excluded",
       "stable_sha256": null,
       "reason": "stable-public-surface"
     },
     {
       "path": "tests/test_vpn_egress_policy_validation.py",
-      "approved_sha256": "0e1877400760c451b2ea337465de00771d2519923706ed573c717e1d451bbb0f",
+      "approved_sha256": "234eb285fe3cba4e937ee0e8be6b7207fe991a3c9c6ab3245dfd1351fac0e7ff",
       "disposition": "excluded",
       "stable_sha256": null,
       "reason": "stable-public-surface"
