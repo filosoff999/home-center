@@ -1,16 +1,16 @@
 {
   "schema": "home-center.approved-source-provenance.v1",
   "product": "home-center",
-  "version": "0.61.2",
+  "version": "0.62.1",
   "approved_repository": "ControlCenterSoft/home-center-development",
-  "approved_revision": "ff5ef0c7fb878ee28ff314cd5809c8cb0df2f726",
-  "approved_manifest_sha256": "99173747e526259d18458fa7d73fafa6d015b3154c220bac736fce52e40fd3c8",
-  "stable_release_boundary_revision": "40f096456e9739513b0ba4516d46d0bb61f11088",
+  "approved_revision": "8adc370a947c520d4bbb9f0e020cb03741e2e46c",
+  "approved_manifest_sha256": "14c966408ec031f6ca3163b1425b2d7d669b83735d5a76183b505e5391b4792f",
+  "stable_release_boundary_revision": "c3fee20a3ee562136a9bd4441a73e6fbb0b10309",
   "summary": {
-    "total": 706,
-    "identical": 389,
+    "total": 759,
+    "identical": 418,
     "adapted": 9,
-    "excluded": 308
+    "excluded": 332
   },
   "files": [
     {
@@ -50,7 +50,7 @@
     },
     {
       "path": ".github/workflows/publish-release.yml",
-      "approved_sha256": "8ef605679ae17cb5607f87480bf365bf3192ca1f6468abd7b82a6754bdebb9ab",
+      "approved_sha256": "9041124ea7dd39c7897092a6b7de9a923d010c9ecd7e925af2718cd9f89898f9",
       "disposition": "excluded",
       "stable_sha256": null,
       "reason": "stable-release-boundary"
@@ -73,21 +73,21 @@
       "path": "README.md",
       "approved_sha256": "93657b2ac76192cc2b457c7019c3a7b82afba5d8ee0a50d9a796234de3788814",
       "disposition": "adapted",
-      "stable_sha256": "4be5057ccf3f1a23f31021779a78223537abb779eb6254ffd9e509b4a29f89ea",
+      "stable_sha256": "02fa516069be82bf4c56eddb8733530ae7ce137b828ebe50ac9d4dc1f3cf2bc7",
       "reason": "hardened-stable-integration"
     },
     {
       "path": "VERSION",
-      "approved_sha256": "d02656b09acd5fe9598ec0102a9af737bb94a2f5ce2b05ba888d18472294cecf",
+      "approved_sha256": "03715f74a72cb8bc0e67956f88d2b319240568017c3f0977c8239e02bf1ca91e",
       "disposition": "identical",
-      "stable_sha256": "d02656b09acd5fe9598ec0102a9af737bb94a2f5ce2b05ba888d18472294cecf",
+      "stable_sha256": "03715f74a72cb8bc0e67956f88d2b319240568017c3f0977c8239e02bf1ca91e",
       "reason": "approved-byte-copy"
     },
     {
       "path": "contracts/README.md",
       "approved_sha256": "a1e587c06ad129fe7fdc66ffc2f7aa25b06ab560fe1e8977525956cebb6be6a0",
       "disposition": "adapted",
-      "stable_sha256": "d30a7ef2c2066b1996f99657996991f4b2e8c83cad19345d645c8204ddf29452",
+      "stable_sha256": "4405e4dfac02d3e185ab538e04f159af92a7af7931dc3f0915a59c4aea34eb04",
       "reason": "hardened-stable-integration"
     },
     {
@@ -1036,6 +1036,118 @@
       "reason": "approved-byte-copy"
     },
     {
+      "path": "contracts/household/role-identity-account-preflight-observation.v1.schema.json",
+      "approved_sha256": "2fb08bcdf2c9d728590b5096fc491ca40d83809e5a84014e2ed05d7f6400509f",
+      "disposition": "identical",
+      "stable_sha256": "2fb08bcdf2c9d728590b5096fc491ca40d83809e5a84014e2ed05d7f6400509f",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "contracts/household/role-identity-binding-state.v1.schema.json",
+      "approved_sha256": "7091515f5cfc9620d1b3d35ef04c58669a869c3c03abcfc02fc840b2e240d485",
+      "disposition": "identical",
+      "stable_sha256": "7091515f5cfc9620d1b3d35ef04c58669a869c3c03abcfc02fc840b2e240d485",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "contracts/household/role-identity-binding-transition-receipt.v1.schema.json",
+      "approved_sha256": "e27ea7feae9b28f5b03c255267807a2948356fd7eceec796dab03a8e81a12951",
+      "disposition": "identical",
+      "stable_sha256": "e27ea7feae9b28f5b03c255267807a2948356fd7eceec796dab03a8e81a12951",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "contracts/household/role-identity-provider-capability.v1.schema.json",
+      "approved_sha256": "facf3c376d913cbb885d54a98c0ba9e4a94645dbca04f4bfe710dccb06bf7fae",
+      "disposition": "identical",
+      "stable_sha256": "facf3c376d913cbb885d54a98c0ba9e4a94645dbca04f4bfe710dccb06bf7fae",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "contracts/household/role-identity-provider-qualification.v1.schema.json",
+      "approved_sha256": "d7771b14cf622056bd808954feb7d187e31ffce7b38c0a70b40c55a16935e464",
+      "disposition": "identical",
+      "stable_sha256": "d7771b14cf622056bd808954feb7d187e31ffce7b38c0a70b40c55a16935e464",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "contracts/household/role-identity-provisioning-adapter-result.v1.schema.json",
+      "approved_sha256": "bade16ee895f4b3a5585f3f2d86b00df7f9b9c14b988b34630d6b8bda2893a44",
+      "disposition": "identical",
+      "stable_sha256": "bade16ee895f4b3a5585f3f2d86b00df7f9b9c14b988b34630d6b8bda2893a44",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "contracts/household/role-identity-provisioning-api-bind-request.v1.schema.json",
+      "approved_sha256": "1ce73616466e22dbac7d309c23cecef7b25483251635e281a77a1fa629e22533",
+      "disposition": "identical",
+      "stable_sha256": "1ce73616466e22dbac7d309c23cecef7b25483251635e281a77a1fa629e22533",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "contracts/household/role-identity-provisioning-api-execute-request.v1.schema.json",
+      "approved_sha256": "3825cb8321812496d0302ee958d7120363fc8d53b0ecb256752fafc42d54ebcc",
+      "disposition": "identical",
+      "stable_sha256": "3825cb8321812496d0302ee958d7120363fc8d53b0ecb256752fafc42d54ebcc",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "contracts/household/role-identity-provisioning-api-plan-request.v1.schema.json",
+      "approved_sha256": "687ed46b8b7302f794e0752db0ff41ce0e6091ff935d7edc6c220143968fb808",
+      "disposition": "identical",
+      "stable_sha256": "687ed46b8b7302f794e0752db0ff41ce0e6091ff935d7edc6c220143968fb808",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "contracts/household/role-identity-provisioning-api-preflight-request.v1.schema.json",
+      "approved_sha256": "b4827177e87911afa24a30871a2950f06b6b8366749d56854e19d543597433ca",
+      "disposition": "identical",
+      "stable_sha256": "b4827177e87911afa24a30871a2950f06b6b8366749d56854e19d543597433ca",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "contracts/household/role-identity-provisioning-execution-receipt.v1.schema.json",
+      "approved_sha256": "32aa9fa7b8fe19eab850fabe9f7cea3b4eaed0f263fed122c502ceac946cdfe8",
+      "disposition": "identical",
+      "stable_sha256": "32aa9fa7b8fe19eab850fabe9f7cea3b4eaed0f263fed122c502ceac946cdfe8",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "contracts/household/role-identity-provisioning-execution-request.v1.schema.json",
+      "approved_sha256": "e931d5a565d7d363bcc713b430de9af56e1aaf05d6ee5336ca1eedd3c1093f13",
+      "disposition": "identical",
+      "stable_sha256": "e931d5a565d7d363bcc713b430de9af56e1aaf05d6ee5336ca1eedd3c1093f13",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "contracts/household/role-identity-provisioning-plan.v1.schema.json",
+      "approved_sha256": "43c4198f8453b0e3e395ae384a1f61a2184085cb6b0e114832fa86a4492882fa",
+      "disposition": "identical",
+      "stable_sha256": "43c4198f8453b0e3e395ae384a1f61a2184085cb6b0e114832fa86a4492882fa",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "contracts/household/role-identity-provisioning-preflight-decision.v1.schema.json",
+      "approved_sha256": "a701f1de4fa121ac03e0b5a008d3e4f357371817af9bedb905e4a336730c77c8",
+      "disposition": "identical",
+      "stable_sha256": "a701f1de4fa121ac03e0b5a008d3e4f357371817af9bedb905e4a336730c77c8",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "contracts/household/role-identity-provisioning-readback-observation.v1.schema.json",
+      "approved_sha256": "ab9848a0340149a889a2735b97cd129f626ec74accb895c9d331f460cc2242fe",
+      "disposition": "identical",
+      "stable_sha256": "ab9848a0340149a889a2735b97cd129f626ec74accb895c9d331f460cc2242fe",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "contracts/household/role-identity-provisioning-verification.v1.schema.json",
+      "approved_sha256": "e1b452b0bba0cf1a4b6c47c0c399796c8ce873ce19f61b10bb06ad63ee3d10a5",
+      "disposition": "identical",
+      "stable_sha256": "e1b452b0bba0cf1a4b6c47c0c399796c8ce873ce19f61b10bb06ad63ee3d10a5",
+      "reason": "approved-byte-copy"
+    },
+    {
       "path": "contracts/household/vpn-egress-observation.v1.schema.json",
       "approved_sha256": "f613b42cf2a70263cd11bb63f1cd9eca9a551eede72f69b4ea3596cd9fe856ad",
       "disposition": "identical",
@@ -1855,6 +1967,13 @@
       "reason": "stable-release-documentation"
     },
     {
+      "path": "docs/architecture/0.62-role-identity-provisioning-foundation.md",
+      "approved_sha256": "382d4938178adcd4c964afb0f7bbd84001bc1aee3be90fe3fc34c1dc58d89968",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-release-documentation"
+    },
+    {
       "path": "docs/architecture/cozy-interface.md",
       "approved_sha256": "e1979bb7695e44754390991ca159c5e64ae7fed05fa163cb66be475051d4fdfb",
       "disposition": "excluded",
@@ -2226,24 +2345,24 @@
       "reason": "stable-release-documentation"
     },
     {
-      "path": "docs/releases/0.61.1.md",
-      "approved_sha256": "8da246a3ac8dadf56d039c7b1484b17c544d5dd5554d984e863e73fce58874e8",
+      "path": "docs/releases/0.62.0.md",
+      "approved_sha256": "aff517fb891c2d6bcca97eb28e383c0bef94ba8a6462d5d7eb29823fc0ae1323",
       "disposition": "excluded",
       "stable_sha256": null,
       "reason": "stable-release-documentation"
     },
     {
-      "path": "docs/releases/0.61.2.md",
-      "approved_sha256": "3b6982ec7cb5211c5589889a62c41b2542800fd539397dd2bad6a0cce60bdfd7",
+      "path": "docs/releases/0.62.1.md",
+      "approved_sha256": "a02e72114b2edab12774cd0ec778ba8b9beb7dbbbfde8694bb8a980f8eed037d",
       "disposition": "excluded",
       "stable_sha256": null,
       "reason": "stable-release-documentation"
     },
     {
       "path": "product/control-plane/src/home_center/__init__.py",
-      "approved_sha256": "4b211be329255e2138af5307fe158e00c123f14d459c6ee4e8ebbe17d38329ad",
+      "approved_sha256": "7151df36b548536a61898d3e8bb3d66c3ee12b6c85f6ffd74ab6525d017fe7a9",
       "disposition": "identical",
-      "stable_sha256": "4b211be329255e2138af5307fe158e00c123f14d459c6ee4e8ebbe17d38329ad",
+      "stable_sha256": "7151df36b548536a61898d3e8bb3d66c3ee12b6c85f6ffd74ab6525d017fe7a9",
       "reason": "approved-byte-copy"
     },
     {
@@ -2328,6 +2447,13 @@
       "approved_sha256": "7e853a6786affffd0880c02e183925e6abb8a9ede241ab1ad7b447c7de9b135e",
       "disposition": "identical",
       "stable_sha256": "7e853a6786affffd0880c02e183925e6abb8a9ede241ab1ad7b447c7de9b135e",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "product/control-plane/src/home_center/api_v9.py",
+      "approved_sha256": "dbbeb7b30c285ae63f25555af485b08f2034b03ce5d9a00779d5134b5a2d26ac",
+      "disposition": "identical",
+      "stable_sha256": "dbbeb7b30c285ae63f25555af485b08f2034b03ce5d9a00779d5134b5a2d26ac",
       "reason": "approved-byte-copy"
     },
     {
@@ -3381,6 +3507,83 @@
       "reason": "approved-byte-copy"
     },
     {
+      "path": "product/control-plane/src/home_center/role_identity_binding_api_runtime.py",
+      "approved_sha256": "999b652133ccb1e6997c98b5ce90c87ab24a3b4c1f6b93bfb2a309b1a8350c43",
+      "disposition": "identical",
+      "stable_sha256": "999b652133ccb1e6997c98b5ce90c87ab24a3b4c1f6b93bfb2a309b1a8350c43",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "product/control-plane/src/home_center/role_identity_binding_transition.py",
+      "approved_sha256": "a65b430854fc62cefa109d5ed421bba5ed87393ecdbfd47eb8b4bd3dcdf43d30",
+      "disposition": "identical",
+      "stable_sha256": "a65b430854fc62cefa109d5ed421bba5ed87393ecdbfd47eb8b4bd3dcdf43d30",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "product/control-plane/src/home_center/role_identity_provider_qualification.py",
+      "approved_sha256": "3d779fdcce587803fda030ef7889a535673390e23851a7e844522b510c6a1d22",
+      "disposition": "identical",
+      "stable_sha256": "3d779fdcce587803fda030ef7889a535673390e23851a7e844522b510c6a1d22",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "product/control-plane/src/home_center/role_identity_provisioning.py",
+      "approved_sha256": "37a31abc3063a625bc5a70c3eef0a5a01f5f78c40fc000e5d2dfa5a6c7a9b40a",
+      "disposition": "identical",
+      "stable_sha256": "37a31abc3063a625bc5a70c3eef0a5a01f5f78c40fc000e5d2dfa5a6c7a9b40a",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "product/control-plane/src/home_center/role_identity_provisioning_api_composition.py",
+      "approved_sha256": "6c2a30d2f2c9c8495cc9d19d22a32d70b1090adc33d5c45830b78c19fbdb65c5",
+      "disposition": "identical",
+      "stable_sha256": "6c2a30d2f2c9c8495cc9d19d22a32d70b1090adc33d5c45830b78c19fbdb65c5",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "product/control-plane/src/home_center/role_identity_provisioning_api_runtime.py",
+      "approved_sha256": "aaee8d049383e64d17dc49232b9cf9d96f50dcb7b2d9e107b751300336cadf99",
+      "disposition": "identical",
+      "stable_sha256": "aaee8d049383e64d17dc49232b9cf9d96f50dcb7b2d9e107b751300336cadf99",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "product/control-plane/src/home_center/role_identity_provisioning_execution.py",
+      "approved_sha256": "9b7ca08902eb43809b9e7a6c537b78da1af65f12509e321edf010e61b5d5a982",
+      "disposition": "identical",
+      "stable_sha256": "9b7ca08902eb43809b9e7a6c537b78da1af65f12509e321edf010e61b5d5a982",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "product/control-plane/src/home_center/role_identity_provisioning_preflight.py",
+      "approved_sha256": "79ee06f551a8b82d53fb49e37e0b7c1f3f31734034e4790a513c445e0b7cee1d",
+      "disposition": "identical",
+      "stable_sha256": "79ee06f551a8b82d53fb49e37e0b7c1f3f31734034e4790a513c445e0b7cee1d",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "product/control-plane/src/home_center/role_identity_provisioning_runtime.py",
+      "approved_sha256": "772c4483dbfe36621ed0b67cf38c7dadfd435cb59917fe0bacf0a37268760f21",
+      "disposition": "identical",
+      "stable_sha256": "772c4483dbfe36621ed0b67cf38c7dadfd435cb59917fe0bacf0a37268760f21",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "product/control-plane/src/home_center/role_identity_provisioning_runtime_safe.py",
+      "approved_sha256": "e6a61c8609a5f07070db198747a6344090428d7f372e79a2b036106703f673f2",
+      "disposition": "identical",
+      "stable_sha256": "e6a61c8609a5f07070db198747a6344090428d7f372e79a2b036106703f673f2",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "product/control-plane/src/home_center/role_identity_provisioning_verification.py",
+      "approved_sha256": "de7091b8cf826aff592c3e648a8dd4c2ed8dc0d8bdd5f2a7aa03d8131f698f33",
+      "disposition": "identical",
+      "stable_sha256": "de7091b8cf826aff592c3e648a8dd4c2ed8dc0d8bdd5f2a7aa03d8131f698f33",
+      "reason": "approved-byte-copy"
+    },
+    {
       "path": "product/control-plane/src/home_center/runbook_state.py",
       "approved_sha256": "dc3064c2f13f317e5b680458d6fd64e848b77b812faba1c763a348f49f8bd523",
       "disposition": "identical",
@@ -3389,16 +3592,23 @@
     },
     {
       "path": "product/control-plane/src/home_center/runtime.py",
-      "approved_sha256": "90e40d5072c834b390627fd143fa9b7e7833a8748f4f463559b0de8410f6688d",
+      "approved_sha256": "bf6950c1107d435c9a8a0b933849f4166e69f4416aebfa6fb8d33d226c0914d0",
       "disposition": "identical",
-      "stable_sha256": "90e40d5072c834b390627fd143fa9b7e7833a8748f4f463559b0de8410f6688d",
+      "stable_sha256": "bf6950c1107d435c9a8a0b933849f4166e69f4416aebfa6fb8d33d226c0914d0",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "product/control-plane/src/home_center/runtime_safe.py",
+      "approved_sha256": "f40820584ee998a9aa3e98c8eca42d1f81840456d59f1173c08d7c71ba14801d",
+      "disposition": "identical",
+      "stable_sha256": "f40820584ee998a9aa3e98c8eca42d1f81840456d59f1173c08d7c71ba14801d",
       "reason": "approved-byte-copy"
     },
     {
       "path": "product/control-plane/src/home_center/server.py",
-      "approved_sha256": "a6f654ef2a5b83c8aa2339abb991876d827c612facd22f30ff6b9d9379522517",
+      "approved_sha256": "9a8daa685d5b17be5bb62e04e7238449ab902e3eacbbdceffa0800ed36e81eb6",
       "disposition": "identical",
-      "stable_sha256": "a6f654ef2a5b83c8aa2339abb991876d827c612facd22f30ff6b9d9379522517",
+      "stable_sha256": "9a8daa685d5b17be5bb62e04e7238449ab902e3eacbbdceffa0800ed36e81eb6",
       "reason": "approved-byte-copy"
     },
     {
@@ -3522,9 +3732,9 @@
     },
     {
       "path": "product/web/static/index.html",
-      "approved_sha256": "41aab891392c716397ef8fe20f1add2089f329ad311a534569c6beb299ae7878",
+      "approved_sha256": "6814ca38f4fb862df0af6f6fd43a9fc3777fc20f5ec6e9065cc772775c246b6d",
       "disposition": "adapted",
-      "stable_sha256": "b63b961009b9f7419390182f4a4694a543e0db16d9c4b132df3454c9b731ae0f",
+      "stable_sha256": "6de024bf76d9b21cdcd2d2b0ebfd9d9c6fbd71b146090c34561e6c52e9f2a302",
       "reason": "hardened-stable-integration"
     },
     {
@@ -3550,9 +3760,9 @@
     },
     {
       "path": "pyproject.toml",
-      "approved_sha256": "4b07f165c3a8f466a6d1bc00d2a4bca9b9685d833e82779edd8df7349a855a9b",
+      "approved_sha256": "032f3916043f7d29335cebbf1c4a2cbadeef22b4734861a425e89b3813e78426",
       "disposition": "identical",
-      "stable_sha256": "4b07f165c3a8f466a6d1bc00d2a4bca9b9685d833e82779edd8df7349a855a9b",
+      "stable_sha256": "032f3916043f7d29335cebbf1c4a2cbadeef22b4734861a425e89b3813e78426",
       "reason": "approved-byte-copy"
     },
     {
@@ -3599,7 +3809,7 @@
     },
     {
       "path": "tests/conftest.py",
-      "approved_sha256": "1dba492ad140812b24194900142621e13c44ff760a33bee176ad6953f00ab16f",
+      "approved_sha256": "1b4cd5484f9537c059e6aa1a006c363b2d6cafcb69229ee1d80877731235af65",
       "disposition": "excluded",
       "stable_sha256": null,
       "reason": "stable-public-surface"
@@ -3628,6 +3838,13 @@
     {
       "path": "tests/test_api_v8_policy_enforcement_route.py",
       "approved_sha256": "75eadaae5ae84caeeb97263d449e303b8b91ef149fbe637ae463c89e24b7f301",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_api_v9_identity_provisioning_route.py",
+      "approved_sha256": "163796e012004faf4ef0673bdbc469a1e973cadffb1328a6cf1b767f4339e9ab",
       "disposition": "excluded",
       "stable_sha256": null,
       "reason": "stable-public-surface"
@@ -4026,7 +4243,7 @@
     },
     {
       "path": "tests/test_household_policy_effective_state_api_ui.py",
-      "approved_sha256": "e68420ba5cb5c2fc3416c6cd26cb1aba851eea0cd07e6a6226675e9521ff8612",
+      "approved_sha256": "5e8a535484533bbc53aeb0fa9810a50d53b8b1036cfe11720dd8b829d70cda58",
       "disposition": "excluded",
       "stable_sha256": null,
       "reason": "stable-public-surface"
@@ -4852,28 +5069,98 @@
     },
     {
       "path": "tests/test_release_061_hosted_systemd_upgrade.py",
-      "approved_sha256": "b12627b2ebb99d8c12718b4c346ed0d2c6d73f65e1a8b9d8092c60a6b4edeba9",
+      "approved_sha256": "102193e8ff4b7b792d3c5dfc0abec7c3ef798d0fcf45836de995602e4e9b248b",
       "disposition": "excluded",
       "stable_sha256": null,
       "reason": "stable-public-surface"
     },
     {
       "path": "tests/test_release_061_hosted_upgrade_drill.py",
-      "approved_sha256": "ee91ec14bf491b3f8cf5620e62af0942e18766e05974fc906be564db1b4020be",
+      "approved_sha256": "5c9d273ff1ec1be574fedbc903e228a94045d010ba601f638e560ddea541b69c",
       "disposition": "excluded",
       "stable_sha256": null,
       "reason": "stable-public-surface"
     },
     {
       "path": "tests/test_release_061_source_preparation.py",
-      "approved_sha256": "d1cae8f10b2e3eec30179f500c4f649887089c4e5d4e3628b4187f9f99427971",
+      "approved_sha256": "2380364543620340de9f376e2d5a48537c368e9374b0c4ff030519550cd7ab84",
       "disposition": "excluded",
       "stable_sha256": null,
       "reason": "stable-public-surface"
     },
     {
       "path": "tests/test_release_061_technical_stable_gate.py",
-      "approved_sha256": "f8407bdf640cf11bbcee4401fc7f3179f253498e1b0eb44cda8552fdb32b3249",
+      "approved_sha256": "25f369528478b462ce05b26b55255ca49584ae3330f9f7654cc7874bd74b6fcb",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_release_062_api_artifact_membership.py",
+      "approved_sha256": "634abf2011d790797d3b08abb6f2d50025e8b98d088bda276e22bae2c204e9b4",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_release_062_artifact_membership.py",
+      "approved_sha256": "8cd6e839109abf7263f558959a5ee1976fb9b5c1a500c4d61f6deb3a5738343a",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_release_062_hosted_systemd_upgrade.py",
+      "approved_sha256": "cf7fbc58781b8fd7e9c92ef4ee565b8541ac2dba28f518695ed156523ffc0b9e",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_release_062_hosted_upgrade_drill.py",
+      "approved_sha256": "d2ca4673b54981ae88d06679cb0ea8c12be7bd87efe43fa83e333b45b6d4b14e",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_release_062_preflight_artifact_membership.py",
+      "approved_sha256": "17f8243b0466c7a259ee4e09cb74af3cb0b624929449b05c21f07a78f4ca1e9a",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_release_062_production_safe_runtime.py",
+      "approved_sha256": "b0da85414225f05dc348df1f1a7b420c82c01752717794d7d11d393d2d6a0cb7",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_release_062_runtime_artifact_membership.py",
+      "approved_sha256": "0cf600bd68a0b40bae3de26223b078a79696d7886f5e22711ae7c075c111f278",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_release_062_source_preparation.py",
+      "approved_sha256": "af4cd863b7bcc16c2204fc9a9e40b14769af4c999fa4696b20823b42f6365db1",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_release_062_technical_stable_gate.py",
+      "approved_sha256": "a606e24307aa46b5196d36a03ee3f8e244b177244915a876ae902daabf5c153f",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_release_062_verification_artifact_membership.py",
+      "approved_sha256": "a75bfec342eb7e5dd9f5e3db214a70a8604c3f212707503a724e7e8222e001f2",
       "disposition": "excluded",
       "stable_sha256": null,
       "reason": "stable-public-surface"
@@ -4895,6 +5182,90 @@
     {
       "path": "tests/test_release_publication_post_stable_gate.py",
       "approved_sha256": "a2482bbdbd9ffd7d18f8f73a72194dab4f1894bc0e3e7050c18d06d53fd1853d",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_role_identity_binding_transition.py",
+      "approved_sha256": "6240358f3262b06dcae2ceddb1e9e0f74109cdf442276cd4c8a432b2783ebe2c",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_role_identity_provider_qualification.py",
+      "approved_sha256": "c6507f0b1464c5589528c900ddb9ce3e6f46c8292d102a7efe0b0d87d486e954",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_role_identity_provisioning.py",
+      "approved_sha256": "d3653c0b6d8cd1075b53a4bf89f18adbd2abfef350eb660a75431544cb46475e",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_role_identity_provisioning_api_composition.py",
+      "approved_sha256": "d3748d5d7865f0626553e05846d4b9edf0d4b2c66225935aa2731f80b228fa44",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_role_identity_provisioning_api_runtime.py",
+      "approved_sha256": "27035b8fdc6752aa67a2e332199c32dc24049761c428304ec3b9bc14cc46ac60",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_role_identity_provisioning_contract_schemas.py",
+      "approved_sha256": "37cbe1c21689664ac00356892ed32750f5d42c3f6497b59821a30cf62dc02051",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_role_identity_provisioning_execution.py",
+      "approved_sha256": "ed08dda3b46bc0d152cf3f6b897a0b7f139a2c1f9fdb344718633e45cb214627",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_role_identity_provisioning_preflight.py",
+      "approved_sha256": "ed7a8e0f64ff262eaf871af7a156db8bdb0ffe4f723acc790e0c51168a60f3ae",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_role_identity_provisioning_runtime.py",
+      "approved_sha256": "631ffb6912d3f8e67f45b324f7e17d6209a3e51125f1c31d4cce541f43c60d23",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_role_identity_provisioning_runtime_safe.py",
+      "approved_sha256": "60a4505dccd3ea8b36f94737b85cde6bc328ec8ab02910fc1f02237bbd6c9e45",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_role_identity_provisioning_verification.py",
+      "approved_sha256": "5fd95a229bb8f2589d459d9a1b81c6701523ba5812843ba228aa99c9b59120f9",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_role_identity_runtime_composition.py",
+      "approved_sha256": "77b792c9f180d03d647a1964a0b47c88220d70c5b6351a5ec61b3d6e675eda29",
       "disposition": "excluded",
       "stable_sha256": null,
       "reason": "stable-public-surface"
