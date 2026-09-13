@@ -1,16 +1,16 @@
 {
   "schema": "home-center.approved-source-provenance.v1",
   "product": "home-center",
-  "version": "0.58.0",
+  "version": "0.59.0",
   "approved_repository": "ControlCenterSoft/home-center-development",
-  "approved_revision": "94ceae8a3bac2c53beade4c258dc68767d1c04fb",
-  "approved_manifest_sha256": "6ca77f382acecd56d703f7c1c8104a91b02a84abdda9b8862ebb3ed3f47429c2",
-  "stable_release_boundary_revision": "b68e54d6985e6ea0b68a3995eef216103382720a",
+  "approved_revision": "1b54a0e72ca8fead4527946f95498dde41ee553f",
+  "approved_manifest_sha256": "b0761d45579e377fcfd3dec11f58784ed48408d33ad941d1306b13d3293c61eb",
+  "stable_release_boundary_revision": "cd3086ab5ca35e83fdcf2b41a54d78b1687ad8c5",
   "summary": {
-    "total": 560,
-    "identical": 319,
+    "total": 644,
+    "identical": 359,
     "adapted": 9,
-    "excluded": 232
+    "excluded": 276
   },
   "files": [
     {
@@ -73,21 +73,21 @@
       "path": "README.md",
       "approved_sha256": "93657b2ac76192cc2b457c7019c3a7b82afba5d8ee0a50d9a796234de3788814",
       "disposition": "adapted",
-      "stable_sha256": "b26747132ff0968ad9defd4c3b1d1b9014ee22b19a45ba0a40e3da85784bc20f",
+      "stable_sha256": "a912d1b555173a03616d7f34a4da8fdad6b3c41fdfb9d1835bf15d4f4a8baa50",
       "reason": "hardened-stable-integration"
     },
     {
       "path": "VERSION",
-      "approved_sha256": "f8de3de8a138497bc14999472efa9f096f64fa424a84665266a1f800f6ff5515",
+      "approved_sha256": "1576b10264db773520ed80039d6f655f5c587927c907deec1fb3a127ae6e5e87",
       "disposition": "identical",
-      "stable_sha256": "f8de3de8a138497bc14999472efa9f096f64fa424a84665266a1f800f6ff5515",
+      "stable_sha256": "1576b10264db773520ed80039d6f655f5c587927c907deec1fb3a127ae6e5e87",
       "reason": "approved-byte-copy"
     },
     {
       "path": "contracts/README.md",
       "approved_sha256": "a1e587c06ad129fe7fdc66ffc2f7aa25b06ab560fe1e8977525956cebb6be6a0",
       "disposition": "adapted",
-      "stable_sha256": "1bc63fd6edb7e7f89bb052abaf77661bbb9b484d30e3e7b42aea6e6616d8bb02",
+      "stable_sha256": "9aec92a084fa6beb5a80a206781de9f6d2f034deb575ce19a7f8e798c81dfc24",
       "reason": "hardened-stable-integration"
     },
     {
@@ -770,6 +770,153 @@
       "reason": "approved-byte-copy"
     },
     {
+      "path": "contracts/household/household-policy-actual-state-observation.v1.schema.json",
+      "approved_sha256": "5d59bf883b0d83cf249b235e66f7373a2579372a9b225281be47a81c76c23e30",
+      "disposition": "identical",
+      "stable_sha256": "5d59bf883b0d83cf249b235e66f7373a2579372a9b225281be47a81c76c23e30",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "contracts/household/household-policy-backend-apply-request.v1.schema.json",
+      "approved_sha256": "9234f715f1815a7732a28f1c3712ca8add06ad69a0a17e25fa615c7ae804dcd7",
+      "disposition": "identical",
+      "stable_sha256": "9234f715f1815a7732a28f1c3712ca8add06ad69a0a17e25fa615c7ae804dcd7",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "contracts/household/household-policy-change-confirm-request.v1.schema.json",
+      "approved_sha256": "c87539474549bf64774a71bfe141b8744ca25ac0894ae5ba74462d6d7900993a",
+      "disposition": "identical",
+      "stable_sha256": "c87539474549bf64774a71bfe141b8744ca25ac0894ae5ba74462d6d7900993a",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "contracts/household/household-policy-change-plan-request.v1.schema.json",
+      "approved_sha256": "fdf5cf9a333ba821f9d585326931badba1f2a4b2da41898bb0acaea8432d5f85",
+      "disposition": "identical",
+      "stable_sha256": "fdf5cf9a333ba821f9d585326931badba1f2a4b2da41898bb0acaea8432d5f85",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "contracts/household/household-policy-change-plan.v1.schema.json",
+      "approved_sha256": "ff7a1befa6cfcd80c0d4f884626eb5ec90b786928183025c188074ed6a2939b0",
+      "disposition": "identical",
+      "stable_sha256": "ff7a1befa6cfcd80c0d4f884626eb5ec90b786928183025c188074ed6a2939b0",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "contracts/household/household-policy-desired-state.v1.schema.json",
+      "approved_sha256": "0fb100549ae59550a7c19153d988c4002a1ce387c9dc54d3e8cb86a2bd36bc0a",
+      "disposition": "identical",
+      "stable_sha256": "0fb100549ae59550a7c19153d988c4002a1ce387c9dc54d3e8cb86a2bd36bc0a",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "contracts/household/household-policy-effective-state.v1.schema.json",
+      "approved_sha256": "534978db5186d0fc024d2b8659c4669b0701368b1b86d3aac501eb4db023f989",
+      "disposition": "identical",
+      "stable_sha256": "534978db5186d0fc024d2b8659c4669b0701368b1b86d3aac501eb4db023f989",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "contracts/household/household-policy-enforcement-admission.v1.schema.json",
+      "approved_sha256": "d12385126f52e8457e654de695ced267b31fb5139f5f0ae0eb7d035b62f97954",
+      "disposition": "identical",
+      "stable_sha256": "d12385126f52e8457e654de695ced267b31fb5139f5f0ae0eb7d035b62f97954",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "contracts/household/household-policy-enforcement-confirm-request.v1.schema.json",
+      "approved_sha256": "6a06d3629a762b9e72889c2182d119a791814a0f0b704a0738d9caba20730363",
+      "disposition": "identical",
+      "stable_sha256": "6a06d3629a762b9e72889c2182d119a791814a0f0b704a0738d9caba20730363",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "contracts/household/household-policy-enforcement-confirmation.v1.schema.json",
+      "approved_sha256": "44e0fc9e98e6e1635b880e3a56a02c9763d81610b0310bd7872906b2a386902b",
+      "disposition": "identical",
+      "stable_sha256": "44e0fc9e98e6e1635b880e3a56a02c9763d81610b0310bd7872906b2a386902b",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "contracts/household/household-policy-enforcement-execute-request.v1.schema.json",
+      "approved_sha256": "f5e70b5d151ae23d4f2ed4d90bed56ccbec4c52eda8340e7f5977d30b5f28d0e",
+      "disposition": "identical",
+      "stable_sha256": "f5e70b5d151ae23d4f2ed4d90bed56ccbec4c52eda8340e7f5977d30b5f28d0e",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "contracts/household/household-policy-enforcement-plan-request.v1.schema.json",
+      "approved_sha256": "c4372e645cfcf971a050b50d035fa2b35c40ba806de3d6518ba87ecfe6cd0186",
+      "disposition": "identical",
+      "stable_sha256": "c4372e645cfcf971a050b50d035fa2b35c40ba806de3d6518ba87ecfe6cd0186",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "contracts/household/household-policy-enforcement-plan.v1.schema.json",
+      "approved_sha256": "bdd146295e46dcad28663be241826f4b8765698a51cb314c520bd57d26c983e9",
+      "disposition": "identical",
+      "stable_sha256": "bdd146295e46dcad28663be241826f4b8765698a51cb314c520bd57d26c983e9",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "contracts/household/household-policy-enforcement-qualification-binding.v1.schema.json",
+      "approved_sha256": "13336f50a3f17016e6436dc42ff420c146dabd487ca00f3422fcd6dc3213d28c",
+      "disposition": "identical",
+      "stable_sha256": "13336f50a3f17016e6436dc42ff420c146dabd487ca00f3422fcd6dc3213d28c",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "contracts/household/household-policy-enforcement-receipt.v1.schema.json",
+      "approved_sha256": "9797d9965bff3bee8e38ca519d0c368a2e87e98ac8fb7d85b4cdf7b9c4891cfa",
+      "disposition": "identical",
+      "stable_sha256": "9797d9965bff3bee8e38ca519d0c368a2e87e98ac8fb7d85b4cdf7b9c4891cfa",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "contracts/household/household-policy-enforcement-reconciliation-snapshot.v1.schema.json",
+      "approved_sha256": "cca9e0336af86e953fc3a3355c2509358274b60856dd73a66cb9f87201caa337",
+      "disposition": "identical",
+      "stable_sha256": "cca9e0336af86e953fc3a3355c2509358274b60856dd73a66cb9f87201caa337",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "contracts/household/household-policy-reconciliation-evidence.v1.schema.json",
+      "approved_sha256": "33138cfe76dc76e4172ed3c495bc3f7ee0beb967ea2fdec4aed5eed55db74e8d",
+      "disposition": "identical",
+      "stable_sha256": "33138cfe76dc76e4172ed3c495bc3f7ee0beb967ea2fdec4aed5eed55db74e8d",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "contracts/household/household-policy-reconciliation-request.v1.schema.json",
+      "approved_sha256": "08865a8e6af5ae0ce1500138982805e2b58dab19f051783143c0460999ea7a0a",
+      "disposition": "identical",
+      "stable_sha256": "08865a8e6af5ae0ce1500138982805e2b58dab19f051783143c0460999ea7a0a",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "contracts/household/household-policy-verification-transition-receipt.v1.schema.json",
+      "approved_sha256": "bc99fd1bec57110b2c6840c6f9d4196624cda533c4d3209e7f629e188a4722a1",
+      "disposition": "identical",
+      "stable_sha256": "bc99fd1bec57110b2c6840c6f9d4196624cda533c4d3209e7f629e188a4722a1",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "contracts/household/household-policy-verification-transition-request.v1.schema.json",
+      "approved_sha256": "560ff2f800cf80dc1a8480a563730b8c323ebac7dcf103dd31901f26aee5fa6c",
+      "disposition": "identical",
+      "stable_sha256": "560ff2f800cf80dc1a8480a563730b8c323ebac7dcf103dd31901f26aee5fa6c",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "contracts/household/household-policy-verified-desired-state.v1.schema.json",
+      "approved_sha256": "adaa5ead5e9aabd4c4d6fae1ef01f4f5500d19e7a43bd35cf8812e486160f5ff",
+      "disposition": "identical",
+      "stable_sha256": "adaa5ead5e9aabd4c4d6fae1ef01f4f5500d19e7a43bd35cf8812e486160f5ff",
+      "reason": "approved-byte-copy"
+    },
+    {
       "path": "contracts/household/household-store.v1.schema.json",
       "approved_sha256": "ddd6e2d060d9f54b01cfeaed481c22229b31ff967a45872b6baf3d633f5d173b",
       "disposition": "identical",
@@ -1155,6 +1302,13 @@
       "reason": "stable-public-surface"
     },
     {
+      "path": "contracts/openapi/home-center-household-policy-enforcement.v1.openapi.json",
+      "approved_sha256": "46cd924c020efae5ab9bcdd48975e1186065d4fc2cdbc19cd904d92b25406faa",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
       "path": "contracts/openapi/home-center-intents.v1.openapi.json",
       "approved_sha256": "8d61bd62e7ccee97b55ba2d5636981b92bd4f70751350bd6ccab3946df328381",
       "disposition": "excluded",
@@ -1199,6 +1353,13 @@
     {
       "path": "contracts/releases/dsse-envelope.v1.schema.json",
       "approved_sha256": "f12ac056f465765d11abd618bae93aed8c63379f442b0e2fe12a66f790de499d",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "contracts/releases/policy-backend-qualification.v1.schema.json",
+      "approved_sha256": "64325d97a039361805097a8a13aea30eb19b3265f5c6eeeec9ce732d28b5f89b",
       "disposition": "excluded",
       "stable_sha256": null,
       "reason": "stable-public-surface"
@@ -1451,6 +1612,104 @@
     {
       "path": "docs/architecture/0.58-post-condition-verification.md",
       "approved_sha256": "76c218b5260ae1ddc493eeeee6366e23f4acfcef87705b76a5f939b9eb554dc4",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-release-documentation"
+    },
+    {
+      "path": "docs/architecture/0.59-policy-backend-qualification.md",
+      "approved_sha256": "d698be871ba31158ab27c29d5641b1c74af8f50a05465c572b2467e880f5715e",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-release-documentation"
+    },
+    {
+      "path": "docs/architecture/0.59-policy-composer-foundation.md",
+      "approved_sha256": "5b921a2246ed317b7ddf2d87aca1f23cccb3f7a739c1f693c4046aea679c407a",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-release-documentation"
+    },
+    {
+      "path": "docs/architecture/0.59-policy-effective-state.md",
+      "approved_sha256": "4ec3c6cfeb6f817bd77056434cc4a5d87e802ac51dccc99f0a171c4d08afd0b4",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-release-documentation"
+    },
+    {
+      "path": "docs/architecture/0.59-policy-enforcement-admission.md",
+      "approved_sha256": "4bc90f0e9f03fa5f35b88c1499830e60d993c8a0c181f3317ded357c3681b54d",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-release-documentation"
+    },
+    {
+      "path": "docs/architecture/0.59-policy-enforcement-execution-boundary.md",
+      "approved_sha256": "0870a1eb179d787f426c6f10897de527cdf549cf4e10d12f0cf5920695e17119",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-release-documentation"
+    },
+    {
+      "path": "docs/architecture/0.59-policy-enforcement-http-boundary.md",
+      "approved_sha256": "7fed76944f203dafa38128662f06ede515c820427b6c42d55220297a77148159",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-release-documentation"
+    },
+    {
+      "path": "docs/architecture/0.59-policy-enforcement-qualification-binding.md",
+      "approved_sha256": "7f8a1852cff7b650db2fded597b4d2d2ce3011eabcad497e6e9801a4d6dedfd2",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-release-documentation"
+    },
+    {
+      "path": "docs/architecture/0.59-policy-enforcement-reconciliation-snapshot.md",
+      "approved_sha256": "9e65fced3d625602737c6b6cf797dd264a4241a64392e5bca44c4a5debecb868",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-release-documentation"
+    },
+    {
+      "path": "docs/architecture/0.59-policy-reconciliation-api.md",
+      "approved_sha256": "b639d15b8b9e73a7256bf42b8b789ea09a856880043dc58b540e232f938cc146",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-release-documentation"
+    },
+    {
+      "path": "docs/architecture/0.59-policy-reconciliation-preparation.md",
+      "approved_sha256": "d5d1cc5b9571307989779801b89524578f10a25230ff2a4b22649de8c3b8e6ae",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-release-documentation"
+    },
+    {
+      "path": "docs/architecture/0.59-policy-reconciliation-recovery.md",
+      "approved_sha256": "a3bce936771ae7338b34c05404a8d521a7545060a6faabc2e343bb3caefb9fe1",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-release-documentation"
+    },
+    {
+      "path": "docs/architecture/0.59-policy-reconciliation-runtime.md",
+      "approved_sha256": "5a55d36bed269ee5634ded2e6b1e2b653d8bcd929293ddba41778d99d484fc27",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-release-documentation"
+    },
+    {
+      "path": "docs/architecture/0.59-policy-verification-state.md",
+      "approved_sha256": "9354e2a403a84b6c1050f10c31023fc0d19cfbda104a6b96256de3a88c03f849",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-release-documentation"
+    },
+    {
+      "path": "docs/architecture/0.59-policy-verification-transition.md",
+      "approved_sha256": "8e0eac30c6b0b289aeb77d30670c15601abd13eed8d08dd8fa42560676a7762d",
       "disposition": "excluded",
       "stable_sha256": null,
       "reason": "stable-release-documentation"
@@ -1806,10 +2065,17 @@
       "reason": "stable-release-documentation"
     },
     {
+      "path": "docs/releases/0.59.0.md",
+      "approved_sha256": "9f314de5a13b5e579d335611e9fcea17fd8b5abac791d5e00a28cff8db2fc3db",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-release-documentation"
+    },
+    {
       "path": "product/control-plane/src/home_center/__init__.py",
-      "approved_sha256": "a2eca8dd89655558c6e6757eac721e53db0eb0a2857875609865ce507239afdc",
+      "approved_sha256": "1ecae8e72d6f4a32d8cd2efdbd03282c46668fc007451a5bacf3b8310f8c75e2",
       "disposition": "identical",
-      "stable_sha256": "a2eca8dd89655558c6e6757eac721e53db0eb0a2857875609865ce507239afdc",
+      "stable_sha256": "1ecae8e72d6f4a32d8cd2efdbd03282c46668fc007451a5bacf3b8310f8c75e2",
       "reason": "approved-byte-copy"
     },
     {
@@ -1873,6 +2139,27 @@
       "approved_sha256": "37cd69f41a7aa4209c82043a663a2e48d9628a95ef454435da474a8c4f2e92bf",
       "disposition": "identical",
       "stable_sha256": "37cd69f41a7aa4209c82043a663a2e48d9628a95ef454435da474a8c4f2e92bf",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "product/control-plane/src/home_center/api_v6.py",
+      "approved_sha256": "78b6d7e8c035ac8719b5582d441e08748de6699b19401ce8eb63f1cf3d1c953f",
+      "disposition": "identical",
+      "stable_sha256": "78b6d7e8c035ac8719b5582d441e08748de6699b19401ce8eb63f1cf3d1c953f",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "product/control-plane/src/home_center/api_v7.py",
+      "approved_sha256": "af31aa8ab5d3bfd1280bb9b59dbd2913907572a9c66cf675efc5df467659b8d6",
+      "disposition": "identical",
+      "stable_sha256": "af31aa8ab5d3bfd1280bb9b59dbd2913907572a9c66cf675efc5df467659b8d6",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "product/control-plane/src/home_center/api_v8.py",
+      "approved_sha256": "7e853a6786affffd0880c02e183925e6abb8a9ede241ab1ad7b447c7de9b135e",
+      "disposition": "identical",
+      "stable_sha256": "7e853a6786affffd0880c02e183925e6abb8a9ede241ab1ad7b447c7de9b135e",
       "reason": "approved-byte-copy"
     },
     {
@@ -2394,6 +2681,104 @@
       "reason": "approved-byte-copy"
     },
     {
+      "path": "product/control-plane/src/home_center/household_policy_api.py",
+      "approved_sha256": "37611b78387ace1d82cb5c4b6183a2db124ce0c6ec5402db73f602c96fca7718",
+      "disposition": "identical",
+      "stable_sha256": "37611b78387ace1d82cb5c4b6183a2db124ce0c6ec5402db73f602c96fca7718",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "product/control-plane/src/home_center/household_policy_composer.py",
+      "approved_sha256": "822821f5e58932ee1dcb0b7ad469c1bfd76ab4a6a3904f91b1d59af606ebd2a2",
+      "disposition": "identical",
+      "stable_sha256": "822821f5e58932ee1dcb0b7ad469c1bfd76ab4a6a3904f91b1d59af606ebd2a2",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "product/control-plane/src/home_center/household_policy_effective_state.py",
+      "approved_sha256": "12a80c3b4b7451958724645c5c998969f61f289290d993f21dcc3923c23bf3ac",
+      "disposition": "identical",
+      "stable_sha256": "12a80c3b4b7451958724645c5c998969f61f289290d993f21dcc3923c23bf3ac",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "product/control-plane/src/home_center/household_policy_enforcement_admission.py",
+      "approved_sha256": "8804d5698a84c5439a54d343d4a9f73fdb4da46a4ca107c5c8b680f75dc7dd77",
+      "disposition": "identical",
+      "stable_sha256": "8804d5698a84c5439a54d343d4a9f73fdb4da46a4ca107c5c8b680f75dc7dd77",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "product/control-plane/src/home_center/household_policy_enforcement_qualification_binding.py",
+      "approved_sha256": "1044ad04e5fb0e39fb6811948cb2179dfcc5c144b0f30b4039033aedbe11a14d",
+      "disposition": "identical",
+      "stable_sha256": "1044ad04e5fb0e39fb6811948cb2179dfcc5c144b0f30b4039033aedbe11a14d",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "product/control-plane/src/home_center/household_policy_enforcement_reconciliation_snapshot.py",
+      "approved_sha256": "699f3bcaf3f66820527bbcc96c0aa68dd312b36e4871ca7590d12a68a49d8c21",
+      "disposition": "identical",
+      "stable_sha256": "699f3bcaf3f66820527bbcc96c0aa68dd312b36e4871ca7590d12a68a49d8c21",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "product/control-plane/src/home_center/household_policy_enforcement_runtime.py",
+      "approved_sha256": "0a9e96462b7dd873d8eb2840f13aaa2882247de6a942dff97768e580ae0c261c",
+      "disposition": "identical",
+      "stable_sha256": "0a9e96462b7dd873d8eb2840f13aaa2882247de6a942dff97768e580ae0c261c",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "product/control-plane/src/home_center/household_policy_reconciliation.py",
+      "approved_sha256": "ead83b333aab47874054500b5062071103ab3ef3bfed4ee15b1e3c724a0bec2d",
+      "disposition": "identical",
+      "stable_sha256": "ead83b333aab47874054500b5062071103ab3ef3bfed4ee15b1e3c724a0bec2d",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "product/control-plane/src/home_center/household_policy_reconciliation_api_runtime.py",
+      "approved_sha256": "741a259564af5a3a62644bdbcef527196a174778f8e52ab1a0337c0390a06211",
+      "disposition": "identical",
+      "stable_sha256": "741a259564af5a3a62644bdbcef527196a174778f8e52ab1a0337c0390a06211",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "product/control-plane/src/home_center/household_policy_reconciliation_recovery.py",
+      "approved_sha256": "36c85e5766be28b0519b596905c80d5d1ec164be908ce5bf96060926226b227a",
+      "disposition": "identical",
+      "stable_sha256": "36c85e5766be28b0519b596905c80d5d1ec164be908ce5bf96060926226b227a",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "product/control-plane/src/home_center/household_policy_reconciliation_runtime.py",
+      "approved_sha256": "190cacd46bb98ce1ae8e9b4a1409a0697aeeca9fe45f2e14c943f1970b357c68",
+      "disposition": "identical",
+      "stable_sha256": "190cacd46bb98ce1ae8e9b4a1409a0697aeeca9fe45f2e14c943f1970b357c68",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "product/control-plane/src/home_center/household_policy_runtime.py",
+      "approved_sha256": "607cf58b673c3c4adb15599332149fa65a70def03ca971ebed7263859fa62695",
+      "disposition": "identical",
+      "stable_sha256": "607cf58b673c3c4adb15599332149fa65a70def03ca971ebed7263859fa62695",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "product/control-plane/src/home_center/household_policy_verification_state.py",
+      "approved_sha256": "191284c703cae4eb6cb01d54102b98c96a8f5c9a3ba2d7959de48dce6d406dcc",
+      "disposition": "identical",
+      "stable_sha256": "191284c703cae4eb6cb01d54102b98c96a8f5c9a3ba2d7959de48dce6d406dcc",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "product/control-plane/src/home_center/household_policy_verification_transition.py",
+      "approved_sha256": "c81eb7c474d051ae4de80984a8cbe4588f1ac6a8574f348b6f3dd684ec19a1bc",
+      "disposition": "identical",
+      "stable_sha256": "c81eb7c474d051ae4de80984a8cbe4588f1ac6a8574f348b6f3dd684ec19a1bc",
+      "reason": "approved-byte-copy"
+    },
+    {
       "path": "product/control-plane/src/home_center/household_runtime.py",
       "approved_sha256": "261cef7d4a0a23fb213b34e240299b3172e4abdf12e99d53d06dfa3dee0475a3",
       "disposition": "identical",
@@ -2695,6 +3080,13 @@
       "reason": "approved-byte-copy"
     },
     {
+      "path": "product/control-plane/src/home_center/policy_backend_qualification.py",
+      "approved_sha256": "33d1e021b30753cdde16ced0c7d4b5862e43951902a34e2d61db0c47f6269f9f",
+      "disposition": "identical",
+      "stable_sha256": "33d1e021b30753cdde16ced0c7d4b5862e43951902a34e2d61db0c47f6269f9f",
+      "reason": "approved-byte-copy"
+    },
+    {
       "path": "product/control-plane/src/home_center/privileged_helper.py",
       "approved_sha256": "eb192e58dae90b47b06c240f2c465d7672a0c58afd2e67076be603fec66a8132",
       "disposition": "identical",
@@ -2773,16 +3165,16 @@
     },
     {
       "path": "product/control-plane/src/home_center/runtime.py",
-      "approved_sha256": "2bdfe595bafcc1ea9c9c7ea36192c713c24c8b2dc2efaa3edc6c132dc3ad3cb0",
+      "approved_sha256": "90e40d5072c834b390627fd143fa9b7e7833a8748f4f463559b0de8410f6688d",
       "disposition": "identical",
-      "stable_sha256": "2bdfe595bafcc1ea9c9c7ea36192c713c24c8b2dc2efaa3edc6c132dc3ad3cb0",
+      "stable_sha256": "90e40d5072c834b390627fd143fa9b7e7833a8748f4f463559b0de8410f6688d",
       "reason": "approved-byte-copy"
     },
     {
       "path": "product/control-plane/src/home_center/server.py",
-      "approved_sha256": "0c5df6a8558ea045af4efb2be85eae75cee2512aeed11cffaad4471587877dcd",
+      "approved_sha256": "a6f654ef2a5b83c8aa2339abb991876d827c612facd22f30ff6b9d9379522517",
       "disposition": "identical",
-      "stable_sha256": "0c5df6a8558ea045af4efb2be85eae75cee2512aeed11cffaad4471587877dcd",
+      "stable_sha256": "a6f654ef2a5b83c8aa2339abb991876d827c612facd22f30ff6b9d9379522517",
       "reason": "approved-byte-copy"
     },
     {
@@ -2885,9 +3277,9 @@
     },
     {
       "path": "product/web/static/index.html",
-      "approved_sha256": "ccc0f2cf9ee4549d570652eeedd3a011a35c0f1a7400c06b2f43b0dd0a689359",
+      "approved_sha256": "0b7c87828714f15598caa0a41140fa8d41d7678b03d7e83a7fca9d3661c05308",
       "disposition": "adapted",
-      "stable_sha256": "8fbba382021106d5825228e2255e0436ee321062c8beb640c4f505d49f987ca2",
+      "stable_sha256": "ab84f7aa96f6d91a1af742368e0d4c4aa3af197ac53f1d5c940a52c51cfdf63b",
       "reason": "hardened-stable-integration"
     },
     {
@@ -2905,10 +3297,17 @@
       "reason": "approved-byte-copy"
     },
     {
-      "path": "pyproject.toml",
-      "approved_sha256": "53b8ee55cbc2a405e12e2a949052b60f6a15e62d9d1abbe40c54574e1342f589",
+      "path": "product/web/static/policy-effective-state.js",
+      "approved_sha256": "67f2940717cd739d08d93c73d012814c178f26710671274ced879d3cd66f54bf",
       "disposition": "identical",
-      "stable_sha256": "53b8ee55cbc2a405e12e2a949052b60f6a15e62d9d1abbe40c54574e1342f589",
+      "stable_sha256": "67f2940717cd739d08d93c73d012814c178f26710671274ced879d3cd66f54bf",
+      "reason": "approved-byte-copy"
+    },
+    {
+      "path": "pyproject.toml",
+      "approved_sha256": "ee9472371930b6b1e02c9c8f4f2a6d91d69566f1350a262e2396af4ad61021ca",
+      "disposition": "identical",
+      "stable_sha256": "ee9472371930b6b1e02c9c8f4f2a6d91d69566f1350a262e2396af4ad61021ca",
       "reason": "approved-byte-copy"
     },
     {
@@ -2948,14 +3347,14 @@
     },
     {
       "path": "scripts/qualify_release_artifact.py",
-      "approved_sha256": "48b53a4cd11e614f13ad30cc378ff34ea4165438e9ccdd6fb6e7e88e1e7ab588",
+      "approved_sha256": "bcc1a0b49415b65972053f165e68037ea1f67db288c649f4e45b586eff379f2a",
       "disposition": "excluded",
       "stable_sha256": null,
       "reason": "stable-public-surface"
     },
     {
       "path": "tests/conftest.py",
-      "approved_sha256": "dc57053eb41477d8249ebe8ccdd80635b1439275e1606805564696ae46effc4c",
+      "approved_sha256": "8df26505f4e38e71a03ea6ee928e32ccef3d87c0117c51c70a22e648031c20be",
       "disposition": "excluded",
       "stable_sha256": null,
       "reason": "stable-public-surface"
@@ -2963,6 +3362,27 @@
     {
       "path": "tests/test_api_v5_cleanup_execution_route.py",
       "approved_sha256": "3448d1348c5ce522ceee824620886651e4e13e4cf122c530a47e6f5f3f980c7e",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_api_v7_policy_reconciliation_route.py",
+      "approved_sha256": "746094684bead5bf5cee3b339dd5489acfedf2ae10f6f43cca963d47a8aceeef",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_api_v8_policy_enforcement_contracts.py",
+      "approved_sha256": "a948bf98a8960f391a8efa520e27c3f9bc4b1a100a90ffa70caeb44021db3fc7",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_api_v8_policy_enforcement_route.py",
+      "approved_sha256": "75eadaae5ae84caeeb97263d449e303b8b91ef149fbe637ae463c89e24b7f301",
       "disposition": "excluded",
       "stable_sha256": null,
       "reason": "stable-public-surface"
@@ -3339,6 +3759,111 @@
       "reason": "stable-public-surface"
     },
     {
+      "path": "tests/test_household_policy_api.py",
+      "approved_sha256": "c7d7c6f9307e79e523c288a9245f4dda1d8255c15623b02cb78bae9fb0281f4d",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_household_policy_composer.py",
+      "approved_sha256": "97909e9af644ecf5d64d205520547a3eb4b0e55f198232943b4f096089c879a5",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_household_policy_effective_state.py",
+      "approved_sha256": "365415551ef64b10c4615a09da8c69e0fee983dcf6c80e3775c4fef726bd6226",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_household_policy_effective_state_api_ui.py",
+      "approved_sha256": "e68420ba5cb5c2fc3416c6cd26cb1aba851eea0cd07e6a6226675e9521ff8612",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_household_policy_enforcement_admission.py",
+      "approved_sha256": "488e1c56bdab1b5b24f80d89eb55d13a8190d46703297112384a3029575bc004",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_household_policy_enforcement_qualification_binding.py",
+      "approved_sha256": "2336a9cf300e0b01961fa8677c4177a51b40663df399278d93c8c09f33259c61",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_household_policy_enforcement_reconciliation_snapshot.py",
+      "approved_sha256": "133c2ce80fcd97b24c5e108b7aa2133c0efb3d3911363a577ed99d999607abbc",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_household_policy_enforcement_runtime.py",
+      "approved_sha256": "5f704a49aead1556b52b367ee2e2505192c34425bd97bcfe9f254d0e70d65700",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_household_policy_reconciliation.py",
+      "approved_sha256": "67a59101e8efc596a6269c4dc89ab61b299048ec8e17ec86449d2b134b3279af",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_household_policy_reconciliation_api_runtime.py",
+      "approved_sha256": "6331123c4f7517ad05903e294d2eac0580bff66f0f6b2ba0ff2ec6c94c688156",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_household_policy_reconciliation_recovery.py",
+      "approved_sha256": "cb0ab31766952278417cd101362e1a6b562c9a0038fb5f78e43d41c2f87dfdaa",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_household_policy_reconciliation_runtime.py",
+      "approved_sha256": "2682dad416bda0a5f27c9b94c3f9e11cc5bca5e507cdf1c0d8242db4efb81e99",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_household_policy_runtime.py",
+      "approved_sha256": "8fa9f395363d6c2c3e4b35b1960d25151f778d4d73f2644a296f9a91d2329670",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_household_policy_verification_state.py",
+      "approved_sha256": "597953dcc95dd7935ac0192f39eedd1f98fb0d36a0cfdb144515b7ea60ae05da",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_household_policy_verification_transition.py",
+      "approved_sha256": "5384067f4dd8261008054f19e8dcb1c6fda1fbd1d9f4e650abc8d21d40384351",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
       "path": "tests/test_household_runtime.py",
       "approved_sha256": "26c3315fa9bb75e50525e2e84674ab89d84de55cdffcf1856f34e3ee14462a6e",
       "disposition": "excluded",
@@ -3605,6 +4130,13 @@
       "reason": "stable-public-surface"
     },
     {
+      "path": "tests/test_policy_backend_qualification.py",
+      "approved_sha256": "97007261e00808b02ea194bde212482ca54b658c19eb1d3a305e295a4105c9f6",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
       "path": "tests/test_portable_runtime_topology.py",
       "approved_sha256": "619301d26279f306a412667f4c86d71152b79da4712d57bcdada0365db4a5d40",
       "disposition": "excluded",
@@ -3844,7 +4376,7 @@
     },
     {
       "path": "tests/test_release_058_artifact_backup_membership.py",
-      "approved_sha256": "38b9f84a57029f6fdcd066c2ac54871cea2e1932c18978152477f5991bc1912e",
+      "approved_sha256": "2fbbf43ce1dd114cc6e3f2c82005ad02bdd43b08a44a905299e47d01c03520bc",
       "disposition": "excluded",
       "stable_sha256": null,
       "reason": "stable-public-surface"
@@ -3879,7 +4411,63 @@
     },
     {
       "path": "tests/test_release_058_source_preparation.py",
-      "approved_sha256": "e7094c634680638de9cf091894ed80ada15b63e4d39e6b9555a432fadf34c7e9",
+      "approved_sha256": "9fe2ee10da952f3c46c214d06d22ca2839cf854f4b8f4158dadbb8afc0d04f67",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_release_059_artifact_required_members.py",
+      "approved_sha256": "b101a7f18b938d25fbb2a492e9ee7a96158af6a2d1fe47c7a8acef8781ce3019",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_release_059_hosted_systemd_upgrade.py",
+      "approved_sha256": "1d21c2fda6744759ec7ece41ac0cfa1bdc4b0b6eef0a054706aa2242eb5946dc",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_release_059_hosted_upgrade_drill.py",
+      "approved_sha256": "007ca4103216a4657e144ef7a07b3cb2ae61e330db06511d9fc87bb7637321cb",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_release_059_policy_backup_restore.py",
+      "approved_sha256": "cd84d54296f5d631403d1f70dc261391faff0ddcc82fba832cb58802c0988ae9",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_release_059_policy_contract_schemas.py",
+      "approved_sha256": "e7b6e225c3b0c4a518ffa2413552766ddea321fb62d648f6eb45f119f5007f88",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_release_059_policy_interrupted_write_recovery.py",
+      "approved_sha256": "55688b0aa078168ddcc3b8f5fba0f8e3d4d5ad0fcaacb5b9e0115175f60a525d",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_release_059_source_preparation.py",
+      "approved_sha256": "3fe6830f05f41f842e324b309be7f019564bc4fc738c8b9f129c7fa13caffcc0",
+      "disposition": "excluded",
+      "stable_sha256": null,
+      "reason": "stable-public-surface"
+    },
+    {
+      "path": "tests/test_release_059_technical_stable_gate.py",
+      "approved_sha256": "1c07a1c1de5479e0a18f934a150211a554fc07ea683a0cbeac885eddde0caa9a",
       "disposition": "excluded",
       "stable_sha256": null,
       "reason": "stable-public-surface"
