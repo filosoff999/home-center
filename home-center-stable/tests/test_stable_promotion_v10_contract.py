@@ -43,6 +43,18 @@ class StablePromotionV10ContractTests(unittest.TestCase):
         self.assertIn("python3 -m unittest discover -v -s tests -p 'test_*.py'", text)
         self.assertIn("HOME_CENTER_PUBLIC_EXPORT=PASS", text)
 
+    def test_r3_retry_preserves_exact_version_and_cumulative_web_dependency_order(self) -> None:
+        text = WORKFLOW.read_text(encoding="utf-8")
+        self.assertIn("startsWith(github.ref_name, 'promote10r3/')", text)
+        self.assertIn("device-provider-resolution.js", text)
+        self.assertIn("policy-effective-state.js", text)
+        self.assertIn("required.append('<script src=\"/static/device-provider-resolution.js\"></script>')", text)
+        self.assertIn("required.append('<script src=\"/static/policy-effective-state.js\"></script>')", text)
+        self.assertLess(
+            text.index("required.append('<script src=\"/static/device-provider-resolution.js\"></script>')"),
+            text.index("required.append('<script src=\"/static/policy-effective-state.js\"></script>')"),
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

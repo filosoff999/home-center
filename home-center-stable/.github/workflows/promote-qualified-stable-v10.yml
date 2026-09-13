@@ -15,7 +15,7 @@ jobs:
     if: >-
       github.repository == 'ControlCenterSoft/home-center-stable' &&
       github.ref_type == 'branch' &&
-      (startsWith(github.ref_name, 'promote10/') || startsWith(github.ref_name, 'promote10r2/'))
+      (startsWith(github.ref_name, 'promote10/') || startsWith(github.ref_name, 'promote10r2/') || startsWith(github.ref_name, 'promote10r3/'))
     runs-on: ubuntu-latest
     timeout-minutes: 35
     env:
@@ -178,17 +178,22 @@ jobs:
           index = root / 'product/web/static/index.html'
           if index.is_file():
               text = index.read_text(encoding='utf-8').replace(old_version, version)
+              required = []
               if (root / 'product/web/static/device-enrollment.js').is_file():
-                  required = (
+                  required.extend((
                       '<script src="/static/device-registration.js"></script>',
                       '<script src="/static/device-management-plan.js"></script>',
                       '<script src="/static/device-enrollment.js"></script>',
-                  )
-                  insertion = ''.join(f'  {item}\n' for item in required if item not in text)
-                  if insertion:
-                      if '</body>' not in text:
-                          raise SystemExit('PUBLIC_WEB_BODY_MISSING')
-                      text = text.replace('</body>', insertion + '</body>', 1)
+                  ))
+              if (root / 'product/web/static/device-provider-resolution.js').is_file():
+                  required.append('<script src="/static/device-provider-resolution.js"></script>')
+              if (root / 'product/web/static/policy-effective-state.js').is_file():
+                  required.append('<script src="/static/policy-effective-state.js"></script>')
+              insertion = ''.join(f'  {item}\n' for item in required if item not in text)
+              if insertion:
+                  if '</body>' not in text:
+                      raise SystemExit('PUBLIC_WEB_BODY_MISSING')
+                  text = text.replace('</body>', insertion + '</body>', 1)
               index.write_text(text, encoding='utf-8')
 
           for wf in (
