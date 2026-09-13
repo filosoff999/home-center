@@ -87,7 +87,7 @@
       "path": "contracts/README.md",
       "approved_sha256": "a1e587c06ad129fe7fdc66ffc2f7aa25b06ab560fe1e8977525956cebb6be6a0",
       "disposition": "adapted",
-      "stable_sha256": "4405e4dfac02d3e185ab538e04f159af92a7af7931dc3f0915a59c4aea34eb04",
+      "stable_sha256": "441c5d961a8462dcf90205db5e0f3b4e1a85aa899d4240a84c9b1c408e6a246e",
       "reason": "hardened-stable-integration"
     },
     {
