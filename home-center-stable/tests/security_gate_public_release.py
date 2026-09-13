@@ -24,6 +24,7 @@ def main() -> int:
     device_management_web = device_registration_web | {"device-management-plan.js"}
     device_enrollment_web = device_management_web | {"device-enrollment.js"}
     device_provider_resolution_web = device_enrollment_web | {"device-provider-resolution.js"}
+    policy_effective_state_web = device_provider_resolution_web | {"policy-effective-state.js"}
     actual_web = {path.name for path in (ROOT / "product/web/static").iterdir()}
     require(
         actual_web == base_web
@@ -31,7 +32,8 @@ def main() -> int:
         or actual_web == device_registration_web
         or actual_web == device_management_web
         or actual_web == device_enrollment_web
-        or actual_web == device_provider_resolution_web,
+        or actual_web == device_provider_resolution_web
+        or actual_web == policy_effective_state_web,
         "public Web shape",
     )
     index_html = (ROOT / "product/web/static/index.html").read_text(encoding="utf-8")
@@ -39,8 +41,10 @@ def main() -> int:
         require('/static/device-registration.js' in index_html, "device registration UI is not loaded")
         require('/static/device-management-plan.js' in index_html, "device management UI is not loaded")
         require('/static/device-enrollment.js' in index_html, "device enrollment UI is not loaded")
-    if actual_web == device_provider_resolution_web:
+    if actual_web in (device_provider_resolution_web, policy_effective_state_web):
         require('/static/device-provider-resolution.js' in index_html, "device provider-resolution UI is not loaded")
+    if actual_web == policy_effective_state_web:
+        require('/static/policy-effective-state.js' in index_html, "policy effective-state UI is not loaded")
     require(
         {path.name for path in (ROOT / "contracts/openapi").iterdir()} == {"home-center.v1.openapi.json"},
         "OpenAPI is not consolidated",
